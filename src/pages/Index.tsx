@@ -60,9 +60,10 @@ const Index = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button 
+              onClick={() => navigate('/discover')}
               className="w-full sm:w-auto min-h-[44px] px-8 bg-primary-forest text-white hover:bg-primary-forest/90 touch-feedback"
             >
-              Get Started
+              Discover Matches
             </Button>
             <Button 
               onClick={() => navigate('/components')}
