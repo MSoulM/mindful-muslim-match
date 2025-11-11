@@ -10,6 +10,8 @@ import { MatchCard } from '@/components/match/MatchCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Feedback/Skeleton';
 import { Toast } from '@/components/ui/Feedback/Toast';
+import { SkipLink } from '@/components/ui/accessibility/SkipLink';
+import { ScreenReaderAnnounce } from '@/components/ui/accessibility/ScreenReaderAnnounce';
 
 interface Match {
   id: string;
@@ -92,6 +94,7 @@ export default function DiscoverScreen() {
   const [matches, setMatches] = useState<Match[]>(sampleMatches);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
   const [toast, setToast] = useState<{
     isOpen: boolean;
     type: 'success' | 'error' | 'warning' | 'info';
@@ -121,21 +124,26 @@ export default function DiscoverScreen() {
   const handleSkip = (matchId: string) => {
     hapticFeedback('medium');
     
+    const match = matches.find(m => m.id === matchId);
+    
     // Animate card out
     setMatches(prev => prev.filter(m => m.id !== matchId));
     
-    // Show toast
+    // Show toast and announce
     showToast('info', 'Match saved for later');
+    setAnnouncement(`Match with ${match?.name} skipped. Showing next match.`);
   };
 
   const fetchNewMatches = async () => {
     setLoading(true);
+    setAnnouncement('Refreshing matches...');
     
     // Simulated refresh
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     setLoading(false);
     showToast('success', 'Matches refreshed');
+    setAnnouncement('Matches refreshed successfully.');
   };
 
   const handleNotificationClick = () => {
@@ -215,6 +223,9 @@ export default function DiscoverScreen() {
 
   return (
     <PageTransition>
+      <SkipLink href="#main-content">Skip to main content</SkipLink>
+      <ScreenReaderAnnounce message={announcement} />
+      
       <div className="min-h-screen flex flex-col">
         {/* TopBar */}
         <TopBar

@@ -12,6 +12,7 @@ interface ScreenContainerProps {
   scrollable?: boolean;
   onRefresh?: () => Promise<void>;
   className?: string;
+  id?: string;
 }
 
 export const ScreenContainer = ({
@@ -23,6 +24,7 @@ export const ScreenContainer = ({
   scrollable = true,
   onRefresh,
   className,
+  id,
 }: ScreenContainerProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -103,6 +105,7 @@ export const ScreenContainer = ({
 
   return (
     <div
+      id={id}
       ref={containerRef}
       className={cn(
         'relative w-full scroll-smooth',

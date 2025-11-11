@@ -46,14 +46,18 @@ export const TopBar = ({
   }
 
   return (
-    <motion.div
+    <motion.header
+      role="banner"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-neutral-100 shadow-sm"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="h-14 px-4 sm:px-5 flex items-center justify-between">
+      <nav 
+        aria-label="Main navigation"
+        className="h-14 px-4 sm:px-5 flex items-center justify-between"
+      >
         {/* Left Section */}
         <div className="flex items-center min-w-0 flex-1">
           {variant === 'logo' ? (
@@ -61,9 +65,9 @@ export const TopBar = ({
           ) : (
             <motion.button
               onClick={onBackClick}
-              className="flex items-center gap-2 min-h-[44px] -ml-2 px-2 touch-feedback"
+              className="flex items-center gap-2 min-h-[44px] -ml-2 px-2 touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
               whileTap={{ scale: 0.97 }}
-              aria-label="Go back"
+              aria-label={`Go back${title ? ` to ${title}` : ''}`}
             >
               <ChevronLeft className="w-6 h-6 text-neutral-700 flex-shrink-0" />
               <span className="text-base font-semibold text-neutral-900 truncate max-w-[200px]">
@@ -79,21 +83,24 @@ export const TopBar = ({
           {onNotificationClick && (
             <motion.button
               onClick={onNotificationClick}
-              className="relative min-w-[44px] min-h-[44px] flex items-center justify-center touch-feedback rounded-full"
+              className="relative min-w-[44px] min-h-[44px] flex items-center justify-center touch-feedback rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               whileTap={{ scale: 0.9 }}
-              aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount})` : ''}`}
+              aria-label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ', no unread notifications'}`}
+              aria-describedby={notificationCount > 0 ? 'notification-count' : undefined}
             >
-              <Bell className="w-5 h-5 text-neutral-700" />
+              <Bell className="w-5 h-5 text-neutral-700" aria-hidden="true" />
               
               {/* Badge */}
               {notificationCount > 0 && (
                 <motion.div
+                  id="notification-count"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                   className="absolute top-2 right-2 w-[18px] h-[18px] rounded-full bg-semantic-error flex items-center justify-center"
+                  aria-label={`${notificationCount} unread notifications`}
                 >
-                  <span className="text-[10px] font-bold text-white leading-none">
+                  <span className="text-[10px] font-bold text-white leading-none" aria-hidden="true">
                     {notificationCount > 99 ? '99+' : notificationCount}
                   </span>
                 </motion.div>
@@ -105,19 +112,19 @@ export const TopBar = ({
           {userInitials && onProfileClick && (
             <motion.button
               onClick={onProfileClick}
-              className="p-[5px] touch-feedback"
+              className="p-[5px] touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
               whileTap={{ scale: 0.95 }}
-              aria-label="Profile"
+              aria-label={`Profile, ${userInitials}`}
             >
               <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center border-2 border-white shadow-lg">
-                <span className="text-sm font-bold text-white leading-none">
+                <span className="text-sm font-bold text-white leading-none" aria-hidden="true">
                   {userInitials}
                 </span>
               </div>
             </motion.button>
           )}
         </div>
-      </div>
-    </motion.div>
+      </nav>
+    </motion.header>
   );
 };

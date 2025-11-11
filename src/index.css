@@ -129,7 +129,15 @@ All colors MUST be HSL.
 
   /* Focus visible only for keyboard */
   .focus-visible:focus {
-    @apply outline-none ring-2 ring-primary-forest ring-offset-2;
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .focus-visible:focus {
+      outline: 3px solid currentColor;
+      outline-offset: 2px;
+    }
   }
 
   /* Custom animations */

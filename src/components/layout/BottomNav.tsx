@@ -31,6 +31,8 @@ export const BottomNav = ({
 }: BottomNavProps) => {
   return (
     <motion.nav
+      role="navigation"
+      aria-label="Bottom navigation"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -48,11 +50,12 @@ export const BottomNav = ({
               <motion.button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className="relative flex flex-col items-center justify-center gap-1 flex-1 max-w-[80px] px-1 touch-feedback"
+                className="relative flex flex-col items-center justify-center gap-1 flex-1 max-w-[80px] px-1 touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
                 whileTap={{ scale: 0.95 }}
                 animate={isActive ? { scale: 1.05 } : { scale: 1 }}
                 aria-label={tab.label}
                 aria-current={isActive ? 'page' : undefined}
+                role="link"
               >
                 {/* Active indicator */}
                 {isActive && (
@@ -75,8 +78,9 @@ export const BottomNav = ({
                       ? '0 8px 16px rgba(212,165,116,0.3)' 
                       : '0 4px 10px rgba(212,165,116,0.2)',
                   }}
+                  aria-hidden="true"
                 >
-                  <Icon className="w-7 h-7 text-white" />
+                  <Icon className="w-7 h-7 text-white" aria-hidden="true" />
                 </motion.div>
 
                 {/* Label */}
@@ -94,14 +98,15 @@ export const BottomNav = ({
 
           // Normal Tab
           return (
-            <motion.button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className="relative flex flex-col items-center justify-center gap-1 flex-1 max-w-[80px] px-1 py-2 touch-feedback"
-              whileTap={{ scale: 0.97 }}
-              aria-label={tab.label}
-              aria-current={isActive ? 'page' : undefined}
-            >
+              <motion.button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                className="relative flex flex-col items-center justify-center gap-1 flex-1 max-w-[80px] px-1 py-2 touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
+                whileTap={{ scale: 0.97 }}
+                aria-label={tab.label}
+                aria-current={isActive ? 'page' : undefined}
+                role="link"
+              >
               {/* Active indicator */}
               {isActive && (
                 <motion.div
@@ -118,6 +123,7 @@ export const BottomNav = ({
                     "w-6 h-6 transition-colors duration-200",
                     isActive ? "text-primary-forest" : "text-neutral-500"
                   )}
+                  aria-hidden="true"
                 />
 
                 {/* Badge */}
@@ -127,8 +133,10 @@ export const BottomNav = ({
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                     className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-semantic-error flex items-center justify-center"
+                    role="status"
+                    aria-label={`${tab.badge} ${tab.label.toLowerCase()} notifications`}
                   >
-                    <span className="text-[10px] font-bold text-white leading-none">
+                    <span className="text-[10px] font-bold text-white leading-none" aria-hidden="true">
                       {tab.badge > 9 ? '9+' : tab.badge}
                     </span>
                   </motion.div>

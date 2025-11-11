@@ -48,7 +48,7 @@ export const MatchCard = ({
 
   if (variant === 'compact') {
     return (
-      <motion.div
+      <motion.article
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className={cn(
@@ -56,18 +56,20 @@ export const MatchCard = ({
           'p-4 flex gap-4 items-center',
           className
         )}
+        role="article"
+        aria-label={`Match with ${match.name}, ${match.age} years old, ${match.compatibility}% compatibility`}
       >
         {/* Photo */}
         <div className="w-[120px] h-[120px] flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center">
           {match.photoUrl && imageLoaded ? (
             <img
               src={match.photoUrl}
-              alt={match.name}
+              alt={`Photo of ${match.name}`}
               className="w-full h-full object-cover"
               onLoad={() => setImageLoaded(true)}
             />
           ) : (
-            <span className="text-6xl">{match.emoji}</span>
+            <span className="text-6xl" aria-hidden="true">{match.emoji}</span>
           )}
         </div>
 
@@ -92,17 +94,19 @@ export const MatchCard = ({
           </div>
         </div>
 
-        <ChevronRight className="w-5 h-5 text-neutral-400 flex-shrink-0" />
-      </motion.div>
+        <ChevronRight className="w-5 h-5 text-neutral-400 flex-shrink-0" aria-hidden="true" />
+      </motion.article>
     );
   }
 
   return (
-    <motion.div
+    <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       {...hoverLift}
       className={cn('bg-white rounded-2xl border border-neutral-200 shadow-lg overflow-hidden', className)}
+      role="article"
+      aria-label={`Match with ${match.name}, ${match.age} years old from ${match.location}. ${match.compatibility}% compatibility.`}
     >
       {/* Like Animation Overlay */}
       <AnimatePresence>
@@ -119,8 +123,8 @@ export const MatchCard = ({
         )}
       </AnimatePresence>
       {/* Header */}
-      <div className="p-4 flex items-start gap-3">
-        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center text-2xl">
+      <header className="p-4 flex items-start gap-3">
+        <div className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center text-2xl" aria-hidden="true">
           {match.emoji}
         </div>
         <div className="flex-1 min-w-0">
@@ -128,8 +132,8 @@ export const MatchCard = ({
             {match.name}, {match.age}
           </h2>
           <p className="text-sm text-neutral-600 flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5" />
-            {match.location} • {match.distance}
+            <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{match.location} • {match.distance}</span>
           </p>
         </div>
         <div
@@ -137,10 +141,11 @@ export const MatchCard = ({
             'px-3 py-1.5 rounded-full text-xs font-semibold text-white',
             `bg-gradient-to-r ${getCompatibilityColor(match.compatibility)}`
           )}
+          aria-label={`${match.compatibility}% compatibility match`}
         >
           {match.compatibility}% Match
         </div>
-      </div>
+      </header>
 
       {/* Photo */}
       <div 
@@ -149,16 +154,18 @@ export const MatchCard = ({
           setShowLikeAnimation(true);
           setTimeout(() => setShowLikeAnimation(false), 600);
         }}
+        role="img"
+        aria-label={`Photo of ${match.name}`}
       >
         {!imageLoaded && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[128px] opacity-50">{match.emoji}</span>
+            <span className="text-[128px] opacity-50" aria-hidden="true">{match.emoji}</span>
           </div>
         )}
         {match.photoUrl && (
           <img
             src={match.photoUrl}
-            alt={match.name}
+            alt={`Photo of ${match.name}`}
             className={cn(
               'w-full h-full object-cover transition-opacity duration-300',
               imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -169,7 +176,7 @@ export const MatchCard = ({
       </div>
 
       {/* Bio */}
-      <div className="p-4">
+      <section className="p-4" aria-label="Biography">
         <div className="relative">
           <p
             className={cn(
@@ -186,12 +193,14 @@ export const MatchCard = ({
         {match.bio.length > 200 && (
           <button
             onClick={() => setBioExpanded(!bioExpanded)}
-            className="text-sm text-primary-forest font-medium mt-2"
+            className="text-sm text-primary-forest font-medium mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+            aria-expanded={bioExpanded}
+            aria-label={bioExpanded ? 'Show less biography' : 'Show more biography'}
           >
             {bioExpanded ? 'Show less' : 'Read more'}
           </button>
         )}
-      </div>
+      </section>
 
       {/* ChaiChat Preview */}
       {match.chaiChat && onChaiChatClick && (
@@ -239,11 +248,12 @@ export const MatchCard = ({
             size="lg"
             fullWidth
             onClick={onSkip}
+            aria-label={`Skip match with ${match.name} for now`}
           >
             Skip for Now
           </Button>
         </div>
       )}
-    </motion.div>
+    </motion.article>
   );
 };
