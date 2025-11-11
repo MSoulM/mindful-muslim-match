@@ -65,12 +65,12 @@ const Index = () => {
               Get Started
             </Button>
             <Button 
-              onClick={() => navigate('/demo')}
+              onClick={() => navigate('/components')}
               variant="outline"
               className="w-full sm:w-auto min-h-[44px] px-8 border-primary-forest text-primary-forest hover:bg-primary-forest/5 touch-feedback flex items-center gap-2"
             >
               <Smartphone className="w-4 h-4" />
-              View Layout Demo
+              View Components Demo
             </Button>
           </div>
         </motion.div>
