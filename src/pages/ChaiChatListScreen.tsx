@@ -328,7 +328,14 @@ const ChaiChatListScreen = () => {
         <div className="h-20" />
       </ScreenContainer>
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav activeTab={activeTab} onTabChange={(tabId) => {
+        setActiveTab(tabId);
+        if (tabId === 'discover') navigate('/discover');
+        else if (tabId === 'myagent') navigate('/myagent');
+        else if (tabId === 'dna') navigate('/dna');
+        else if (tabId === 'chaichat') navigate('/chaichat');
+        else if (tabId === 'messages') navigate('/messages');
+      }} />
     </div>
   );
 };

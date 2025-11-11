@@ -1,4 +1,4 @@
-# MatchMe - Mindful Matchmaking App
+# MuslimSoulmate.ai - Mindful Matchmaking App
 
 A mobile-first, AI-powered matchmaking application built with React and TypeScript.
 

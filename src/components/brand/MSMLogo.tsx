@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import logoImage from '@/assets/mysouldna-logo.jpg';
+import heartImage from '@/assets/mysouldna-heart.jpg';
 
 interface MSMLogoProps {
   variant?: 'full' | 'icon' | 'compact';
@@ -31,19 +33,18 @@ export const MSMLogo = ({
   const LogoIcon = ({ size = 36 }: { size?: number }) => (
     <motion.div
       className={cn(
-        "rounded-lg flex items-center justify-center",
-        "bg-gradient-to-br from-primary-forest to-primary-gold"
+        "rounded-full flex items-center justify-center overflow-hidden",
+        "bg-white shadow-md"
       )}
       style={{ width: size, height: size }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
-      <span 
-        className="text-white font-bold leading-none" 
-        style={{ fontSize: size * 0.55 }}
-      >
-        M
-      </span>
+      <img 
+        src={heartImage}
+        alt="MuslimSoulmate.ai"
+        className="w-full h-full object-cover"
+      />
     </motion.div>
   );
 
@@ -59,7 +60,7 @@ export const MSMLogo = ({
           className
         )}
         whileTap={{ scale: 0.97 }}
-        aria-label="MatchMe"
+        aria-label="MuslimSoulmate.ai"
       >
         <LogoIcon size={36} />
       </motion.button>
@@ -80,11 +81,11 @@ export const MSMLogo = ({
           className
         )}
         whileTap={onClick ? { scale: 0.97, opacity: 0.9 } : undefined}
-        aria-label="MatchMe - Mindful Matchmaking"
+        aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
       >
         <LogoIcon size={32} />
         <span className="text-lg font-bold text-primary-forest leading-none">
-          MatchMe
+          MuslimSoulmate.ai
         </span>
       </motion.button>
     );
@@ -103,12 +104,12 @@ export const MSMLogo = ({
         className
       )}
       whileTap={onClick ? { scale: 0.97, opacity: 0.9 } : undefined}
-      aria-label="MatchMe - Mindful Matchmaking"
+      aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
     >
       <LogoIcon size={36} />
       <div className="flex flex-col items-start">
         <span className="text-xl font-bold text-primary-forest leading-none">
-          MatchMe
+          MuslimSoulmate.ai
         </span>
         <span className="text-[10px] font-semibold text-primary-gold leading-none mt-0.5">
           Mindful Matchmaking

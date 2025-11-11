@@ -165,8 +165,8 @@ export default function DiscoverScreen() {
       case 'discover':
         navigate('/discover');
         break;
-      case 'agent':
-        navigate('/agent');
+      case 'myagent':
+        navigate('/myagent');
         break;
       case 'dna':
         navigate('/dna');

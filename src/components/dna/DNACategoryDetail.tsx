@@ -391,11 +391,12 @@ export const DNACategoryDetail = ({
         initial={{ y: 100 }}
         animate={{ y: showStickyButton ? 0 : 100 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed bottom-20 left-0 right-0 px-5 z-20"
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 px-5 py-4 z-20 shadow-lg"
+        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
       >
         <Button
           onClick={onUpdate}
-          className="w-full h-[52px] text-base font-semibold shadow-lg"
+          className="w-full h-[52px] text-base font-semibold"
           size="lg"
         >
           ✨ Update {category.name}

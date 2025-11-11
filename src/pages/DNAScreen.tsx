@@ -145,7 +145,7 @@ export default function DNAScreen() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="pt-6"
+              className="pt-4"
             >
               <DNAStatsCard
                 mainStat={{
@@ -153,9 +153,8 @@ export default function DNAScreen() {
                   label: 'Your Compatibility Profile'
                 }}
                 gradient="default"
-                className="min-h-[180px] relative"
+                className="min-h-[140px] relative"
               />
-              
             </motion.div>
 
             {/* Categories Section */}

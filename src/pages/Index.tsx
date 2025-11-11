@@ -54,7 +54,7 @@ const Index = () => {
           </h1>
           
           <p className="text-md sm:text-lg text-neutral-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            MatchMe brings together Muslim singles seeking meaningful, halal marriages. 
+            MuslimSoulmate.ai brings together Muslim singles seeking meaningful, halal marriages. 
             Connect with compatible matches in a safe, respectful environment.
           </p>
 
@@ -118,7 +118,7 @@ const Index = () => {
             Ready to Begin Your Journey?
           </h2>
           <p className="text-md sm:text-lg opacity-90 mb-8 max-w-xl mx-auto">
-            Join MatchMe today and take the first step towards finding your life partner 
+            Join MuslimSoulmate.ai today and take the first step towards finding your life partner 
             through mindful, halal matchmaking.
           </p>
           <Button 
@@ -134,7 +134,7 @@ const Index = () => {
         <div className="max-w-5xl mx-auto text-center">
           <MSMLogo variant="compact" className="mx-auto mb-4" />
           <p className="text-sm text-neutral-500">
-            © 2025 MatchMe. All rights reserved.
+            © 2025 MuslimSoulmate.ai. All rights reserved.
           </p>
         </div>
       </footer>

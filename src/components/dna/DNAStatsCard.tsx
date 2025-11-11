@@ -33,7 +33,7 @@ export const DNAStatsCard = ({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        'relative rounded-2xl p-8 overflow-hidden',
+        'relative rounded-2xl p-6 overflow-hidden',
         `bg-gradient-to-br ${gradients[gradient]}`,
         className
       )}
@@ -50,8 +50,8 @@ export const DNAStatsCard = ({
         )}
 
         {/* Main Stat */}
-        <div className="mb-6">
-          <div className="text-5xl font-bold text-white mb-2">
+        <div className="mb-4">
+          <div className="text-5xl font-bold text-white mb-1">
             {mainStat.value}%
           </div>
           <p className="text-md text-white/90 font-medium">

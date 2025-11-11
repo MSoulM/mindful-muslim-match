@@ -68,7 +68,7 @@ export const TestingChecklist = () => {
   
   return (
     <div className="p-6 max-w-2xl mx-auto min-h-screen bg-background">
-      <h1 className="text-2xl font-bold mb-2 text-foreground">MatchMe Testing Checklist</h1>
+      <h1 className="text-2xl font-bold mb-2 text-foreground">MuslimSoulmate.ai Testing Checklist</h1>
       <p className="text-sm text-muted-foreground mb-6">Complete all tests before production deployment</p>
       
       <div className="mb-8 p-4 bg-card rounded-xl border border-border">

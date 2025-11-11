@@ -200,7 +200,7 @@ const ProfileScreen = () => {
 
         {/* Footer */}
         <div className="text-center py-6 pb-24">
-          <p className="text-xs text-muted-foreground mb-1">MatchMe v2.1.0</p>
+          <p className="text-xs text-muted-foreground mb-1">MuslimSoulmate.ai v2.1.0</p>
           <a href="#" className="text-xs text-primary hover:underline">
             Terms & Privacy
           </a>
