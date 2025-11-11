@@ -103,36 +103,7 @@ export const DNACategoryDetail = ({
 
   return (
     <div ref={containerRef} className="h-full overflow-y-auto">
-      {/* Header Section - Sticky on scroll */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'sticky top-0 z-10 bg-background transition-shadow duration-200',
-          isScrolled && 'shadow-md'
-        )}
-      >
-        <div className="px-5 pt-6 pb-5 text-center">
-          <div className="flex flex-col items-center gap-3">
-            {/* Icon */}
-            <div className="text-5xl">
-              {categoryIcon || category.icon}
-            </div>
-            
-            {/* Title */}
-            <h1 className="text-2xl font-bold text-foreground">
-              {category.name}
-            </h1>
-            
-            {/* Description */}
-            <p className="text-[15px] text-muted-foreground max-w-[90%] leading-relaxed">
-              {category.description}
-            </p>
-          </div>
-        </div>
-      </motion.header>
-
-      <div className="px-5 pb-28">
+      <div className="px-5 pt-6 pb-32">
         {/* Score Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -329,11 +300,11 @@ export const DNACategoryDetail = ({
           transition={{ delay: 0.7 }}
           className="mb-8"
         >
-          <h2 className="text-lg font-bold text-foreground mb-4">
-            📈 Your Growth Journey
+          <h2 className="text-lg font-bold text-foreground mb-3">
+            📈 Growth Journey
           </h2>
           
-          <div className="bg-card rounded-xl p-6 shadow-sm min-h-[200px]">
+          <div className="bg-card rounded-xl p-4 shadow-sm">
             <DNATimelineChart
               data={timeline.data}
               currentIndex={timeline.currentIndex}
@@ -386,12 +357,8 @@ export const DNACategoryDetail = ({
         </motion.section>
       </div>
 
-      {/* Update CTA - Sticky bottom button */}
-      <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: showStickyButton ? 0 : 100 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 px-5 py-4 z-20 shadow-lg"
+      {/* Update CTA - Fixed bottom button */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 px-5 py-4 z-20 shadow-lg"
         style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
       >
         <Button
@@ -401,7 +368,7 @@ export const DNACategoryDetail = ({
         >
           ✨ Update {category.name}
         </Button>
-      </motion.div>
+      </div>
     </div>
   );
 };
