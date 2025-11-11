@@ -1,9 +1,10 @@
-import { motion } from 'framer-motion';
-import { MapPin, ChevronRight, Coffee } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, ChevronRight, Coffee, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { useState } from 'react';
+import { hoverLift } from '@/utils/animations';
 
 interface MatchCardProps {
   match: {
@@ -37,6 +38,7 @@ export const MatchCard = ({
 }: MatchCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
 
   const getCompatibilityColor = (score: number) => {
     if (score >= 80) return 'from-semantic-success to-primary-forest';
@@ -99,8 +101,23 @@ export const MatchCard = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      {...hoverLift}
       className={cn('bg-white rounded-2xl border border-neutral-200 shadow-lg overflow-hidden', className)}
     >
+      {/* Like Animation Overlay */}
+      <AnimatePresence>
+        {showLikeAnimation && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.2, 0], opacity: [0, 1, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+          >
+            <Heart className="w-32 h-32 text-semantic-error fill-current drop-shadow-2xl" />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="p-4 flex items-start gap-3">
         <div className="w-12 h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center text-2xl">
@@ -126,7 +143,13 @@ export const MatchCard = ({
       </div>
 
       {/* Photo */}
-      <div className="relative w-full h-[380px] sm:h-[420px] bg-gradient-to-br from-primary-forest/20 to-primary-gold/20">
+      <div 
+        className="relative w-full h-[380px] sm:h-[420px] bg-gradient-to-br from-primary-forest/20 to-primary-gold/20"
+        onDoubleClick={() => {
+          setShowLikeAnimation(true);
+          setTimeout(() => setShowLikeAnimation(false), 600);
+        }}
+      >
         {!imageLoaded && (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-[128px] opacity-50">{match.emoji}</span>

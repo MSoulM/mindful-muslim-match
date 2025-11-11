@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { pageTransition, pageTransitionConfig } from "@/utils/animations";
 import Index from "./pages/Index";
 import LayoutDemo from "./pages/LayoutDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
@@ -25,34 +27,120 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <Index />
+          </motion.div>
+        } />
+        <Route path="/demo" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <LayoutDemo />
+          </motion.div>
+        } />
+        <Route path="/components" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ComponentsDemo />
+          </motion.div>
+        } />
+        <Route path="/discover" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <DiscoverScreen />
+          </motion.div>
+        } />
+        <Route path="/dna" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <DNAScreen />
+          </motion.div>
+        } />
+        <Route path="/myagent" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <MyAgentScreen />
+          </motion.div>
+        } />
+        <Route path="/insights" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <InsightsScreen />
+          </motion.div>
+        } />
+        <Route path="/agent-chat" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <AgentChatScreen />
+          </motion.div>
+        } />
+        <Route path="/stats" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <StatsScreen />
+          </motion.div>
+        } />
+        <Route path="/chaichat" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ChaiChatListScreen />
+          </motion.div>
+        } />
+        <Route path="/chaichat/:id" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ChaiChatDetailScreen />
+          </motion.div>
+        } />
+        <Route path="/messages" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <MessagesScreen />
+          </motion.div>
+        } />
+        <Route path="/profile" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ProfileScreen />
+          </motion.div>
+        } />
+        <Route path="/dna/values" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ValuesDetailScreen />
+          </motion.div>
+        } />
+        <Route path="/dna/interests" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <InterestsDetailScreen />
+          </motion.div>
+        } />
+        <Route path="/dna/personality" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <PersonalityDetailScreen />
+          </motion.div>
+        } />
+        <Route path="/dna/lifestyle" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <LifestyleDetailScreen />
+          </motion.div>
+        } />
+        <Route path="/dna/goals" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <GoalsDetailScreen />
+          </motion.div>
+        } />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <NotFound />
+          </motion.div>
+        } />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/demo" element={<LayoutDemo />} />
-          <Route path="/components" element={<ComponentsDemo />} />
-          <Route path="/discover" element={<DiscoverScreen />} />
-          <Route path="/dna" element={<DNAScreen />} />
-          <Route path="/myagent" element={<MyAgentScreen />} />
-          <Route path="/insights" element={<InsightsScreen />} />
-          <Route path="/agent-chat" element={<AgentChatScreen />} />
-          <Route path="/stats" element={<StatsScreen />} />
-          <Route path="/chaichat" element={<ChaiChatListScreen />} />
-          <Route path="/chaichat/:id" element={<ChaiChatDetailScreen />} />
-          <Route path="/messages" element={<MessagesScreen />} />
-          <Route path="/profile" element={<ProfileScreen />} />
-          <Route path="/dna/values" element={<ValuesDetailScreen />} />
-          <Route path="/dna/interests" element={<InterestsDetailScreen />} />
-          <Route path="/dna/personality" element={<PersonalityDetailScreen />} />
-          <Route path="/dna/lifestyle" element={<LifestyleDetailScreen />} />
-          <Route path="/dna/goals" element={<GoalsDetailScreen />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AnimatedRoutes />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
