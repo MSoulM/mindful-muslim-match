@@ -9,6 +9,8 @@ import { AppProvider } from "@/context/AppContext";
 import { UserProvider } from "@/context/UserContext";
 import { MatchesProvider } from "@/context/MatchesContext";
 import { DNAProvider } from "@/context/DNAContext";
+import TestingChecklist from "@/components/dev/TestingChecklist";
+import DevicePreview from "@/components/dev/DevicePreview";
 import Index from "./pages/Index";
 import LayoutDemo from "./pages/LayoutDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
@@ -127,6 +129,23 @@ const AnimatedRoutes = () => {
             <GoalsDetailScreen />
           </motion.div>
         } />
+        
+        {/* Development Tools - Only in development */}
+        {import.meta.env.DEV && (
+          <>
+            <Route path="/dev/testing" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <TestingChecklist />
+              </motion.div>
+            } />
+            <Route path="/dev/preview" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <DevicePreview />
+              </motion.div>
+            } />
+          </>
+        )}
+        
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
