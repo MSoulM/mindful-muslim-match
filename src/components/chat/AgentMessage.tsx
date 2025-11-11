@@ -25,7 +25,7 @@ export const AgentMessage = ({
   className,
 }: AgentMessageProps) => {
   const isWelcome = variant === 'welcome';
-  const avatarSize = isWelcome ? 'w-11 h-11' : 'w-9 h-9';
+  const avatarSize = 'w-8 h-8';
   const titleSize = isWelcome ? 'text-md font-bold' : 'text-sm font-semibold';
 
   return (
