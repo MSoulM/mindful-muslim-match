@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Archive } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { MessageCard } from '@/components/message/MessageCard';
-import { Button } from '@/components/ui/Button';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
+import { SwipeableCard } from '@/components/ui/SwipeableCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 const MessagesScreen = () => {
@@ -51,6 +53,17 @@ const MessagesScreen = () => {
     console.log('Navigate to message:', id);
   };
 
+  const handleArchive = (id: string) => {
+    console.log('Archive message:', id);
+    // TODO: Implement archive logic
+  };
+
+  const handleRefresh = async () => {
+    // Simulate fetching new messages
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log('Messages refreshed');
+  };
+
   const handleExploreMatches = () => {
     navigate('/discover');
   };
@@ -70,21 +83,30 @@ const MessagesScreen = () => {
         padding={false}
       >
         {hasMessages ? (
-          <>
+          <PullToRefresh onRefresh={handleRefresh}>
             {/* Active Conversations */}
             <div className="flex flex-col">
               {messages.map((message) => (
-                <MessageCard
+                <SwipeableCard
                   key={message.id}
-                  avatar={message.avatar}
-                  name={message.name}
-                  preview={message.preview}
-                  time={message.time}
-                  unreadCount={message.unreadCount}
-                  isOnline={message.isOnline}
-                  isFromUser={message.isFromUser}
-                  onClick={() => handleMessageClick(message.id)}
-                />
+                  onSwipeLeft={() => handleArchive(message.id)}
+                  leftAction={{
+                    label: 'Archive',
+                    color: '#ef4444',
+                    icon: <Archive className="w-5 h-5 text-white" />
+                  }}
+                >
+                  <MessageCard
+                    avatar={message.avatar}
+                    name={message.name}
+                    preview={message.preview}
+                    time={message.time}
+                    unreadCount={message.unreadCount}
+                    isOnline={message.isOnline}
+                    isFromUser={message.isFromUser}
+                    onClick={() => handleMessageClick(message.id)}
+                  />
+                </SwipeableCard>
               ))}
             </div>
 
@@ -94,7 +116,7 @@ const MessagesScreen = () => {
                 View archived (2)
               </button>
             </div>
-          </>
+          </PullToRefresh>
         ) : (
           <EmptyState
             icon={<span className="text-6xl">💬</span>}
