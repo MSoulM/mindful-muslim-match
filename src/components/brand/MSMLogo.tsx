@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import logoImage from '@/assets/mysouldna-logo.jpg';
-import heartImage from '@/assets/mysouldna-heart.jpg';
+import logoImage from '@/assets/msm-logo.jpg';
 
 interface MSMLogoProps {
   variant?: 'full' | 'icon' | 'compact';
@@ -33,17 +32,16 @@ export const MSMLogo = ({
   const LogoIcon = ({ size = 36 }: { size?: number }) => (
     <motion.div
       className={cn(
-        "rounded-full flex items-center justify-center overflow-hidden",
-        "bg-white shadow-md"
+        "flex items-center justify-center"
       )}
       style={{ width: size, height: size }}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
       <img 
-        src={heartImage}
+        src={logoImage}
         alt="MuslimSoulmate.ai"
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain"
       />
     </motion.div>
   );
