@@ -10,11 +10,13 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  status?: 'sending' | 'sent' | 'delivered' | 'error';
 }
 
 const AgentChatScreen = () => {
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -48,22 +50,49 @@ const AgentChatScreen = () => {
     { id: '5', text: '🤔 Ask Anything', value: '' },
   ];
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior,
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom('smooth');
   }, [messages]);
+
+  // Handle keyboard showing/hiding
+  useEffect(() => {
+    const handleResize = () => {
+      // Scroll to bottom when keyboard appears
+      setTimeout(() => scrollToBottom('auto'), 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const copyMessage = (content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      // Show a brief toast or feedback
+      if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+      }
+    });
+  };
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
 
+    const messageId = Date.now().toString();
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: messageId,
       role: 'user',
       content: inputValue.trim(),
       timestamp: new Date(),
+      status: 'sending',
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -76,17 +105,53 @@ const AgentChatScreen = () => {
       inputRef.current.style.height = '44px';
     }
 
-    // Simulate AI response (replace with actual API call)
+    // Update status to sent
     setTimeout(() => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, status: 'sent' as const } : msg
+        )
+      );
+    }, 300);
+
+    // Simulate AI response (replace with actual API call)
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      // Update to delivered
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, status: 'delivered' as const } : msg
+        )
+      );
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: "I understand you're interested in that topic. Let me help you with some insights based on your profile and preferences. What specific aspect would you like to explore further?",
         timestamp: new Date(),
+        status: 'delivered',
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setIsLoading(false);
-    }, 1500);
+    } catch (error) {
+      // Handle error
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, status: 'error' as const } : msg
+        )
+      );
+      setIsLoading(false);
+    }
+  };
+
+  const retryMessage = (messageId: string) => {
+    const message = messages.find((m) => m.id === messageId);
+    if (message && message.status === 'error') {
+      setInputValue(message.content);
+      setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      setTimeout(() => handleSend(), 100);
+    }
   };
 
   const handleQuickReply = (value: string) => {
@@ -136,9 +201,11 @@ const AgentChatScreen = () => {
 
       {/* Messages Container */}
       <div
+        ref={messagesContainerRef}
         className="flex-1 overflow-y-auto px-4 pt-4 pb-20"
         style={{
           paddingTop: 'calc(56px + env(safe-area-inset-top) + 16px)',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <div className="max-w-2xl mx-auto space-y-4">
@@ -171,11 +238,31 @@ const AgentChatScreen = () => {
                   style={{ maxWidth: '85%' }}
                 >
                   <div
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      copyMessage(message.content);
+                    }}
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0];
+                      const timer = setTimeout(() => {
+                        copyMessage(message.content);
+                      }, 500);
+                      
+                      const clearTimer = () => {
+                        clearTimeout(timer);
+                        document.removeEventListener('touchend', clearTimer);
+                        document.removeEventListener('touchmove', clearTimer);
+                      };
+                      
+                      document.addEventListener('touchend', clearTimer);
+                      document.addEventListener('touchmove', clearTimer);
+                    }}
                     className={cn(
-                      'px-4 py-3 break-words',
+                      'px-4 py-3 break-words cursor-pointer select-text',
                       message.role === 'assistant'
                         ? 'bg-white rounded-2xl rounded-tl-sm shadow-sm'
-                        : 'bg-gradient-to-br from-primary-forest to-primary-forest/90 text-white rounded-2xl rounded-br-sm'
+                        : 'bg-gradient-to-br from-primary-forest to-primary-forest/90 text-white rounded-2xl rounded-br-sm',
+                      message.status === 'error' && 'opacity-60'
                     )}
                   >
                     <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
@@ -183,10 +270,33 @@ const AgentChatScreen = () => {
                     </p>
                   </div>
                   
-                  {/* Timestamp */}
-                  <span className="text-[11px] text-neutral-500 mt-1 px-1">
-                    {formatTime(message.timestamp)}
-                  </span>
+                  {/* Timestamp and Status */}
+                  <div className="flex items-center gap-1 mt-1 px-1">
+                    <span className="text-[11px] text-neutral-500">
+                      {formatTime(message.timestamp)}
+                    </span>
+                    {message.role === 'user' && message.status && (
+                      <>
+                        {message.status === 'sending' && (
+                          <span className="text-[11px] text-neutral-400">●</span>
+                        )}
+                        {message.status === 'sent' && (
+                          <span className="text-[11px] text-neutral-500">✓</span>
+                        )}
+                        {message.status === 'delivered' && (
+                          <span className="text-[11px] text-primary-forest">✓✓</span>
+                        )}
+                        {message.status === 'error' && (
+                          <button
+                            onClick={() => retryMessage(message.id)}
+                            className="text-[11px] text-semantic-error hover:underline"
+                          >
+                            Retry
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             ))}
