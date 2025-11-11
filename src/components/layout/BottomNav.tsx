@@ -18,7 +18,7 @@ interface BottomNavProps {
 
 const defaultTabs: NavTab[] = [
   { id: 'discover', label: 'Discover', icon: Compass },
-  { id: 'agent', label: 'MyAgent', icon: Bot },
+  { id: 'myagent', label: 'MyAgent', icon: Bot },
   { id: 'dna', label: 'MySoul DNA', icon: Fingerprint, isHero: true },
   { id: 'chaichat', label: 'ChaiChat', icon: MessageCircle, badge: 2 },
   { id: 'messages', label: 'Messages', icon: MessageCircle, badge: 3 },
@@ -57,15 +57,6 @@ export const BottomNav = ({
                 aria-current={isActive ? 'page' : undefined}
                 role="link"
               >
-                {/* Active indicator */}
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-primary-forest rounded-full"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
-
                 {/* Hero Icon Circle */}
                 <motion.div
                   className={cn(
@@ -107,15 +98,6 @@ export const BottomNav = ({
                 aria-current={isActive ? 'page' : undefined}
                 role="link"
               >
-              {/* Active indicator */}
-              {isActive && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] bg-primary-forest rounded-full"
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-              )}
-
               {/* Icon Container */}
               <div className="relative">
                 <Icon

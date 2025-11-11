@@ -52,7 +52,7 @@ export const DNAStatsCard = ({
         {/* Main Stat */}
         <div className="mb-6">
           <div className="text-5xl font-bold text-white mb-2">
-            {mainStat.value}
+            {mainStat.value}%
           </div>
           <p className="text-md text-white/90 font-medium">
             {mainStat.label}

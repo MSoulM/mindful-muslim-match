@@ -41,6 +41,11 @@ const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <DNAScreen />
+          </motion.div>
+        } />
+        <Route path="/home" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <Index />
           </motion.div>
         } />

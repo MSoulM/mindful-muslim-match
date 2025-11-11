@@ -401,17 +401,6 @@ export const DNACategoryDetail = ({
           ✨ Update {category.name}
         </Button>
       </motion.div>
-
-      {/* Static CTA at bottom */}
-      <div className="px-5 pb-6">
-        <Button
-          onClick={onUpdate}
-          className="w-full h-[52px] text-base font-semibold"
-          size="lg"
-        >
-          ✨ Update {category.name}
-        </Button>
-      </div>
     </div>
   );
 };

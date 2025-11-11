@@ -89,8 +89,8 @@ export default function DNAScreen() {
       case 'discover':
         navigate('/discover');
         break;
-      case 'agent':
-        navigate('/agent');
+      case 'myagent':
+        navigate('/myagent');
         break;
       case 'dna':
         navigate('/dna');
@@ -156,19 +156,6 @@ export default function DNAScreen() {
                 className="min-h-[180px] relative"
               />
               
-              {/* Pulse glow effect */}
-              <motion.div
-                animate={{
-                  opacity: [0.4, 0.7, 0.4],
-                  scale: [1, 1.02, 1],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute inset-0 bg-primary-forest/10 rounded-2xl blur-xl -z-10"
-              />
             </motion.div>
 
             {/* Categories Section */}
