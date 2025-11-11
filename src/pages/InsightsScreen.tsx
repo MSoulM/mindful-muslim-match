@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
-import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
@@ -24,7 +23,6 @@ interface Insight {
 
 const InsightsScreen = () => {
   const navigate = useNavigate();
-  const [activeTab] = useState('myagent');
   const [showAllInsights, setShowAllInsights] = useState(false);
   const [expandedExplanation, setExpandedExplanation] = useState(false);
 
@@ -104,7 +102,6 @@ const InsightsScreen = () => {
       
       <ScreenContainer
         hasTopBar
-        hasBottomNav
         padding
         scrollable
       >
@@ -279,11 +276,9 @@ const InsightsScreen = () => {
           />
         </motion.div>
 
-        {/* Bottom padding for nav */}
-        <div className="h-20" />
+        {/* Bottom padding */}
+        <div className="h-8" />
       </ScreenContainer>
-
-      <BottomNav activeTab={activeTab} onTabChange={() => {}} />
     </div>
   );
 };

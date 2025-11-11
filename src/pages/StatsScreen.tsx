@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
-import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { DNAStatsCard } from '@/components/dna/DNAStatsCard';
 import { StatCard } from '@/components/ui/Cards/StatCard';
@@ -12,7 +11,6 @@ import { cn } from '@/lib/utils';
 
 const StatsScreen = () => {
   const navigate = useNavigate();
-  const [activeTab] = useState('myagent');
   const [daysActive, setDaysActive] = useState(0);
   const [dnaComplete, setDnaComplete] = useState(0);
 
@@ -80,26 +78,9 @@ const StatsScreen = () => {
       
       <ScreenContainer
         hasTopBar
-        hasBottomNav
         padding
         scrollable
       >
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="text-center mb-7"
-        >
-          <div className="text-5xl mb-3">📊</div>
-          <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-            Your Journey
-          </h1>
-          <p className="text-[15px] text-neutral-600">
-            Track your progress
-          </p>
-        </motion.div>
-
         {/* Hero Progress Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -356,11 +337,9 @@ const StatsScreen = () => {
           />
         </motion.div>
 
-        {/* Bottom padding for nav */}
-        <div className="h-20" />
+        {/* Bottom padding */}
+        <div className="h-8" />
       </ScreenContainer>
-
-      <BottomNav activeTab={activeTab} onTabChange={() => {}} />
     </div>
   );
 };
