@@ -8,6 +8,11 @@ import LayoutDemo from "./pages/LayoutDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
 import DiscoverScreen from "./pages/DiscoverScreen";
 import DNAScreen from "./pages/DNAScreen";
+import ValuesDetailScreen from "./pages/dna/ValuesDetailScreen";
+import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
+import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
+import LifestyleDetailScreen from "./pages/dna/LifestyleDetailScreen";
+import GoalsDetailScreen from "./pages/dna/GoalsDetailScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +29,11 @@ const App = () => (
           <Route path="/components" element={<ComponentsDemo />} />
           <Route path="/discover" element={<DiscoverScreen />} />
           <Route path="/dna" element={<DNAScreen />} />
+          <Route path="/dna/values" element={<ValuesDetailScreen />} />
+          <Route path="/dna/interests" element={<InterestsDetailScreen />} />
+          <Route path="/dna/personality" element={<PersonalityDetailScreen />} />
+          <Route path="/dna/lifestyle" element={<LifestyleDetailScreen />} />
+          <Route path="/dna/goals" element={<GoalsDetailScreen />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
