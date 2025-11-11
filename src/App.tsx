@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { pageTransition, pageTransitionConfig } from "@/utils/animations";
+import { AppProvider } from "@/context/AppContext";
+import { UserProvider } from "@/context/UserContext";
+import { MatchesProvider } from "@/context/MatchesContext";
+import { DNAProvider } from "@/context/DNAContext";
 import Index from "./pages/Index";
 import LayoutDemo from "./pages/LayoutDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
@@ -136,13 +140,21 @@ const AnimatedRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AnimatedRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
+    <AppProvider>
+      <UserProvider>
+        <MatchesProvider>
+          <DNAProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AnimatedRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </DNAProvider>
+        </MatchesProvider>
+      </UserProvider>
+    </AppProvider>
   </QueryClientProvider>
 );
 

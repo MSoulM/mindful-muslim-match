@@ -17,10 +17,16 @@ import {
   Camera 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useUser } from '@/context/UserContext';
+import { useDNA } from '@/context/DNAContext';
+import { useApp } from '@/context/AppContext';
 
 const ProfileScreen = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
+  const { user, logout } = useUser();
+  const { overallScore } = useDNA();
+  const { notificationCount } = useApp();
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -29,7 +35,10 @@ const ProfileScreen = () => {
   };
 
   const handleSignOut = () => {
-    console.log('Sign out');
+    if (window.confirm('Are you sure you want to sign out?')) {
+      logout();
+      navigate('/');
+    }
   };
 
   const handlePauseProfile = () => {
@@ -44,9 +53,19 @@ const ProfileScreen = () => {
     console.log('Edit profile');
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-muted">
-      <TopBar variant="logo" />
+      <TopBar 
+        variant="logo" 
+        notificationCount={notificationCount}
+        userInitials={user.initials}
+        onNotificationClick={() => navigate('/notifications')}
+        onProfileClick={() => {}}
+      />
       
       <ScreenContainer 
         hasTopBar 
@@ -69,7 +88,7 @@ const ProfileScreen = () => {
             className="relative inline-block mb-4"
           >
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/30 to-primary/60 flex items-center justify-center">
-              <span className="text-3xl font-bold text-white">AK</span>
+              <span className="text-3xl font-bold text-white">{user.initials}</span>
             </div>
             <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-background">
               <Camera className="w-4 h-4 text-primary-foreground" />
@@ -77,10 +96,10 @@ const ProfileScreen = () => {
           </motion.button>
 
           {/* Name & Bio */}
-          <h1 className="text-2xl font-bold text-foreground mb-1">Ahmed Khan</h1>
-          <p className="text-sm text-muted-foreground mb-2">London, UK • 32</p>
+          <h1 className="text-2xl font-bold text-foreground mb-1">{user.name}</h1>
+          <p className="text-sm text-muted-foreground mb-2">{user.location} • {user.age}</p>
           <p className="text-sm text-foreground/80 max-w-md mx-auto">
-            Seeking a life partner to build a blessed family together
+            {user.bio}
           </p>
         </div>
 
@@ -89,15 +108,15 @@ const ProfileScreen = () => {
           <div className="bg-gradient-to-br from-primary/80 to-primary rounded-2xl p-4 shadow-lg">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-white">95%</div>
+                <div className="text-2xl font-bold text-white">{overallScore}%</div>
                 <div className="text-xs text-white/80">DNA</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">12</div>
+                <div className="text-2xl font-bold text-white">{user.matchCount}</div>
                 <div className="text-xs text-white/80">Matches</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">67d</div>
+                <div className="text-2xl font-bold text-white">{user.activeDays}d</div>
                 <div className="text-xs text-white/80">Active</div>
               </div>
             </div>
