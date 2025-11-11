@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { LucideIcon, Compass, Bot, Fingerprint, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import mySoulDNAIcon from '@/assets/mysouldna-nav-icon.png';
 
 interface NavTab {
   id: string;
@@ -66,12 +67,17 @@ export const BottomNav = ({
                   )}
                   animate={{
                     boxShadow: isActive 
-                      ? '0 8px 16px rgba(212,165,116,0.3)' 
-                      : '0 4px 10px rgba(212,165,116,0.2)',
+                      ? '0 8px 16px rgba(212,165,116,0.36)' 
+                      : '0 4px 10px rgba(212,165,116,0.24)',
                   }}
                   aria-hidden="true"
                 >
-                  <Icon className="w-7 h-7 text-white" aria-hidden="true" />
+                  <img 
+                    src={mySoulDNAIcon} 
+                    alt="MySoul DNA" 
+                    className="w-7 h-7 object-contain"
+                    aria-hidden="true"
+                  />
                 </motion.div>
 
                 {/* Label */}
