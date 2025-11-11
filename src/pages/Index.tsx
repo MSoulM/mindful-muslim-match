@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
 import { MSMLogo } from '@/components/brand/MSMLogo';
 import { SafeArea } from '@/components/utils/SafeArea';
-import { Heart, Shield, Sparkles, Users } from 'lucide-react';
+import { Heart, Shield, Sparkles, Users, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const navigate = useNavigate();
+  
   const features = [
     {
       icon: Heart,
@@ -62,10 +65,12 @@ const Index = () => {
               Get Started
             </Button>
             <Button 
+              onClick={() => navigate('/demo')}
               variant="outline"
-              className="w-full sm:w-auto min-h-[44px] px-8 border-primary-forest text-primary-forest hover:bg-primary-forest/5 touch-feedback"
+              className="w-full sm:w-auto min-h-[44px] px-8 border-primary-forest text-primary-forest hover:bg-primary-forest/5 touch-feedback flex items-center gap-2"
             >
-              Learn More
+              <Smartphone className="w-4 h-4" />
+              View Layout Demo
             </Button>
           </div>
         </motion.div>
