@@ -11,6 +11,7 @@ import DNAScreen from "./pages/DNAScreen";
 import MyAgentScreen from "./pages/MyAgentScreen";
 import InsightsScreen from "./pages/InsightsScreen";
 import AgentChatScreen from "./pages/AgentChatScreen";
+import StatsScreen from "./pages/StatsScreen";
 import ValuesDetailScreen from "./pages/dna/ValuesDetailScreen";
 import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
 import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/myagent" element={<MyAgentScreen />} />
           <Route path="/insights" element={<InsightsScreen />} />
           <Route path="/agent-chat" element={<AgentChatScreen />} />
+          <Route path="/stats" element={<StatsScreen />} />
           <Route path="/dna/values" element={<ValuesDetailScreen />} />
           <Route path="/dna/interests" element={<InterestsDetailScreen />} />
           <Route path="/dna/personality" element={<PersonalityDetailScreen />} />
