@@ -127,7 +127,7 @@ export const BottomNav = ({
                   <img 
                     src={chaiChatIcon} 
                     alt="ChaiChat" 
-                    className="w-[30px] h-[30px] object-contain"
+                    className="w-[38px] h-[38px] object-contain"
                     aria-hidden="true"
                   />
                 ) : (
