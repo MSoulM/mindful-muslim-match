@@ -20,8 +20,20 @@ const AgentChatScreen = () => {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi there! 👋 I'm your MMAgent. I'm here to help you navigate your journey to finding meaningful connections. What would you like to talk about today?",
-      timestamp: new Date(),
+      content: "Assalamu alaikum Ahmed! I'm here to help you on your journey to find your life partner. What would you like to know?",
+      timestamp: new Date(Date.now() - 120000), // 2 minutes ago
+    },
+    {
+      id: '2',
+      role: 'user',
+      content: "What should I know about Sarah before our chat?",
+      timestamp: new Date(Date.now() - 60000), // 1 minute ago
+    },
+    {
+      id: '3',
+      role: 'assistant',
+      content: "Great question! Based on your ChaiChat conversation, Sarah values work-life balance and has a wonderful sense of humor. She mentioned loving hiking and reading - perhaps ask about her favorite trails or recent books. She appreciates depth in conversation, so don't hesitate to share your genuine thoughts. Your 95% compatibility suggests natural conversation flow. Be yourself - that's who she matched with! 😊",
+      timestamp: new Date(Date.now() - 30000), // 30 seconds ago
     },
   ]);
   const [inputValue, setInputValue] = useState('');
