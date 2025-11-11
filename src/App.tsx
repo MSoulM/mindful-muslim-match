@@ -14,6 +14,7 @@ import AgentChatScreen from "./pages/AgentChatScreen";
 import StatsScreen from "./pages/StatsScreen";
 import ChaiChatListScreen from "./pages/ChaiChatListScreen";
 import ChaiChatDetailScreen from "./pages/ChaiChatDetailScreen";
+import MessagesScreen from "./pages/MessagesScreen";
 import ValuesDetailScreen from "./pages/dna/ValuesDetailScreen";
 import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
 import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/stats" element={<StatsScreen />} />
           <Route path="/chaichat" element={<ChaiChatListScreen />} />
           <Route path="/chaichat/:id" element={<ChaiChatDetailScreen />} />
+          <Route path="/messages" element={<MessagesScreen />} />
           <Route path="/dna/values" element={<ValuesDetailScreen />} />
           <Route path="/dna/interests" element={<InterestsDetailScreen />} />
           <Route path="/dna/personality" element={<PersonalityDetailScreen />} />
