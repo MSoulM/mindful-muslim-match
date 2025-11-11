@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
+import fingerprintIcon from '@/assets/mysouldna-fingerprint.png';
 
 interface DNACategoryCardProps {
   category: string;
@@ -48,9 +49,26 @@ export const DNACategoryCard = ({
     >
       <div className="flex items-start gap-4">
         {/* Icon */}
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-forest/10 to-primary-gold/10 flex items-center justify-center flex-shrink-0 text-primary-forest">
-          {icon}
-        </div>
+        <motion.div 
+          className={cn(
+            "w-12 h-12 rounded-xl bg-gradient-to-br from-primary-forest/10 to-primary-gold/10",
+            "flex items-center justify-center flex-shrink-0 relative",
+            "shadow-[0_0_20px_rgba(10,58,46,0.2)]"
+          )}
+          whileHover={{
+            boxShadow: "0 0 24px rgba(10,58,46,0.24)"
+          }}
+          whileTap={{
+            boxShadow: "0 0 24px rgba(10,58,46,0.24)"
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          <img 
+            src={fingerprintIcon} 
+            alt="MySoulDNA" 
+            className="w-7 h-7 object-contain opacity-80"
+          />
+        </motion.div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
