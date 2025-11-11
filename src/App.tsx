@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import LayoutDemo from "./pages/LayoutDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
 import DiscoverScreen from "./pages/DiscoverScreen";
+import DNAScreen from "./pages/DNAScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/demo" element={<LayoutDemo />} />
           <Route path="/components" element={<ComponentsDemo />} />
           <Route path="/discover" element={<DiscoverScreen />} />
+          <Route path="/dna" element={<DNAScreen />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
