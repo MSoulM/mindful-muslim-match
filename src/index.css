@@ -131,4 +131,18 @@ All colors MUST be HSL.
   .focus-visible:focus {
     @apply outline-none ring-2 ring-primary-forest ring-offset-2;
   }
+
+  /* Custom animations */
+  @keyframes bounce-subtle {
+    0%, 100% { 
+      transform: translateY(0); 
+    }
+    50% { 
+      transform: translateY(-10px); 
+    }
+  }
+
+  .animate-bounce-subtle {
+    animation: bounce-subtle 3s ease-in-out infinite;
+  }
 }
