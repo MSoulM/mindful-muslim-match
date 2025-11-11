@@ -170,6 +170,7 @@ export default function DNAScreen() {
                   >
                     <DNACategoryCard
                       category={category.category}
+                      categoryId={category.id}
                       icon={<Icon className="w-6 h-6" />}
                       completion={category.completion}
                       rarity={category.rarity}

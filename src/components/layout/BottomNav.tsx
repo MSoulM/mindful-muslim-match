@@ -2,6 +2,9 @@ import { motion } from 'framer-motion';
 import { LucideIcon, Compass, Bot, Fingerprint, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import mySoulDNAIcon from '@/assets/mysouldna-nav-icon.png';
+import discoverIcon from '@/assets/discover-icon.jpg';
+import myAgentIcon from '@/assets/myagent-icon.jpg';
+import chaiChatIcon from '@/assets/chaichat-icon.jpg';
 
 interface NavTab {
   id: string;
@@ -75,7 +78,7 @@ export const BottomNav = ({
                   <img 
                     src={mySoulDNAIcon} 
                     alt="MySoul DNA" 
-                    className="w-7 h-7 object-contain"
+                    className="w-8 h-8 object-contain"
                     aria-hidden="true"
                   />
                 </motion.div>
@@ -106,13 +109,36 @@ export const BottomNav = ({
               >
               {/* Icon Container */}
               <div className="relative">
-                <Icon
-                  className={cn(
-                    "w-6 h-6 transition-colors duration-200",
-                    isActive ? "text-primary-forest" : "text-neutral-500"
-                  )}
-                  aria-hidden="true"
-                />
+                {tab.id === 'discover' ? (
+                  <img 
+                    src={discoverIcon} 
+                    alt="Discover" 
+                    className="w-6 h-6 object-contain"
+                    aria-hidden="true"
+                  />
+                ) : tab.id === 'myagent' ? (
+                  <img 
+                    src={myAgentIcon} 
+                    alt="MyAgent" 
+                    className="w-6 h-6 object-contain"
+                    aria-hidden="true"
+                  />
+                ) : tab.id === 'chaichat' ? (
+                  <img 
+                    src={chaiChatIcon} 
+                    alt="ChaiChat" 
+                    className="w-6 h-6 object-contain"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Icon
+                    className={cn(
+                      "w-6 h-6 transition-colors duration-200",
+                      isActive ? "text-primary-forest" : "text-neutral-500"
+                    )}
+                    aria-hidden="true"
+                  />
+                )}
 
                 {/* Badge */}
                 {tab.badge && tab.badge > 0 && (
