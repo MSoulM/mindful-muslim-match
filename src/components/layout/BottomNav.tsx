@@ -113,21 +113,21 @@ export const BottomNav = ({
                   <img 
                     src={discoverIcon} 
                     alt="Discover" 
-                    className="w-6 h-6 object-contain"
+                    className="w-[30px] h-[30px] object-contain"
                     aria-hidden="true"
                   />
                 ) : tab.id === 'myagent' ? (
                   <img 
                     src={myAgentIcon} 
                     alt="MyAgent" 
-                    className="w-6 h-6 object-contain"
+                    className="w-[30px] h-[30px] object-contain"
                     aria-hidden="true"
                   />
                 ) : tab.id === 'chaichat' ? (
                   <img 
                     src={chaiChatIcon} 
                     alt="ChaiChat" 
-                    className="w-6 h-6 object-contain"
+                    className="w-[30px] h-[30px] object-contain"
                     aria-hidden="true"
                   />
                 ) : (
