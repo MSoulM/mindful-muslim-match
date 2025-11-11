@@ -9,6 +9,7 @@ import ComponentsDemo from "./pages/ComponentsDemo";
 import DiscoverScreen from "./pages/DiscoverScreen";
 import DNAScreen from "./pages/DNAScreen";
 import MyAgentScreen from "./pages/MyAgentScreen";
+import InsightsScreen from "./pages/InsightsScreen";
 import ValuesDetailScreen from "./pages/dna/ValuesDetailScreen";
 import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
 import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/discover" element={<DiscoverScreen />} />
           <Route path="/dna" element={<DNAScreen />} />
           <Route path="/myagent" element={<MyAgentScreen />} />
+          <Route path="/insights" element={<InsightsScreen />} />
           <Route path="/dna/values" element={<ValuesDetailScreen />} />
           <Route path="/dna/interests" element={<InterestsDetailScreen />} />
           <Route path="/dna/personality" element={<PersonalityDetailScreen />} />
