@@ -41,6 +41,10 @@ import ManageSubscriptionScreen from "./pages/ManageSubscriptionScreen";
 import SettingsScreen from "./pages/SettingsScreen";
 import PrivacyScreen from "./pages/settings/PrivacyScreen";
 import DeleteAccountScreen from "./pages/settings/DeleteAccountScreen";
+import HelpCenterScreen from "./pages/HelpCenterScreen";
+import FAQScreen from "./pages/FAQScreen";
+import ContactSupportScreen from "./pages/ContactSupportScreen";
+import TutorialScreen from "./pages/TutorialScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -206,6 +210,28 @@ const AnimatedRoutes = () => {
         <Route path="/settings/delete-account" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <DeleteAccountScreen />
+          </motion.div>
+        } />
+        
+        {/* Help Center Routes */}
+        <Route path="/help" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <HelpCenterScreen />
+          </motion.div>
+        } />
+        <Route path="/help/faq" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <FAQScreen />
+          </motion.div>
+        } />
+        <Route path="/help/contact" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ContactSupportScreen />
+          </motion.div>
+        } />
+        <Route path="/help/tutorial/:id" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <TutorialScreen />
           </motion.div>
         } />
         
