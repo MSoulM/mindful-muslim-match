@@ -20,8 +20,10 @@ import { PremiumBenefitCard } from '@/components/premium/PremiumBenefitCard';
 import { PlanCard } from '@/components/premium/PlanCard';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
-type PlanType = 'monthly' | 'quarterly' | 'annual';
+import { usePremium } from '@/hooks/usePremium';
+import { PlanType, PLAN_DETAILS } from '@/types/premium.types';
+import { useToast } from '@/hooks/use-toast';
+import confetti from 'canvas-confetti';
 
 interface Plan {
   id: PlanType;
@@ -43,7 +45,7 @@ const plans: Plan[] = [
     billing: 'Billed monthly',
   },
   {
-    id: 'quarterly',
+    id: '3month',
     title: '3-Month Plan',
     price: '£23.99',
     priceValue: 23.99,
@@ -66,7 +68,9 @@ const plans: Plan[] = [
 
 export default function PremiumScreen() {
   const navigate = useNavigate();
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>('quarterly');
+  const { toast } = useToast();
+  const { upgradePlan, addTransaction } = usePremium();
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>('3month');
   const [showPaymentMethods, setShowPaymentMethods] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -82,11 +86,47 @@ export default function PremiumScreen() {
     hapticFeedback();
     setIsLoading(true);
     
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsLoading(false);
-    navigate('/subscription/success');
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Upgrade plan
+      upgradePlan(selectedPlan);
+      
+      // Add transaction
+      const planDetails = PLAN_DETAILS[selectedPlan];
+      const totalPrice = selectedPlan === 'monthly' 
+        ? planDetails.price 
+        : selectedPlan === '3month' 
+        ? planDetails.price * 3 
+        : planDetails.price * 12;
+      
+      addTransaction({
+        id: `INV-${Date.now()}`,
+        date: new Date().toLocaleDateString(),
+        amount: `£${totalPrice.toFixed(2)}`,
+        currency: 'GBP',
+        status: 'paid',
+        description: `${planDetails.name} Plan Subscription`,
+      });
+      
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      
+      setIsLoading(false);
+      navigate('/subscription/success');
+    } catch (error) {
+      toast({
+        title: 'Payment failed',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -23,6 +23,7 @@ import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
 import { useDNA } from '@/context/DNAContext';
 import { useApp } from '@/context/AppContext';
+import { usePremium } from '@/hooks/usePremium';
 
 const ProfileScreen = () => {
   const navigate = useNavigate();
@@ -30,9 +31,10 @@ const ProfileScreen = () => {
   const { user, logout } = useUser();
   const { overallScore } = useDNA();
   const { notificationCount } = useApp();
+  const { premiumState } = usePremium();
   
-  // Mock premium status - in production, fetch from user subscription data
-  const [isPremium] = useState(false);
+  // Check if user is premium
+  const isPremium = premiumState.isSubscribed;
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);

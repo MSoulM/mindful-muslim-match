@@ -6,9 +6,12 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import confetti from 'canvas-confetti';
+import { usePremium } from '@/hooks/usePremium';
 
 export default function SubscriptionSuccessScreen() {
   const navigate = useNavigate();
+  const { getCurrentPlanDetails } = usePremium();
+  const planDetails = getCurrentPlanDetails();
 
   useEffect(() => {
     // Confetti burst
@@ -84,7 +87,7 @@ export default function SubscriptionSuccessScreen() {
               Welcome to Premium!
             </h1>
             <p className="text-base text-neutral-600">
-              You're now a premium member
+              You're now on the {planDetails.name} plan
             </p>
           </motion.div>
 
