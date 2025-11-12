@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Check, CheckCheck } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { VoiceMessage } from './VoiceMessage';
+import { MediaViewer } from './MediaViewer';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -40,11 +42,19 @@ export const MessageBubble = ({
   showAvatar,
   matchPhoto
 }: MessageBubbleProps) => {
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
+
   const formatTime = (date: Date) => {
     return new Date(date).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit'
     });
+  };
+
+  const handleImageClick = (index: number) => {
+    setViewerIndex(index);
+    setViewerOpen(true);
   };
   
   const getStatusIcon = () => {
@@ -126,6 +136,7 @@ export const MessageBubble = ({
                       "relative aspect-square cursor-pointer hover:opacity-90 transition-opacity",
                       message.images!.length === 1 && "max-w-[280px] aspect-auto"
                     )}
+                    onClick={() => handleImageClick(idx)}
                   >
                     <img
                       src={img.url}
@@ -183,6 +194,15 @@ export const MessageBubble = ({
           </div>
         )}
       </div>
+
+      {message.images && message.images.length > 0 && (
+        <MediaViewer
+          images={message.images}
+          initialIndex={viewerIndex}
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
     </div>
   );
 };
