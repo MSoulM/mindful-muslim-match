@@ -29,6 +29,9 @@ import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
 import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
 import LifestyleDetailScreen from "./pages/dna/LifestyleDetailScreen";
 import GoalsDetailScreen from "./pages/dna/GoalsDetailScreen";
+import { NotificationCenterScreen } from "./pages/notifications/NotificationCenterScreen";
+import { NotificationPreferencesScreen } from "./pages/settings/NotificationPreferencesScreen";
+import { ChatDetailScreen } from "./pages/chat/ChatDetailScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -102,6 +105,21 @@ const AnimatedRoutes = () => {
         <Route path="/messages" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <MessagesScreen />
+          </motion.div>
+        } />
+        <Route path="/chat/:matchId" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ChatDetailScreen />
+          </motion.div>
+        } />
+        <Route path="/notifications" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <NotificationCenterScreen />
+          </motion.div>
+        } />
+        <Route path="/settings/notification-preferences" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <NotificationPreferencesScreen />
           </motion.div>
         } />
         <Route path="/profile" element={

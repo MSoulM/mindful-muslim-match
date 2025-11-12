@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/Feedback/Skeleton';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { SkipLink } from '@/components/ui/accessibility/SkipLink';
 import { ScreenReaderAnnounce } from '@/components/ui/accessibility/ScreenReaderAnnounce';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface Match {
   id: string;
@@ -95,6 +96,7 @@ export default function DiscoverScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
+  const { unreadCount } = useNotifications();
   const [toast, setToast] = useState<{
     isOpen: boolean;
     type: 'success' | 'error' | 'warning' | 'info';
@@ -186,7 +188,7 @@ export default function DiscoverScreen() {
         <div className="min-h-screen flex flex-col">
           <TopBar
             variant="logo"
-            notificationCount={5}
+            notificationCount={unreadCount}
             userInitials="AK"
             onNotificationClick={handleNotificationClick}
             onProfileClick={handleProfileClick}
@@ -230,7 +232,7 @@ export default function DiscoverScreen() {
         {/* TopBar */}
         <TopBar
           variant="logo"
-          notificationCount={5}
+          notificationCount={unreadCount}
           userInitials="AK"
           onNotificationClick={handleNotificationClick}
           onProfileClick={handleProfileClick}

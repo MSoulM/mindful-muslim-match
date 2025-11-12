@@ -9,6 +9,7 @@ import { PageTransition } from '@/components/layout/PageTransition';
 import { DNAStatsCard } from '@/components/dna/DNAStatsCard';
 import { DNACategoryCard } from '@/components/dna/DNACategoryCard';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
+import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
 
 const categories = [
@@ -63,6 +64,7 @@ const postTypes = [
 export default function DNAScreen() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dna');
+  const { unreadCount } = useNotifications();
 
   const hapticFeedback = (style: 'light' | 'medium' | 'heavy' = 'light') => {
     if ('vibrate' in navigator) {
@@ -125,7 +127,7 @@ export default function DNAScreen() {
         {/* TopBar */}
         <TopBar
           variant="logo"
-          notificationCount={5}
+          notificationCount={unreadCount}
           userInitials="AK"
           onNotificationClick={handleNotificationClick}
           onProfileClick={handleProfileClick}

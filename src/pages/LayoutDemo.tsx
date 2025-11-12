@@ -1,13 +1,17 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { Sheet } from '@/components/layout/Sheet';
 import { Button } from '@/components/ui/button';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Heart, Sparkles, Users, MessageCircle } from 'lucide-react';
 
 const LayoutDemo = () => {
+  const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
   const [activeTab, setActiveTab] = useState('discover');
   const [showSheet, setShowSheet] = useState(false);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
@@ -31,10 +35,10 @@ const LayoutDemo = () => {
       {/* Top Bar */}
       <TopBar
         variant="logo"
-        notificationCount={5}
+        notificationCount={unreadCount}
         userInitials="AZ"
-        onNotificationClick={() => alert('Notifications clicked')}
-        onProfileClick={() => alert('Profile clicked')}
+        onNotificationClick={() => navigate('/notifications')}
+        onProfileClick={() => navigate('/profile')}
       />
 
       {/* Screen Content */}

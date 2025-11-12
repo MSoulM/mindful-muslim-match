@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -14,9 +15,12 @@ import { Select } from '@/components/ui/Input/Select';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { ProgressBar } from '@/components/ui/Feedback/ProgressBar';
 import { Skeleton } from '@/components/ui/Feedback/Skeleton';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Heart, Send, User, Mail, AlertCircle, TrendingUp, Settings, HelpCircle, Star } from 'lucide-react';
 
 const ComponentsDemo = () => {
+  const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
   const [activeTab, setActiveTab] = useState('discover');
   const [showToast, setShowToast] = useState(false);
   const [textValue, setTextValue] = useState('');
@@ -42,10 +46,10 @@ const ComponentsDemo = () => {
         variant="back"
         title="Components Demo"
         onBackClick={() => window.history.back()}
-        notificationCount={3}
+        notificationCount={unreadCount}
         userInitials="JD"
-        onNotificationClick={() => setShowToast(true)}
-        onProfileClick={() => alert('Profile clicked')}
+        onNotificationClick={() => navigate('/notifications')}
+        onProfileClick={() => navigate('/profile')}
       />
 
       <ScreenContainer hasTopBar hasBottomNav padding scrollable>
