@@ -145,14 +145,14 @@ const ProfileScreen = () => {
             icon={<Shield className="w-6 h-6" />}
             title="Privacy & Safety"
             description="Block, report, visibility"
-            onClick={() => console.log('Privacy')}
+            onClick={() => navigate('/settings/privacy')}
             className="rounded-none"
           />
           
           <FeatureCard
             icon={<Bell className="w-6 h-6" />}
             title="Notifications"
-            onClick={() => console.log('Notifications')}
+            onClick={() => navigate('/settings/notifications')}
             className="rounded-none"
             rightElement={
               <Badge className="bg-green-500 text-white hover:bg-green-600">
@@ -165,7 +165,7 @@ const ProfileScreen = () => {
             icon={<Settings className="w-6 h-6" />}
             title="Account Settings"
             description="Email, password, plan"
-            onClick={() => console.log('Account settings')}
+            onClick={() => navigate('/settings')}
             className="rounded-none"
           />
           
