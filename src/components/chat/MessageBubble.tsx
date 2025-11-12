@@ -19,6 +19,12 @@ interface Message {
     waveform: number[];
     url?: string;
   };
+  images?: {
+    url: string;
+    thumbnailUrl?: string;
+    width?: number;
+    height?: number;
+  }[];
 }
 
 interface MessageBubbleProps {
@@ -91,7 +97,7 @@ export const MessageBubble = ({
         )}
         
         <div className={cn(
-          "rounded-2xl",
+          "rounded-2xl overflow-hidden",
           isOwn
             ? "bg-primary text-primary-foreground rounded-br-md"
             : "bg-muted text-foreground rounded-bl-md"
@@ -103,6 +109,41 @@ export const MessageBubble = ({
               audioUrl={message.voiceNote.url}
               isOwn={isOwn}
             />
+          ) : message.type === 'image' && message.images && message.images.length > 0 ? (
+            <div>
+              {/* Image grid */}
+              <div className={cn(
+                "grid gap-1",
+                message.images.length === 1 ? "grid-cols-1" : 
+                message.images.length === 2 ? "grid-cols-2" :
+                message.images.length === 3 ? "grid-cols-3" :
+                "grid-cols-2"
+              )}>
+                {message.images.map((img, idx) => (
+                  <div 
+                    key={idx}
+                    className={cn(
+                      "relative aspect-square cursor-pointer hover:opacity-90 transition-opacity",
+                      message.images!.length === 1 && "max-w-[280px] aspect-auto"
+                    )}
+                  >
+                    <img
+                      src={img.url}
+                      alt={`Image ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {/* Caption if present */}
+              {message.content && (
+                <p className="text-sm whitespace-pre-wrap break-words px-4 py-2">
+                  {message.content}
+                </p>
+              )}
+            </div>
           ) : (
             <p className="text-sm whitespace-pre-wrap break-words px-4 py-2">
               {message.content}

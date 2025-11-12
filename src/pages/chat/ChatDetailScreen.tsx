@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Video, Phone, MoreVertical, Send, Mic, Image, Smile } from 'lucide-react';
+import { ArrowLeft, Video, Phone, MoreVertical } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,12 @@ interface Message {
     waveform: number[];
     url?: string;
   };
+  images?: {
+    url: string;
+    thumbnailUrl?: string;
+    width?: number;
+    height?: number;
+  }[];
 }
 
 export const ChatDetailScreen = () => {
@@ -169,6 +175,53 @@ export const ChatDetailScreen = () => {
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
     }
   };
+
+  const handleSendImages = async (files: File[]) => {
+    // Create temporary URLs for the images
+    const imageData = files.map(file => ({
+      url: URL.createObjectURL(file),
+      thumbnailUrl: URL.createObjectURL(file)
+    }));
+    
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      senderId: currentUserId,
+      recipientId: matchId || '',
+      content: '',
+      type: 'image',
+      timestamp: new Date(),
+      status: 'sending',
+      images: imageData
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+    scrollToBottom();
+    
+    try {
+      // In a real app, you would upload the images to your server here
+      // const uploadedUrls = await uploadImages(files);
+      
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setMessages(prev => prev.map(msg => 
+        msg.id === optimisticMessage.id ? { ...msg, status: 'sent' } : msg
+      ));
+      
+      toast({
+        title: `${files.length} image${files.length > 1 ? 's' : ''} sent`,
+        description: "Your images have been delivered",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to send images",
+        description: "Please try again",
+        variant: "destructive"
+      });
+      
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+    }
+  };
   
   const getStatusText = () => {
     if (isTyping) return 'Typing...';
@@ -300,6 +353,7 @@ export const ChatDetailScreen = () => {
       <MessageComposer
         onSend={handleSendMessage}
         onSendVoiceNote={handleSendVoiceNote}
+        onSendImages={handleSendImages}
         onTyping={handleTyping}
         onStopTyping={handleStopTyping}
       />

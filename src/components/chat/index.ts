@@ -5,3 +5,4 @@ export { DateSeparator } from './DateSeparator';
 export { VoiceMessage } from './VoiceMessage';
 export { VoiceNoteRecorder } from './VoiceNoteRecorder';
 export { WaveformVisualizer } from './WaveformVisualizer';
+export { ImagePicker } from './ImagePicker';

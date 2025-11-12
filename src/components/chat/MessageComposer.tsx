@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { VoiceNoteRecorder } from './VoiceNoteRecorder';
+import { ImagePicker } from './ImagePicker';
 import { AudioRecordingResult } from '@/hooks/useAudioRecorder';
 
 interface MessageComposerProps {
   onSend: (message: string) => void;
   onSendVoiceNote?: (result: AudioRecordingResult) => void;
+  onSendImages?: (files: File[]) => void;
   onTyping: () => void;
   onStopTyping: () => void;
   replyTo?: { id: string; content: string; sender: string };
@@ -27,6 +29,7 @@ const SALAAM_SUGGESTIONS = [
 export const MessageComposer = ({
   onSend,
   onSendVoiceNote,
+  onSendImages,
   onTyping,
   onStopTyping,
   replyTo,
@@ -36,6 +39,7 @@ export const MessageComposer = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showRecorder, setShowRecorder] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   
@@ -125,6 +129,21 @@ export const MessageComposer = ({
   const handleVoiceNoteCancel = () => {
     setShowRecorder(false);
   };
+
+  const handleImagePicker = () => {
+    setShowImagePicker(true);
+  };
+
+  const handleImageSelect = (files: File[]) => {
+    if (onSendImages) {
+      onSendImages(files);
+    }
+    setShowImagePicker(false);
+  };
+
+  const handleImageCancel = () => {
+    setShowImagePicker(false);
+  };
   
   return (
     <>
@@ -133,6 +152,15 @@ export const MessageComposer = ({
           onSend={handleVoiceNoteSend}
           onCancel={handleVoiceNoteCancel}
           maxDuration={60}
+        />
+      )}
+
+      {showImagePicker && (
+        <ImagePicker
+          onSelect={handleImageSelect}
+          onCancel={handleImageCancel}
+          maxFiles={5}
+          maxSizeMB={10}
         />
       )}
       
@@ -178,9 +206,8 @@ export const MessageComposer = ({
             <Button
               variant="ghost"
               size="icon"
+              onClick={handleImagePicker}
               className="shrink-0 h-10 w-10"
-              disabled
-              title="Coming Soon"
             >
               <Image className="h-5 w-5" />
             </Button>
