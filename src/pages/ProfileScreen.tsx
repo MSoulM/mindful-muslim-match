@@ -173,7 +173,7 @@ const ProfileScreen = () => {
             icon={<HelpCircle className="w-6 h-6" />}
             title="Help & Support"
             description="FAQs, contact us"
-            onClick={() => console.log('Help')}
+            onClick={() => navigate('/help')}
             className="rounded-none"
           />
         </div>
