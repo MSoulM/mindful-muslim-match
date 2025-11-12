@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
@@ -17,52 +17,70 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface BlockedUser {
-  id: string;
-  name: string;
-  age: number;
-  avatar: string;
-}
+import { usePrivacy } from '@/hooks/usePrivacy';
+import { BlockedUser } from '@/types/privacy.types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PrivacyScreen() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const {
+    privacyState,
+    blockedUserDetails,
+    updateVisibility,
+    toggleOnlineStatus,
+    toggleReadReceipts,
+    toggleLocationSharing,
+    updatePhotoSettings,
+    unblockUser,
+    requestDataDownload,
+    deleteAllMatches,
+    clearSearchHistory,
+  } = usePrivacy();
+
   const [showInDiscover, setShowInDiscover] = useState(true);
-  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
-  const [showReadReceipts, setShowReadReceipts] = useState(false);
-  const [shareLocation, setShareLocation] = useState(true);
-  const [profileVisibility, setProfileVisibility] = useState<string>('matches');
-  const [blurPhotos, setBlurPhotos] = useState(false);
-  const [requirePhotoApproval, setRequirePhotoApproval] = useState(false);
   
-  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([
-    { id: '1', name: 'User One', age: 28, avatar: '👤' },
-    { id: '2', name: 'User Two', age: 32, avatar: '👤' },
-    { id: '3', name: 'User Three', age: 26, avatar: '👤' },
+  // Mock blocked users - in production, fetch from backend
+  const [blockedUsers] = useState<BlockedUser[]>([
+    { id: '1', name: 'User One', age: 28, avatar: '👤', blockedAt: '2024-01-15' },
+    { id: '2', name: 'User Two', age: 32, avatar: '👤', blockedAt: '2024-01-10' },
+    { id: '3', name: 'User Three', age: 26, avatar: '👤', blockedAt: '2024-01-05' },
   ]);
 
-  const handleToggle = (key: string, value: boolean) => {
-    localStorage.setItem(`privacy-${key}`, JSON.stringify(value));
-  };
-
   const handleUnblock = (userId: string) => {
-    setBlockedUsers(blockedUsers.filter(user => user.id !== userId));
+    unblockUser(userId);
+    toast({
+      title: 'User unblocked',
+      description: 'You can now see this user again.',
+    });
   };
 
-  const handleDownloadData = () => {
-    // Implement data download
-    console.log('Downloading user data...');
+  const handleDownloadData = async () => {
+    await requestDataDownload();
+    toast({
+      title: 'Data download requested',
+      description: 'We\'ll email you a download link within 24 hours.',
+    });
   };
 
-  const handleDeleteMatches = () => {
+  const handleDeleteMatches = async () => {
     if (window.confirm('Are you sure you want to delete all matches? This cannot be undone.')) {
-      console.log('Deleting all matches...');
+      await deleteAllMatches();
+      toast({
+        title: 'Matches deleted',
+        description: 'All your matches have been removed.',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     if (window.confirm('Clear all search history?')) {
-      console.log('Clearing search history...');
+      await clearSearchHistory();
+      toast({
+        title: 'History cleared',
+        description: 'Your search history has been deleted.',
+      });
     }
   };
 
@@ -89,10 +107,7 @@ export default function PrivacyScreen() {
               </div>
               <Switch 
                 checked={showInDiscover}
-                onCheckedChange={(checked) => {
-                  setShowInDiscover(checked);
-                  handleToggle('discover', checked);
-                }}
+                onCheckedChange={setShowInDiscover}
               />
             </div>
 
@@ -107,11 +122,8 @@ export default function PrivacyScreen() {
                 <p className="text-sm text-muted-foreground">Show when you're active</p>
               </div>
               <Switch 
-                checked={showOnlineStatus}
-                onCheckedChange={(checked) => {
-                  setShowOnlineStatus(checked);
-                  handleToggle('online-status', checked);
-                }}
+                checked={privacyState.showOnline}
+                onCheckedChange={toggleOnlineStatus}
               />
             </div>
 
@@ -127,12 +139,9 @@ export default function PrivacyScreen() {
                 <p className="text-sm text-muted-foreground">Know when seen</p>
               </div>
               <Switch 
-                checked={showReadReceipts}
-                onCheckedChange={(checked) => {
-                  setShowReadReceipts(checked);
-                  handleToggle('read-receipts', checked);
-                }}
-                disabled={!showReadReceipts}
+                checked={privacyState.readReceipts}
+                onCheckedChange={toggleReadReceipts}
+                disabled={!privacyState.readReceipts}
               />
             </div>
 
@@ -147,11 +156,8 @@ export default function PrivacyScreen() {
                 <p className="text-sm text-muted-foreground">Approximate only</p>
               </div>
               <Switch 
-                checked={shareLocation}
-                onCheckedChange={(checked) => {
-                  setShareLocation(checked);
-                  handleToggle('location', checked);
-                }}
+                checked={privacyState.shareLocation}
+                onCheckedChange={toggleLocationSharing}
               />
             </div>
           </BaseCard>
@@ -162,7 +168,7 @@ export default function PrivacyScreen() {
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">Profile Visibility</h2>
           <BaseCard padding="md">
             <label className="text-sm font-medium mb-2 block">Who can see my profile</label>
-            <Select value={profileVisibility} onValueChange={setProfileVisibility}>
+            <Select value={privacyState.visibility} onValueChange={updateVisibility}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -188,8 +194,10 @@ export default function PrivacyScreen() {
                 <p className="text-sm text-muted-foreground">Photos blurred for non-matches</p>
               </div>
               <Switch 
-                checked={blurPhotos}
-                onCheckedChange={setBlurPhotos}
+                checked={privacyState.photoSettings.blurUntilMatched}
+                onCheckedChange={(checked) => 
+                  updatePhotoSettings({ blurUntilMatched: checked })
+                }
               />
             </div>
 
@@ -201,8 +209,10 @@ export default function PrivacyScreen() {
                 <p className="text-sm text-muted-foreground">Approve photo view requests</p>
               </div>
               <Switch 
-                checked={requirePhotoApproval}
-                onCheckedChange={setRequirePhotoApproval}
+                checked={privacyState.photoSettings.requireApproval}
+                onCheckedChange={(checked) => 
+                  updatePhotoSettings({ requireApproval: checked })
+                }
               />
             </div>
           </BaseCard>
