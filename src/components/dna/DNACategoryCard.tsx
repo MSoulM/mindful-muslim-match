@@ -3,7 +3,6 @@ import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import fingerprintIcon from '@/assets/mysouldna-fingerprint.png';
-
 interface DNACategoryCardProps {
   category: string;
   categoryId?: string;
@@ -15,29 +14,25 @@ interface DNACategoryCardProps {
   onClick?: () => void;
   className?: string;
 }
-
 const categoryColors: Record<string, string> = {
   'values': '#0D7377',
   'interests': '#FF6B6B',
   'personality': '#8B7AB8',
   'lifestyle': '#0066CC',
-  'goals': '#FDB813',
+  'goals': '#FDB813'
 };
-
 const rarityEmoji = {
   'ultra-rare': '🏆',
   'epic': '💜',
   'rare': '💎',
-  'common': '⭐',
+  'common': '⭐'
 };
-
 const rarityColors = {
   'ultra-rare': 'bg-gradient-to-r from-primary-gold to-primary-pink',
   'epic': 'bg-gradient-to-r from-purple-500 to-primary-pink',
   'rare': 'bg-gradient-to-r from-primary-forest to-primary-gold',
-  'common': 'bg-gradient-to-r from-neutral-400 to-neutral-500',
+  'common': 'bg-gradient-to-r from-neutral-400 to-neutral-500'
 };
-
 export const DNACategoryCard = ({
   category,
   categoryId,
@@ -47,53 +42,31 @@ export const DNACategoryCard = ({
   percentile,
   trend,
   onClick,
-  className,
+  className
 }: DNACategoryCardProps) => {
   const fingerprintColor = categoryId ? categoryColors[categoryId] || '#0A3A2E' : '#0A3A2E';
-  return (
-    <BaseCard
-      padding="md"
-      shadow="sm"
-      interactive={!!onClick}
-      onClick={onClick}
-      className={cn('min-h-[96px]', className)}
-    >
+  return <BaseCard padding="md" shadow="sm" interactive={!!onClick} onClick={onClick} className={cn('min-h-[96px]', className)}>
       <div className="flex items-start gap-4">
         {/* Icon */}
-        <motion.div 
-          className={cn(
-            "w-12 h-12 rounded-xl bg-gradient-to-br from-primary-forest/10 to-primary-gold/10",
-            "flex items-center justify-center flex-shrink-0 relative",
-            "shadow-[0_0_20px_rgba(10,58,46,0.2)]"
-          )}
-          whileHover={{
-            boxShadow: "0 0 24px rgba(10,58,46,0.24)"
-          }}
-          whileTap={{
-            boxShadow: "0 0 24px rgba(10,58,46,0.24)"
-          }}
-          transition={{ duration: 0.2 }}
-        >
-          <img 
-            src={fingerprintIcon} 
-            alt="MySoulDNA" 
-            className="w-7 h-7 object-contain opacity-80"
-            style={{ filter: `brightness(0) saturate(100%) invert(0) sepia(100%) hue-rotate(0deg) contrast(100%)` }}
-          />
-          <div 
-            className="absolute inset-0 w-7 h-7 object-contain opacity-80"
-            style={{ 
-              WebkitMaskImage: `url(${fingerprintIcon})`,
-              WebkitMaskSize: 'contain',
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${fingerprintIcon})`,
-              maskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              backgroundColor: fingerprintColor
-            }}
-          />
+        <motion.div className={cn("w-12 h-12 rounded-xl bg-gradient-to-br from-primary-forest/10 to-primary-gold/10", "flex items-center justify-center flex-shrink-0 relative", "shadow-[0_0_20px_rgba(10,58,46,0.2)]")} whileHover={{
+        boxShadow: "0 0 24px rgba(10,58,46,0.24)"
+      }} whileTap={{
+        boxShadow: "0 0 24px rgba(10,58,46,0.24)"
+      }} transition={{
+        duration: 0.2
+      }}>
+          
+          <div className="absolute inset-0 w-7 h-7 object-contain opacity-80" style={{
+          WebkitMaskImage: `url(${fingerprintIcon})`,
+          WebkitMaskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          maskImage: `url(${fingerprintIcon})`,
+          maskSize: 'contain',
+          maskRepeat: 'no-repeat',
+          maskPosition: 'center',
+          backgroundColor: fingerprintColor
+        }} />
         </motion.div>
 
         {/* Content */}
@@ -110,52 +83,37 @@ export const DNACategoryCard = ({
             </span>
 
             {/* Rarity Badge */}
-            {rarity && (
-              <span className={cn(
-                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white',
-                rarityColors[rarity]
-              )}>
+            {rarity && <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white', rarityColors[rarity])}>
                 <span>{rarityEmoji[rarity]}</span>
                 <span className="capitalize">{rarity.replace('-', ' ')}</span>
-              </span>
-            )}
+              </span>}
 
             {/* Percentile */}
-            {percentile !== undefined && (
-              <span className="text-xs text-primary-forest font-medium">
+            {percentile !== undefined && <span className="text-xs text-primary-forest font-medium">
                 Top {percentile}%
-              </span>
-            )}
+              </span>}
 
             {/* Trend */}
-            {trend && trend !== 'stable' && (
-              <span
-                className={cn(
-                  'text-xs font-medium',
-                  trend === 'up' ? 'text-semantic-success' : 'text-semantic-error'
-                )}
-              >
+            {trend && trend !== 'stable' && <span className={cn('text-xs font-medium', trend === 'up' ? 'text-semantic-success' : 'text-semantic-error')}>
                 {trend === 'up' ? '↑' : '↓'}
-              </span>
-            )}
+              </span>}
           </div>
 
           {/* Progress Bar */}
           <div className="mt-3 h-2 bg-neutral-200 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${completion}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="h-full bg-gradient-to-r from-primary-forest to-primary-gold"
-            />
+            <motion.div initial={{
+            width: 0
+          }} animate={{
+            width: `${completion}%`
+          }} transition={{
+            duration: 0.8,
+            ease: 'easeOut'
+          }} className="h-full bg-gradient-to-r from-primary-forest to-primary-gold" />
           </div>
         </div>
 
         {/* Chevron */}
-        {onClick && (
-          <ChevronRight className="w-5 h-5 text-neutral-400 flex-shrink-0" />
-        )}
+        {onClick && <ChevronRight className="w-5 h-5 text-neutral-400 flex-shrink-0" />}
       </div>
-    </BaseCard>
-  );
+    </BaseCard>;
 };
