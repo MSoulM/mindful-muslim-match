@@ -32,6 +32,9 @@ import GoalsDetailScreen from "./pages/dna/GoalsDetailScreen";
 import { NotificationCenterScreen } from "./pages/notifications/NotificationCenterScreen";
 import { NotificationPreferencesScreen } from "./pages/settings/NotificationPreferencesScreen";
 import { ChatDetailScreen } from "./pages/chat/ChatDetailScreen";
+import { ReportUserScreen } from "./pages/safety/ReportUserScreen";
+import { SafetyCenterScreen } from "./pages/safety/SafetyCenterScreen";
+import { MeetingPlannerScreen } from "./pages/safety/MeetingPlannerScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -150,6 +153,21 @@ const AnimatedRoutes = () => {
         <Route path="/dna/goals" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <GoalsDetailScreen />
+          </motion.div>
+        } />
+        <Route path="/safety" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <SafetyCenterScreen />
+          </motion.div>
+        } />
+        <Route path="/safety/report" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ReportUserScreen />
+          </motion.div>
+        } />
+        <Route path="/safety/meeting-planner" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <MeetingPlannerScreen />
           </motion.div>
         } />
         
