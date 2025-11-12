@@ -1,0 +1,423 @@
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ScreenContainer } from '@/components/layout/ScreenContainer';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Camera, 
+  X, 
+  ChevronDown, 
+  ChevronUp,
+  MapPin,
+  Calendar,
+  MessageSquare,
+  Image as ImageIcon,
+  Video
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+const DNA_CATEGORIES = [
+  { id: 'values', icon: '⚖️', label: 'Values & Beliefs' },
+  { id: 'interests', icon: '🎨', label: 'Interests & Hobbies' },
+  { id: 'personality', icon: '🧠', label: 'Personality' },
+  { id: 'lifestyle', icon: '🏡', label: 'Lifestyle' },
+  { id: 'goals', icon: '🎯', label: 'Goals & Ambitions' },
+];
+
+interface MediaItem {
+  file: File;
+  preview: string;
+  type: 'image' | 'video';
+}
+
+export default function CreatePostScreen() {
+  const navigate = useNavigate();
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [caption, setCaption] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [privacy, setPrivacy] = useState('everyone');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [enableComments, setEnableComments] = useState(true);
+  const [addLocation, setAddLocation] = useState(false);
+  const [schedulePost, setSchedulePost] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    if (media.length + files.length > 5) {
+      toast.error('Maximum 5 media items allowed');
+      return;
+    }
+
+    files.forEach(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setMedia(prev => [...prev, {
+          file,
+          preview: reader.result as string,
+          type: file.type.startsWith('video/') ? 'video' : 'image'
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeMedia = (index: number) => {
+    setMedia(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      }
+      if (prev.length >= 2) {
+        toast.error('Maximum 2 categories allowed');
+        return prev;
+      }
+      return [...prev, categoryId];
+    });
+  };
+
+  const handlePost = async () => {
+    if (media.length === 0) {
+      toast.error('Please add at least one photo or video');
+      return;
+    }
+    if (selectedCategories.length === 0) {
+      toast.error('Please select at least one DNA category');
+      return;
+    }
+
+    setIsPosting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    setIsPosting(false);
+    toast.success('Post shared successfully!');
+    navigate('/post-success');
+  };
+
+  const handleCancel = () => {
+    if (media.length > 0 || caption.length > 0 || selectedCategories.length > 0) {
+      if (window.confirm('Discard this post?')) {
+        navigate(-1);
+      }
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const isValid = media.length > 0 && selectedCategories.length > 0;
+
+  return (
+    <div className="min-h-screen bg-muted">
+      {/* Custom TopBar */}
+      <div className="sticky top-0 z-40 bg-background border-b border-border">
+        <div className="flex items-center justify-between px-4 h-14">
+          <Button variant="ghost" size="sm" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <h1 className="text-base font-semibold">Create Post</h1>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handlePost}
+            disabled={!isValid || isPosting}
+            className="text-primary disabled:text-muted-foreground"
+          >
+            {isPosting ? 'Posting...' : 'Post'}
+          </Button>
+        </div>
+      </div>
+
+      <ScreenContainer hasTopBar={false} hasBottomNav={false} padding={false}>
+        {/* Media Section */}
+        <div 
+          className={cn(
+            "relative bg-neutral-100 flex items-center justify-center cursor-pointer",
+            media.length === 0 ? "min-h-[200px]" : "min-h-[300px] max-h-[400px]"
+          )}
+          onClick={() => media.length === 0 && fileInputRef.current?.click()}
+        >
+          {media.length === 0 ? (
+            <div className="text-center p-8">
+              <Camera className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
+              <h3 className="font-semibold text-foreground mb-1">Add a photo or video</h3>
+              <p className="text-sm text-muted-foreground">Help others know you better</p>
+            </div>
+          ) : (
+            <div className="relative w-full h-full">
+              <img 
+                src={media[0].preview} 
+                alt="Post media"
+                className="w-full h-full object-cover"
+              />
+              
+              {/* Edit/Remove Overlay */}
+              <div className="absolute top-3 right-3 flex gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 rounded-full p-0 bg-background/90 backdrop-blur-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <Camera className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-8 w-8 rounded-full p-0 bg-destructive/90 backdrop-blur-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeMedia(0);
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Media Count */}
+              {media.length > 1 && (
+                <div className="absolute bottom-3 right-3">
+                  <Badge className="bg-background/90 backdrop-blur-sm">
+                    {media.length} items
+                  </Badge>
+                </div>
+              )}
+
+              {/* Media Type Badge */}
+              <div className="absolute bottom-3 left-3">
+                <Badge className="bg-background/90 backdrop-blur-sm">
+                  {media[0].type === 'video' ? <Video className="w-3 h-3 mr-1" /> : <ImageIcon className="w-3 h-3 mr-1" />}
+                  {media[0].type}
+                </Badge>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Caption Section */}
+        <div className="bg-background p-5">
+          <Textarea
+            placeholder="Share something about yourself..."
+            value={caption}
+            onChange={(e) => {
+              if (e.target.value.length <= 500) {
+                setCaption(e.target.value);
+              }
+            }}
+            className="min-h-[100px] max-h-[200px] resize-none text-base border-0 p-0 focus-visible:ring-0"
+          />
+          <div className="flex justify-end mt-2">
+            <span className={cn(
+              "text-xs",
+              caption.length > 450 ? "text-destructive" : "text-muted-foreground"
+            )}>
+              {caption.length}/500
+            </span>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* DNA Category Selection */}
+        <div className="bg-background p-5">
+          <div className="mb-3">
+            <h3 className="font-semibold text-sm flex items-center gap-1">
+              Add to Your DNA
+              <span className="text-destructive">*</span>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              This helps refine your profile • Select up to 2
+            </p>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5">
+            {DNA_CATEGORIES.map(category => (
+              <button
+                key={category.id}
+                onClick={() => toggleCategory(category.id)}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-3 rounded-full border-2 whitespace-nowrap transition-all min-h-[44px]",
+                  selectedCategories.includes(category.id)
+                    ? "border-primary bg-gradient-to-r from-primary/10 to-primary/20"
+                    : "border-border bg-background hover:border-primary/50"
+                )}
+              >
+                <span className="text-lg">{category.icon}</span>
+                <span className="text-sm font-medium">{category.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Privacy Settings */}
+        <div className="bg-background p-5">
+          <h3 className="font-semibold text-sm mb-3">Who can see this?</h3>
+          
+          <RadioGroup value={privacy} onValueChange={setPrivacy} className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="everyone" id="everyone" />
+              <Label htmlFor="everyone" className="flex-1 cursor-pointer">
+                <div>
+                  <p className="font-medium text-sm">Everyone</p>
+                  <p className="text-xs text-muted-foreground">Public to all users</p>
+                </div>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="matches" id="matches" />
+              <Label htmlFor="matches" className="flex-1 cursor-pointer">
+                <div>
+                  <p className="font-medium text-sm">Matches Only</p>
+                  <p className="text-xs text-muted-foreground">Only your matches can see</p>
+                </div>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="premium" id="premium" />
+              <Label htmlFor="premium" className="flex-1 cursor-pointer">
+                <div>
+                  <p className="font-medium text-sm">Premium Members</p>
+                  <p className="text-xs text-muted-foreground">Only premium users</p>
+                </div>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="private" id="private" />
+              <Label htmlFor="private" className="flex-1 cursor-pointer">
+                <div>
+                  <p className="font-medium text-sm">Private</p>
+                  <p className="text-xs text-muted-foreground">Only you can see</p>
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
+
+          <p className="text-xs text-muted-foreground mt-3">
+            This affects your DNA score visibility
+          </p>
+        </div>
+
+        <Separator />
+
+        {/* Advanced Options */}
+        <div className="bg-background">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between p-5 hover:bg-muted/50 transition-colors"
+          >
+            <h3 className="font-semibold text-sm">Advanced Options</h3>
+            {showAdvanced ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            )}
+          </button>
+
+          <AnimatePresence>
+            {showAdvanced && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-5 pb-5 space-y-4">
+                  {/* Enable Comments */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm">Enable Comments</p>
+                        <p className="text-xs text-muted-foreground">Allow others to comment</p>
+                      </div>
+                    </div>
+                    <Switch checked={enableComments} onCheckedChange={setEnableComments} />
+                  </div>
+
+                  {/* Add Location */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm">Add Location</p>
+                        <p className="text-xs text-muted-foreground">Shows city only</p>
+                      </div>
+                    </div>
+                    <Switch checked={addLocation} onCheckedChange={setAddLocation} />
+                  </div>
+
+                  {/* Schedule Post */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm">Schedule Post</p>
+                        <p className="text-xs text-muted-foreground">Post at a later time</p>
+                      </div>
+                    </div>
+                    <Switch checked={schedulePost} onCheckedChange={setSchedulePost} />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom Spacing */}
+        <div className="h-24" />
+      </ScreenContainer>
+
+      {/* Sticky Post Button */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-5 safe-area-bottom z-30">
+        <Button
+          onClick={handlePost}
+          disabled={!isValid || isPosting}
+          className="w-full h-12"
+          size="lg"
+        >
+          {isPosting ? (
+            <span>Posting...</span>
+          ) : !isValid ? (
+            <span>Add photo and category</span>
+          ) : (
+            <span>Share Post</span>
+          )}
+        </Button>
+      </div>
+
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        onChange={handleMediaSelect}
+        className="hidden"
+      />
+    </div>
+  );
+}

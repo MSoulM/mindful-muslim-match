@@ -45,6 +45,9 @@ import HelpCenterScreen from "./pages/HelpCenterScreen";
 import FAQScreen from "./pages/FAQScreen";
 import ContactSupportScreen from "./pages/ContactSupportScreen";
 import TutorialScreen from "./pages/TutorialScreen";
+import CreatePostScreen from "./pages/CreatePostScreen";
+import EditPostScreen from "./pages/EditPostScreen";
+import PostSuccessScreen from "./pages/PostSuccessScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -193,6 +196,23 @@ const AnimatedRoutes = () => {
         <Route path="/subscription/manage" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <ManageSubscriptionScreen />
+          </motion.div>
+        } />
+        
+        {/* Post Routes */}
+        <Route path="/create-post" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <CreatePostScreen />
+          </motion.div>
+        } />
+        <Route path="/edit-post/:postId" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <EditPostScreen />
+          </motion.div>
+        } />
+        <Route path="/post-success" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <PostSuccessScreen />
           </motion.div>
         } />
         
