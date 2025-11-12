@@ -1,5 +1,6 @@
 import { Check, CheckCheck } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { VoiceMessage } from './VoiceMessage';
 import { cn } from '@/lib/utils';
 
 interface Message {
@@ -13,6 +14,11 @@ interface Message {
   replyTo?: Message;
   reactions?: { emoji: string; userId: string }[];
   edited?: boolean;
+  voiceNote?: {
+    duration: number;
+    waveform: number[];
+    url?: string;
+  };
 }
 
 interface MessageBubbleProps {
@@ -85,14 +91,23 @@ export const MessageBubble = ({
         )}
         
         <div className={cn(
-          "px-4 py-2 rounded-2xl",
+          "rounded-2xl",
           isOwn
             ? "bg-primary text-primary-foreground rounded-br-md"
             : "bg-muted text-foreground rounded-bl-md"
         )}>
-          <p className="text-sm whitespace-pre-wrap break-words">
-            {message.content}
-          </p>
+          {message.type === 'voice' && message.voiceNote ? (
+            <VoiceMessage
+              duration={message.voiceNote.duration}
+              waveform={message.voiceNote.waveform}
+              audioUrl={message.voiceNote.url}
+              isOwn={isOwn}
+            />
+          ) : (
+            <p className="text-sm whitespace-pre-wrap break-words px-4 py-2">
+              {message.content}
+            </p>
+          )}
         </div>
         
         <div className={cn(

@@ -3,9 +3,12 @@ import { Send, Mic, Image, Smile, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { VoiceNoteRecorder } from './VoiceNoteRecorder';
+import { AudioRecordingResult } from '@/hooks/useAudioRecorder';
 
 interface MessageComposerProps {
   onSend: (message: string) => void;
+  onSendVoiceNote?: (result: AudioRecordingResult) => void;
   onTyping: () => void;
   onStopTyping: () => void;
   replyTo?: { id: string; content: string; sender: string };
@@ -23,6 +26,7 @@ const SALAAM_SUGGESTIONS = [
 
 export const MessageComposer = ({
   onSend,
+  onSendVoiceNote,
   onTyping,
   onStopTyping,
   replyTo,
@@ -31,7 +35,7 @@ export const MessageComposer = ({
   const [message, setMessage] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
+  const [showRecorder, setShowRecorder] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   
@@ -108,12 +112,31 @@ export const MessageComposer = ({
   };
   
   const handleVoiceRecord = () => {
-    setIsRecording(!isRecording);
-    // Voice recording implementation would go here
+    setShowRecorder(true);
+  };
+
+  const handleVoiceNoteSend = (result: AudioRecordingResult) => {
+    if (onSendVoiceNote) {
+      onSendVoiceNote(result);
+    }
+    setShowRecorder(false);
+  };
+
+  const handleVoiceNoteCancel = () => {
+    setShowRecorder(false);
   };
   
   return (
-    <div className="border-t border-border bg-card safe-bottom">
+    <>
+      {showRecorder && (
+        <VoiceNoteRecorder
+          onSend={handleVoiceNoteSend}
+          onCancel={handleVoiceNoteCancel}
+          maxDuration={60}
+        />
+      )}
+      
+      <div className="border-t border-border bg-card safe-bottom">
       {/* Reply Preview */}
       {replyTo && (
         <div className="px-4 py-2 bg-muted/50 flex items-center justify-between">
@@ -151,24 +174,7 @@ export const MessageComposer = ({
       
       {/* Input Area */}
       <div className="px-4 py-3">
-        {isRecording ? (
-          <div className="flex items-center gap-3 bg-destructive/10 rounded-full px-4 py-3">
-            <div className="flex-1 flex items-center gap-3">
-              <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-destructive">Recording...</span>
-              <span className="text-sm text-muted-foreground">0:34</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleVoiceRecord}
-              className="shrink-0"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2">
             <Button
               variant="ghost"
               size="icon"
@@ -214,14 +220,11 @@ export const MessageComposer = ({
                 size="icon"
                 onClick={handleVoiceRecord}
                 className="shrink-0 h-10 w-10"
-                disabled
-                title="Coming Soon"
               >
                 <Mic className="h-5 w-5" />
               </Button>
             )}
           </div>
-        )}
         
         {/* Character Counter */}
         {message.length > 900 && (
@@ -231,5 +234,6 @@ export const MessageComposer = ({
         )}
       </div>
     </div>
+    </>
   );
 };

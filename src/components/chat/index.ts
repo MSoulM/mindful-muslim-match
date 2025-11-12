@@ -3,3 +3,5 @@ export { MessageComposer } from './MessageComposer';
 export { TypingIndicator } from './TypingIndicator';
 export { DateSeparator } from './DateSeparator';
 export { VoiceMessage } from './VoiceMessage';
+export { VoiceNoteRecorder } from './VoiceNoteRecorder';
+export { WaveformVisualizer } from './WaveformVisualizer';

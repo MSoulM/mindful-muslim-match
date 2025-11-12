@@ -9,7 +9,9 @@ import { MessageComposer } from '@/components/chat/MessageComposer';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { DateSeparator } from '@/components/chat/DateSeparator';
 import { useChatSocket } from '@/hooks/useChatSocket';
+import { AudioRecordingResult } from '@/hooks/useAudioRecorder';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -22,6 +24,11 @@ interface Message {
   replyTo?: Message;
   reactions?: { emoji: string; userId: string }[];
   edited?: boolean;
+  voiceNote?: {
+    duration: number;
+    waveform: number[];
+    url?: string;
+  };
 }
 
 export const ChatDetailScreen = () => {
@@ -113,6 +120,54 @@ export const ChatDetailScreen = () => {
   
   const handleStopTyping = () => {
     sendTyping(false);
+  };
+
+  const handleSendVoiceNote = async (result: AudioRecordingResult) => {
+    // Create a temporary URL for the audio blob
+    const audioUrl = URL.createObjectURL(result.blob);
+    
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      senderId: currentUserId,
+      recipientId: matchId || '',
+      content: 'Voice message',
+      type: 'voice',
+      timestamp: new Date(),
+      status: 'sending',
+      voiceNote: {
+        duration: result.duration,
+        waveform: result.waveform,
+        url: audioUrl
+      }
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+    scrollToBottom();
+    
+    try {
+      // In a real app, you would upload the blob to your server here
+      // const uploadedUrl = await uploadVoiceNote(result.blob);
+      
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setMessages(prev => prev.map(msg => 
+        msg.id === optimisticMessage.id ? { ...msg, status: 'sent' } : msg
+      ));
+      
+      toast({
+        title: "Voice note sent",
+        description: "Your voice message has been delivered",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to send voice note",
+        description: "Please try again",
+        variant: "destructive"
+      });
+      
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+    }
   };
   
   const getStatusText = () => {
@@ -244,6 +299,7 @@ export const ChatDetailScreen = () => {
       {/* Message Composer */}
       <MessageComposer
         onSend={handleSendMessage}
+        onSendVoiceNote={handleSendVoiceNote}
         onTyping={handleTyping}
         onStopTyping={handleStopTyping}
       />

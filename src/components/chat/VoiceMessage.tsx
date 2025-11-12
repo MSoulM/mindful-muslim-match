@@ -1,22 +1,63 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface VoiceMessageProps {
-  duration: string;
+  duration: number;
   waveform: number[];
+  audioUrl?: string;
   isOwn?: boolean;
 }
 
-export const VoiceMessage = ({ duration, waveform, isOwn }: VoiceMessageProps) => {
+export const VoiceMessage = ({ duration, waveform, audioUrl, isOwn }: VoiceMessageProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  useEffect(() => {
+    if (audioUrl && !audioRef.current) {
+      audioRef.current = new Audio(audioUrl);
+      
+      audioRef.current.addEventListener('timeupdate', () => {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+          setProgress(audioRef.current.currentTime / audioRef.current.duration);
+        }
+      });
+      
+      audioRef.current.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setProgress(0);
+        setCurrentTime(0);
+      });
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [audioUrl]);
+  
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
   
   const handlePlayPause = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
     setIsPlaying(!isPlaying);
-    // Audio playback implementation would go here
   };
   
   const cycleSpeed = () => {
@@ -24,6 +65,12 @@ export const VoiceMessage = ({ duration, waveform, isOwn }: VoiceMessageProps) =
     const currentIndex = speeds.indexOf(playbackSpeed);
     const nextIndex = (currentIndex + 1) % speeds.length;
     setPlaybackSpeed(speeds[nextIndex]);
+  };
+  
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
   
   return (
@@ -73,7 +120,9 @@ export const VoiceMessage = ({ duration, waveform, isOwn }: VoiceMessageProps) =
         >
           {playbackSpeed}x
         </button>
-        <span className="text-xs font-medium">{duration}</span>
+        <span className="text-xs font-medium">
+          {isPlaying ? formatTime(currentTime) : formatTime(duration)}
+        </span>
       </div>
     </div>
   );
