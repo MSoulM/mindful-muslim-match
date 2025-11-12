@@ -136,18 +136,6 @@ export default function DiscoverScreen() {
     setAnnouncement(`Match with ${match?.name} skipped. Showing next match.`);
   };
 
-  const fetchNewMatches = async () => {
-    setLoading(true);
-    setAnnouncement('Refreshing matches...');
-    
-    // Simulated refresh
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setLoading(false);
-    showToast('success', 'Matches refreshed');
-    setAnnouncement('Matches refreshed successfully.');
-  };
-
   const handleNotificationClick = () => {
     hapticFeedback('light');
     navigate('/notifications');
@@ -208,7 +196,7 @@ export default function DiscoverScreen() {
                 label: "Retry",
                 onClick: () => {
                   setError(null);
-                  fetchNewMatches();
+                  setLoading(false);
                 }
               }}
             />
@@ -244,7 +232,6 @@ export default function DiscoverScreen() {
           hasBottomNav
           scrollable
           padding
-          onRefresh={fetchNewMatches}
         >
           <div className="space-y-6 pb-8">
             {/* Welcome Message */}

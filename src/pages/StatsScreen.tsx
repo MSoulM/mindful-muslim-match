@@ -188,7 +188,8 @@ const StatsScreen = () => {
           <div className="bg-white rounded-xl p-5 shadow-sm border border-neutral-200">
             <div className="flex items-end justify-between gap-4 h-48">
               {/* October */}
-              <div className="flex-1 flex flex-col items-center">
+              <div className="flex-1 flex flex-col items-center justify-end h-full">
+                <span className="text-sm font-bold text-neutral-900 mb-1">85%</span>
                 <motion.div initial={{
                 height: 0
               }} animate={{
@@ -196,13 +197,13 @@ const StatsScreen = () => {
               }} transition={{
                 duration: 0.6,
                 delay: 0.6
-              }} className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2" />
+              }} className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2 relative" />
                 <span className="text-xs font-medium text-neutral-600">Oct</span>
-                <span className="text-xs text-neutral-500">85%</span>
               </div>
 
               {/* November */}
-              <div className="flex-1 flex flex-col items-center">
+              <div className="flex-1 flex flex-col items-center justify-end h-full">
+                <span className="text-sm font-bold text-neutral-900 mb-1">90%</span>
                 <motion.div initial={{
                 height: 0
               }} animate={{
@@ -210,13 +211,13 @@ const StatsScreen = () => {
               }} transition={{
                 duration: 0.6,
                 delay: 0.7
-              }} className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2" />
+              }} className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2 relative" />
                 <span className="text-xs font-medium text-neutral-600">Nov</span>
-                <span className="text-xs text-neutral-500">90%</span>
               </div>
 
               {/* December */}
-              <div className="flex-1 flex flex-col items-center">
+              <div className="flex-1 flex flex-col items-center justify-end h-full">
+                <span className="text-sm font-bold text-neutral-900 mb-1">95%</span>
                 <motion.div initial={{
                 height: 0
               }} animate={{
@@ -224,9 +225,8 @@ const StatsScreen = () => {
               }} transition={{
                 duration: 0.6,
                 delay: 0.8
-              }} className="w-full bg-gradient-to-t from-primary-gold to-primary-gold/70 rounded-t-lg mb-2" />
+              }} className="w-full bg-gradient-to-t from-primary-gold to-primary-gold/70 rounded-t-lg mb-2 relative" />
                 <span className="text-xs font-medium text-neutral-600">Dec</span>
-                <span className="text-xs text-neutral-500">95%</span>
               </div>
             </div>
           </div>
