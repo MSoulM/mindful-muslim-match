@@ -109,7 +109,7 @@ export default function InterestsDetailScreen() {
       />
       <DNACategoryDetail
         {...categoryData}
-        onUpdate={() => navigate('/create-post')}
+        onUpdate={() => navigate('/insights')}
       />
     </ScreenContainer>
   );

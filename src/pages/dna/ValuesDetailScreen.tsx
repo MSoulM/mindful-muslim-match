@@ -116,7 +116,7 @@ export default function ValuesDetailScreen() {
       />
       <DNACategoryDetail
         {...categoryData}
-        onUpdate={() => navigate('/create-post')}
+        onUpdate={() => navigate('/insights')}
       />
     </ScreenContainer>
   );
