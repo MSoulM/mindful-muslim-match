@@ -38,6 +38,9 @@ import { MeetingPlannerScreen } from "./pages/safety/MeetingPlannerScreen";
 import PremiumScreen from "./pages/PremiumScreen";
 import SubscriptionSuccessScreen from "./pages/SubscriptionSuccessScreen";
 import ManageSubscriptionScreen from "./pages/ManageSubscriptionScreen";
+import SettingsScreen from "./pages/SettingsScreen";
+import PrivacyScreen from "./pages/settings/PrivacyScreen";
+import DeleteAccountScreen from "./pages/settings/DeleteAccountScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -186,6 +189,23 @@ const AnimatedRoutes = () => {
         <Route path="/subscription/manage" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <ManageSubscriptionScreen />
+          </motion.div>
+        } />
+        
+        {/* Settings Routes */}
+        <Route path="/settings" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <SettingsScreen />
+          </motion.div>
+        } />
+        <Route path="/settings/privacy" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <PrivacyScreen />
+          </motion.div>
+        } />
+        <Route path="/settings/delete-account" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <DeleteAccountScreen />
           </motion.div>
         } />
         
