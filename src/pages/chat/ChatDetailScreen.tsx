@@ -76,7 +76,7 @@ export const ChatDetailScreen = () => {
       setMessages(prev => [...prev, message]);
       scrollToBottom();
     },
-    onTyping: (typing) => setIsTyping(typing),
+    onTyping: (userId, typing) => setIsTyping(typing),
     onStatusUpdate: (messageId, status) => {
       setMessages(prev => prev.map(msg => 
         msg.id === messageId ? { ...msg, status } : msg
