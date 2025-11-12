@@ -8,7 +8,6 @@ import { DNAStatsCard } from '@/components/dna/DNAStatsCard';
 import { StatCard } from '@/components/ui/Cards/StatCard';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { cn } from '@/lib/utils';
-
 const StatsScreen = () => {
   const navigate = useNavigate();
   const [daysActive, setDaysActive] = useState(0);
@@ -16,15 +15,10 @@ const StatsScreen = () => {
 
   // Animate numbers on mount
   useEffect(() => {
-    const animateValue = (
-      setter: (value: number) => void,
-      target: number,
-      duration: number
-    ) => {
+    const animateValue = (setter: (value: number) => void, target: number, duration: number) => {
       const start = 0;
       const increment = target / (duration / 16);
       let current = start;
-
       const timer = setInterval(() => {
         current += increment;
         if (current >= target) {
@@ -34,60 +28,46 @@ const StatsScreen = () => {
           setter(Math.floor(current));
         }
       }, 16);
-
       return timer;
     };
-
     const timer1 = animateValue(setDaysActive, 67, 1000);
     const timer2 = animateValue(setDnaComplete, 95, 1000);
-
     return () => {
       clearInterval(timer1);
       clearInterval(timer2);
     };
   }, []);
-
-  const milestones = [
-    {
-      id: '1',
-      icon: '✓',
-      title: 'First ChaiChat Complete',
-      date: 'Achieved Dec 5',
-    },
-    {
-      id: '2',
-      icon: '✓',
-      title: 'DNA 90% Complete',
-      date: 'Achieved Dec 8',
-    },
-    {
-      id: '3',
-      icon: '✓',
-      title: '10 Meaningful Connections',
-      date: 'Achieved Dec 12',
-    },
-  ];
-
-  return (
-    <div className="relative min-h-screen bg-neutral-50">
-      <TopBar
-        variant="back"
-        title="Journey Stats"
-        onBackClick={() => navigate('/myagent')}
-      />
+  const milestones = [{
+    id: '1',
+    icon: '✓',
+    title: 'First ChaiChat Complete',
+    date: 'Achieved Dec 5'
+  }, {
+    id: '2',
+    icon: '✓',
+    title: 'DNA 90% Complete',
+    date: 'Achieved Dec 8'
+  }, {
+    id: '3',
+    icon: '✓',
+    title: '10 Meaningful Connections',
+    date: 'Achieved Dec 12'
+  }];
+  return <div className="relative min-h-screen bg-neutral-50">
+      <TopBar variant="back" title="Journey Stats" onBackClick={() => navigate('/myagent')} />
       
-      <ScreenContainer
-        hasTopBar
-        padding
-        scrollable
-      >
+      <ScreenContainer hasTopBar padding scrollable>
         {/* Hero Progress Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="mb-6"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        scale: 0.95
+      }} animate={{
+        opacity: 1,
+        scale: 1
+      }} transition={{
+        duration: 0.3,
+        delay: 0.1
+      }} className="mb-6">
           <div className="relative rounded-2xl p-8 overflow-hidden bg-gradient-to-br from-primary-forest to-[#4A8B8C] min-h-[140px]">
             {/* Glass morphism overlay */}
             <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
@@ -96,10 +76,8 @@ const StatsScreen = () => {
             <div className="relative z-10">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col items-center justify-center">
-                  <div className="text-5xl font-bold text-white mb-1">
-                    {daysActive}
-                  </div>
-                  <div className="text-sm text-white/90">Days Active</div>
+                  
+                  
                 </div>
                 <div className="flex flex-col items-center justify-center border-l border-white/20">
                   <div className="text-5xl font-bold text-white mb-1">
@@ -117,153 +95,136 @@ const StatsScreen = () => {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className="grid grid-cols-2 gap-3 mb-7"
-        >
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-          >
-            <StatCard
-              icon={<span className="text-3xl">🎯</span>}
-              value="12"
-              label="Matches Sent"
-              className="min-h-[90px]"
-            />
+        <motion.div initial={{
+        opacity: 0
+      }} animate={{
+        opacity: 1
+      }} transition={{
+        duration: 0.3,
+        delay: 0.2
+      }} className="grid grid-cols-2 gap-3 mb-7">
+          <motion.div whileTap={{
+          scale: 0.98
+        }} initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.25
+        }}>
+            <StatCard icon={<span className="text-3xl">🎯</span>} value="12" label="Matches Sent" className="min-h-[90px]" />
           </motion.div>
 
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <StatCard
-              icon={<span className="text-3xl">💬</span>}
-              value="8"
-              label="Active Chats"
-              className="min-h-[90px]"
-            />
+          <motion.div whileTap={{
+          scale: 0.98
+        }} initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.3
+        }}>
+            <StatCard icon={<span className="text-3xl">💬</span>} value="8" label="Active Chats" className="min-h-[90px]" />
           </motion.div>
 
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <StatCard
-              icon={<span className="text-3xl">☕</span>}
-              value="15"
-              label="ChaiChats"
-              className="min-h-[90px]"
-            />
+          <motion.div whileTap={{
+          scale: 0.98
+        }} initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.35
+        }}>
+            <StatCard icon={<span className="text-3xl">☕</span>} value="15" label="ChaiChats" className="min-h-[90px]" />
           </motion.div>
 
-          <motion.div
-            whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <StatCard
-              icon={<span className="text-3xl">📤</span>}
-              value="23"
-              label="Posts Shared"
-              className="min-h-[90px]"
-            />
+          <motion.div whileTap={{
+          scale: 0.98
+        }} initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.4
+        }}>
+            <StatCard icon={<span className="text-3xl">📤</span>} value="23" label="Posts Shared" className="min-h-[90px]" />
           </motion.div>
         </motion.div>
 
         {/* Weekly Activity Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.45 }}
-          className="mb-7"
-        >
+        <motion.div initial={{
+        opacity: 0
+      }} animate={{
+        opacity: 1
+      }} transition={{
+        duration: 0.3,
+        delay: 0.45
+      }} className="mb-7">
           <h2 className="text-lg font-bold text-neutral-900 mb-4">This Week</h2>
           
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-neutral-200">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-semibold text-neutral-900">
-                Profile Views
-              </h3>
-              <div className="flex items-center gap-1 text-semantic-success">
-                <TrendingUp className="w-4 h-4" />
-                <span className="text-sm font-bold">+23%</span>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-3">
-              <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: '68%' }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                  className="h-full bg-gradient-to-r from-primary-forest to-primary-forest/80 rounded-full"
-                />
-              </div>
-            </div>
-
-            <p className="text-sm text-neutral-700 mb-1">
-              34 people viewed you
-            </p>
-            <p className="text-xs text-neutral-500">
-              vs 28 last week
-            </p>
-          </div>
+          
         </motion.div>
 
         {/* DNA Evolution Chart */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-          className="mb-7"
-        >
+        <motion.div initial={{
+        opacity: 0
+      }} animate={{
+        opacity: 1
+      }} transition={{
+        duration: 0.3,
+        delay: 0.5
+      }} className="mb-7">
           <h2 className="text-lg font-bold text-neutral-900 mb-4">DNA Growth</h2>
           
           <div className="bg-white rounded-xl p-5 shadow-sm border border-neutral-200">
             <div className="flex items-end justify-between gap-4 h-48">
               {/* October */}
               <div className="flex-1 flex flex-col items-center">
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: '85%' }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                  className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2"
-                />
+                <motion.div initial={{
+                height: 0
+              }} animate={{
+                height: '85%'
+              }} transition={{
+                duration: 0.6,
+                delay: 0.6
+              }} className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2" />
                 <span className="text-xs font-medium text-neutral-600">Oct</span>
                 <span className="text-xs text-neutral-500">85%</span>
               </div>
 
               {/* November */}
               <div className="flex-1 flex flex-col items-center">
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: '90%' }}
-                  transition={{ duration: 0.6, delay: 0.7 }}
-                  className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2"
-                />
+                <motion.div initial={{
+                height: 0
+              }} animate={{
+                height: '90%'
+              }} transition={{
+                duration: 0.6,
+                delay: 0.7
+              }} className="w-full bg-gradient-to-t from-primary-forest to-primary-forest/70 rounded-t-lg mb-2" />
                 <span className="text-xs font-medium text-neutral-600">Nov</span>
                 <span className="text-xs text-neutral-500">90%</span>
               </div>
 
               {/* December */}
               <div className="flex-1 flex flex-col items-center">
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: '95%' }}
-                  transition={{ duration: 0.6, delay: 0.8 }}
-                  className="w-full bg-gradient-to-t from-primary-gold to-primary-gold/70 rounded-t-lg mb-2"
-                />
+                <motion.div initial={{
+                height: 0
+              }} animate={{
+                height: '95%'
+              }} transition={{
+                duration: 0.6,
+                delay: 0.8
+              }} className="w-full bg-gradient-to-t from-primary-gold to-primary-gold/70 rounded-t-lg mb-2" />
                 <span className="text-xs font-medium text-neutral-600">Dec</span>
                 <span className="text-xs text-neutral-500">95%</span>
               </div>
@@ -272,34 +233,37 @@ const StatsScreen = () => {
         </motion.div>
 
         {/* Milestones Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.55 }}
-          className="mb-7"
-        >
+        <motion.div initial={{
+        opacity: 0
+      }} animate={{
+        opacity: 1
+      }} transition={{
+        duration: 0.3,
+        delay: 0.55
+      }} className="mb-7">
           <h2 className="text-lg font-bold text-neutral-900 mb-4">Milestones</h2>
           
           <div className="space-y-3">
-            {milestones.map((milestone, index) => (
-              <motion.div
-                key={milestone.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2, delay: 0.6 + index * 0.05 }}
-                className="bg-white rounded-xl p-4 shadow-sm border border-neutral-200 flex items-center gap-3"
-              >
+            {milestones.map((milestone, index) => <motion.div key={milestone.id} initial={{
+            opacity: 0,
+            x: -10
+          }} animate={{
+            opacity: 1,
+            x: 0
+          }} transition={{
+            duration: 0.2,
+            delay: 0.6 + index * 0.05
+          }} className="bg-white rounded-xl p-4 shadow-sm border border-neutral-200 flex items-center gap-3">
                 {/* Icon */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ 
-                    type: 'spring',
-                    stiffness: 200,
-                    delay: 0.65 + index * 0.05 
-                  }}
-                  className="w-10 h-10 rounded-full bg-semantic-success/10 flex items-center justify-center flex-shrink-0"
-                >
+                <motion.div initial={{
+              scale: 0
+            }} animate={{
+              scale: 1
+            }} transition={{
+              type: 'spring',
+              stiffness: 200,
+              delay: 0.65 + index * 0.05
+            }} className="w-10 h-10 rounded-full bg-semantic-success/10 flex items-center justify-center flex-shrink-0">
                   <span className="text-lg text-semantic-success">
                     {milestone.icon}
                   </span>
@@ -314,34 +278,30 @@ const StatsScreen = () => {
                     {milestone.date}
                   </p>
                 </div>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div>
         </motion.div>
 
         {/* Bottom Summary Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.6 }}
-          className="mb-6"
-        >
-          <InfoCard
-            variant="highlight"
-            title="Keep Growing! 🌱"
-            description="You're in the top 15% of active members"
-            action={{
-              label: 'Share a post to improve →',
-              onClick: () => navigate('/dna'),
-            }}
-          />
+        <motion.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.3,
+        delay: 0.6
+      }} className="mb-6">
+          <InfoCard variant="highlight" title="Keep Growing! 🌱" description="You're in the top 15% of active members" action={{
+          label: 'Share a post to improve →',
+          onClick: () => navigate('/dna')
+        }} />
         </motion.div>
 
         {/* Bottom padding */}
         <div className="h-8" />
       </ScreenContainer>
-    </div>
-  );
+    </div>;
 };
-
 export default StatsScreen;
