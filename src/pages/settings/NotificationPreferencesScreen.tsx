@@ -7,83 +7,37 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
-interface NotificationPreferences {
-  push: {
-    matches: boolean;
-    messages: boolean;
-    chaiChatUpdates: boolean;
-    weeklyInsights: boolean;
-    achievements: boolean;
-    promotions: boolean;
-  };
-  email: {
-    frequency: 'instant' | 'daily' | 'weekly' | 'never';
-    digest: boolean;
-    newsletters: boolean;
-  };
-  quietHours: {
-    enabled: boolean;
-    start: string;
-    end: string;
-    includePrayerTimes: boolean;
-  };
-  sound: {
-    enabled: boolean;
-    vibration: boolean;
-  };
-}
-
-const DEFAULT_PREFERENCES: NotificationPreferences = {
-  push: {
-    matches: true,
-    messages: true,
-    chaiChatUpdates: true,
-    weeklyInsights: true,
-    achievements: true,
-    promotions: false
-  },
-  email: {
-    frequency: 'daily',
-    digest: true,
-    newsletters: false
-  },
-  quietHours: {
-    enabled: false,
-    start: '22:00',
-    end: '07:00',
-    includePrayerTimes: false
-  },
-  sound: {
-    enabled: true,
-    vibration: true
-  }
-};
+import { NotificationCategory } from '@/components/settings/NotificationCategory';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { useToast } from '@/hooks/use-toast';
 
 export const NotificationPreferencesScreen = () => {
   const navigate = useNavigate();
-  const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
+  const { toast } = useToast();
+  const {
+    notificationState,
+    togglePush,
+    toggleCategory,
+    toggleCategoryOption,
+    toggleEmail,
+    setEmailFrequency,
+    updateQuietHours,
+    toggleSounds,
+    toggleVibration,
+  } = useNotificationPreferences();
+
   const [hasChanges, setHasChanges] = useState(false);
-  
-  const updatePreference = <K extends keyof NotificationPreferences>(
-    category: K,
-    key: keyof NotificationPreferences[K],
-    value: any
-  ) => {
-    setPreferences(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [key]: value
-      }
-    }));
-    setHasChanges(true);
-  };
-  
+
   const handleSave = () => {
-    localStorage.setItem('notification_preferences', JSON.stringify(preferences));
     setHasChanges(false);
-    // Show success toast
+    toast({
+      title: 'Preferences saved',
+      description: 'Your notification settings have been updated.',
+    });
+  };
+
+  const markChanged = () => {
+    if (!hasChanges) setHasChanges(true);
   };
   
   return (
@@ -108,102 +62,25 @@ export const NotificationPreferencesScreen = () => {
               <h2 className="text-lg font-semibold">Push Notifications</h2>
             </div>
             
-            <div className="space-y-4 bg-card rounded-lg border border-border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="matches" className="text-sm font-medium">
-                    New Matches
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    When we find someone special for you
-                  </p>
-                </div>
-                <Switch
-                  id="matches"
-                  checked={preferences.push.matches}
-                  onCheckedChange={(checked) => updatePreference('push', 'matches', checked)}
+            <div className="space-y-3">
+              {notificationState.categories.map((category) => (
+                <NotificationCategory
+                  key={category.id}
+                  icon={<Bell className="w-5 h-5" />}
+                  title={category.label}
+                  description={category.description}
+                  enabled={category.enabled}
+                  onToggle={(enabled) => {
+                    toggleCategory(category.id, enabled);
+                    markChanged();
+                  }}
+                  options={category.options}
+                  onOptionToggle={(optionId, enabled) => {
+                    toggleCategoryOption(category.id, optionId, enabled);
+                    markChanged();
+                  }}
                 />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="messages" className="text-sm font-medium">
-                    Messages
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    When someone sends you a message
-                  </p>
-                </div>
-                <Switch
-                  id="messages"
-                  checked={preferences.push.messages}
-                  onCheckedChange={(checked) => updatePreference('push', 'messages', checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="chaichat" className="text-sm font-medium">
-                    ChaiChat Updates
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    When AI analysis is complete
-                  </p>
-                </div>
-                <Switch
-                  id="chaichat"
-                  checked={preferences.push.chaiChatUpdates}
-                  onCheckedChange={(checked) => updatePreference('push', 'chaiChatUpdates', checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="insights" className="text-sm font-medium">
-                    Weekly Insights
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Your weekly match updates
-                  </p>
-                </div>
-                <Switch
-                  id="insights"
-                  checked={preferences.push.weeklyInsights}
-                  onCheckedChange={(checked) => updatePreference('push', 'weeklyInsights', checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="achievements" className="text-sm font-medium">
-                    Achievements
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    DNA milestones and badges
-                  </p>
-                </div>
-                <Switch
-                  id="achievements"
-                  checked={preferences.push.achievements}
-                  onCheckedChange={(checked) => updatePreference('push', 'achievements', checked)}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="promotions" className="text-sm font-medium">
-                    Promotions & Tips
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Feature updates and tips
-                  </p>
-                </div>
-                <Switch
-                  id="promotions"
-                  checked={preferences.push.promotions}
-                  onCheckedChange={(checked) => updatePreference('push', 'promotions', checked)}
-                />
-              </div>
+              ))}
             </div>
           </section>
           
@@ -213,8 +90,11 @@ export const NotificationPreferencesScreen = () => {
             
             <div className="space-y-4 bg-card rounded-lg border border-border p-4">
               <RadioGroup
-                value={preferences.email.frequency}
-                onValueChange={(value) => updatePreference('email', 'frequency', value as any)}
+                value={notificationState.emailFrequency}
+                onValueChange={(value: any) => {
+                  setEmailFrequency(value);
+                  markChanged();
+                }}
               >
                 <div className="flex items-center space-x-3">
                   <RadioGroupItem value="instant" id="instant" />
@@ -278,12 +158,15 @@ export const NotificationPreferencesScreen = () => {
                 </div>
                 <Switch
                   id="quietHours"
-                  checked={preferences.quietHours.enabled}
-                  onCheckedChange={(checked) => updatePreference('quietHours', 'enabled', checked)}
+                  checked={notificationState.quietHours.enabled}
+                  onCheckedChange={(checked) => {
+                    updateQuietHours({ enabled: checked });
+                    markChanged();
+                  }}
                 />
               </div>
               
-              {preferences.quietHours.enabled && (
+              {notificationState.quietHours.enabled && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -292,8 +175,11 @@ export const NotificationPreferencesScreen = () => {
                       </Label>
                       <input
                         type="time"
-                        value={preferences.quietHours.start}
-                        onChange={(e) => updatePreference('quietHours', 'start', e.target.value)}
+                        value={notificationState.quietHours.start}
+                        onChange={(e) => {
+                          updateQuietHours({ start: e.target.value });
+                          markChanged();
+                        }}
                         className="w-full px-3 py-2 rounded-md border border-border bg-background"
                       />
                     </div>
@@ -303,8 +189,11 @@ export const NotificationPreferencesScreen = () => {
                       </Label>
                       <input
                         type="time"
-                        value={preferences.quietHours.end}
-                        onChange={(e) => updatePreference('quietHours', 'end', e.target.value)}
+                        value={notificationState.quietHours.end}
+                        onChange={(e) => {
+                          updateQuietHours({ end: e.target.value });
+                          markChanged();
+                        }}
                         className="w-full px-3 py-2 rounded-md border border-border bg-background"
                       />
                     </div>
@@ -321,8 +210,11 @@ export const NotificationPreferencesScreen = () => {
                     </div>
                     <Switch
                       id="prayerTimes"
-                      checked={preferences.quietHours.includePrayerTimes}
-                      onCheckedChange={(checked) => updatePreference('quietHours', 'includePrayerTimes', checked)}
+                      checked={notificationState.quietHours.includePrayerTimes}
+                      onCheckedChange={(checked) => {
+                        updateQuietHours({ includePrayerTimes: checked });
+                        markChanged();
+                      }}
                     />
                   </div>
                 </>
@@ -344,8 +236,11 @@ export const NotificationPreferencesScreen = () => {
                 </Label>
                 <Switch
                   id="sound"
-                  checked={preferences.sound.enabled}
-                  onCheckedChange={(checked) => updatePreference('sound', 'enabled', checked)}
+                  checked={notificationState.inAppSounds}
+                  onCheckedChange={(checked) => {
+                    toggleSounds(checked);
+                    markChanged();
+                  }}
                 />
               </div>
               
@@ -355,8 +250,11 @@ export const NotificationPreferencesScreen = () => {
                 </Label>
                 <Switch
                   id="vibration"
-                  checked={preferences.sound.vibration}
-                  onCheckedChange={(checked) => updatePreference('sound', 'vibration', checked)}
+                  checked={notificationState.vibration}
+                  onCheckedChange={(checked) => {
+                    toggleVibration(checked);
+                    markChanged();
+                  }}
                 />
               </div>
             </div>
