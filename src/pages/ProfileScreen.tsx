@@ -6,6 +6,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { FeatureCard } from '@/components/ui/Cards/FeatureCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
+import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { 
   Edit2, 
   Sliders, 
@@ -14,7 +15,9 @@ import {
   Settings, 
   HelpCircle, 
   Pause,
-  Camera 
+  Camera,
+  Crown,
+  ChevronRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
@@ -27,6 +30,9 @@ const ProfileScreen = () => {
   const { user, logout } = useUser();
   const { overallScore } = useDNA();
   const { notificationCount } = useApp();
+  
+  // Mock premium status - in production, fetch from user subscription data
+  const [isPremium] = useState(false);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -121,6 +127,54 @@ const ProfileScreen = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Premium Status Card */}
+        <div className="mx-5 mb-5">
+          {isPremium ? (
+            <BaseCard
+              padding="md"
+              className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Premium Member</h3>
+                    <p className="text-xs text-muted-foreground">All features unlocked</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/manage-subscription')}
+                  className="text-primary hover:text-primary/80"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+              </div>
+            </BaseCard>
+          ) : (
+            <BaseCard
+              padding="md"
+              interactive
+              onClick={() => navigate('/premium')}
+              className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground">Free Member</h3>
+                    <p className="text-xs text-muted-foreground">Upgrade to unlock all features</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-primary flex-shrink-0" />
+              </div>
+            </BaseCard>
+          )}
         </div>
 
         {/* Profile Sections */}
