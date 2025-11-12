@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useWebSocket } from './useWebSocket';
 
-interface Message {
+export interface ChatMessage {
   id: string;
   senderId: string;
   recipientId: string;
@@ -8,147 +9,216 @@ interface Message {
   type: 'text' | 'voice' | 'image' | 'emoji';
   timestamp: Date;
   status: 'sending' | 'sent' | 'delivered' | 'read';
+  metadata?: Record<string, any>;
 }
 
 interface UseChatSocketOptions {
-  onMessage: (message: Message) => void;
-  onTyping: (isTyping: boolean) => void;
-  onStatusUpdate: (messageId: string, status: Message['status']) => void;
+  onMessage?: (message: ChatMessage) => void;
+  onTyping?: (userId: string, isTyping: boolean) => void;
+  onStatusUpdate?: (messageId: string, status: ChatMessage['status']) => void;
+  onReaction?: (messageId: string, reaction: string, userId: string) => void;
+  autoConnect?: boolean;
 }
 
-export const useChatSocket = (chatId: string, options: UseChatSocketOptions) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
-  
-  const connect = () => {
-    if (!chatId) return;
-    
-    // In production, this would be your actual WebSocket URL
-    // For now, we'll simulate the connection
-    console.log(`Connecting to chat ${chatId}...`);
-    
-    // Simulated WebSocket connection
-    // In production: const ws = new WebSocket(`wss://api.matchme.com/chat/${chatId}`);
-    
-    const simulatedWs = {
-      readyState: 1, // OPEN
-      close: () => console.log('WebSocket closed'),
-      send: (data: string) => console.log('Sending:', data)
-    } as WebSocket;
-    
-    socketRef.current = simulatedWs;
-    setIsConnected(true);
-    reconnectAttempts.current = 0;
-    
-    // Simulated message handling
-    // In production, you would set up actual event listeners:
-    /*
-    ws.onopen = () => {
-      setIsConnected(true);
-      reconnectAttempts.current = 0;
-    };
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      switch(data.type) {
+export const useChatSocket = (chatId: string, options: UseChatSocketOptions = {}) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  const handleTypingIndicator = useCallback((userId: string, isTyping: boolean) => {
+    // Clear existing timeout for this user
+    const existingTimeout = typingTimeoutRef.current.get(userId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    setTypingUsers(prev => {
+      const next = new Set(prev);
+      if (isTyping) {
+        next.add(userId);
+        
+        // Auto-clear typing after 3 seconds
+        const timeout = setTimeout(() => {
+          setTypingUsers(curr => {
+            const updated = new Set(curr);
+            updated.delete(userId);
+            return updated;
+          });
+          typingTimeoutRef.current.delete(userId);
+        }, 3000);
+        
+        typingTimeoutRef.current.set(userId, timeout);
+      } else {
+        next.delete(userId);
+      }
+      return next;
+    });
+  }, []);
+
+  const updateMessageStatus = useCallback((messageId: string, status: ChatMessage['status']) => {
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === messageId ? { ...msg, status } : msg
+      )
+    );
+  }, []);
+
+  const { send, isConnected, connectionState } = useWebSocket({
+    channel: `chat:${chatId}`,
+    autoConnect: options.autoConnect ?? true,
+    onMessage: useCallback((data: any) => {
+      switch (data.type) {
         case 'message':
-          options.onMessage(data.message);
+          const newMessage = data.message as ChatMessage;
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m.id === newMessage.id)) {
+              return prev;
+            }
+            return [...prev, newMessage];
+          });
+          options.onMessage?.(newMessage);
           break;
+
         case 'typing':
-          options.onTyping(data.isTyping);
+          handleTypingIndicator(data.userId, data.isTyping);
+          options.onTyping?.(data.userId, data.isTyping);
           break;
+
         case 'status_update':
-          options.onStatusUpdate(data.messageId, data.status);
+          updateMessageStatus(data.messageId, data.status);
+          options.onStatusUpdate?.(data.messageId, data.status);
           break;
+
+        case 'reaction':
+          options.onReaction?.(data.messageId, data.reaction, data.userId);
+          break;
+
+        case 'message_deleted':
+          setMessages(prev => prev.filter(m => m.id !== data.messageId));
+          break;
+
+        default:
+          console.log('[Chat Socket] Unknown message type:', data.type);
       }
-    };
-    
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-    
-    ws.onclose = () => {
-      setIsConnected(false);
-      
-      // Attempt to reconnect with exponential backoff
-      if (reconnectAttempts.current < maxReconnectAttempts) {
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttempts.current++;
-          connect();
-        }, delay);
-      }
-    };
-    */
-  };
-  
-  useEffect(() => {
-    connect();
-    
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-    };
-  }, [chatId]);
-  
-  const sendMessage = async (content: string): Promise<Message> => {
-    // Simulate API call with optimistic response
-    const message: Message = {
-      id: `msg-${Date.now()}`,
+    }, [options, handleTypingIndicator, updateMessageStatus])
+  });
+
+  const sendMessage = useCallback(async (
+    content: string,
+    type: ChatMessage['type'] = 'text',
+    metadata?: Record<string, any>
+  ): Promise<ChatMessage> => {
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
       senderId: 'me',
       recipientId: chatId,
       content,
-      type: 'text',
+      type,
       timestamp: new Date(),
-      status: 'sent'
+      status: 'sending',
+      metadata
     };
-    
-    if (socketRef.current && isConnected) {
-      socketRef.current.send(JSON.stringify({
-        type: 'message',
+
+    // Optimistically add message immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    try {
+      // Send through WebSocket
+      send({
+        type: 'send_message',
+        chatId,
         content,
-        chatId
-      }));
+        messageType: type,
+        metadata,
+        tempId: optimisticMessage.id
+      });
+
+      // Simulate API call for demo
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Update with server ID and status
+      const serverMessage: ChatMessage = {
+        ...optimisticMessage,
+        id: `msg-${Date.now()}`,
+        status: 'sent'
+      };
+
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === optimisticMessage.id ? serverMessage : msg
+        )
+      );
+
+      return serverMessage;
+    } catch (error) {
+      // Rollback on error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      throw error;
     }
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    return message;
-  };
-  
-  const sendTyping = (isTyping: boolean) => {
-    if (socketRef.current && isConnected) {
-      socketRef.current.send(JSON.stringify({
-        type: 'typing',
-        isTyping,
-        chatId
-      }));
-    }
-  };
-  
-  const markAsRead = (messageIds: string[]) => {
-    if (socketRef.current && isConnected) {
-      socketRef.current.send(JSON.stringify({
-        type: 'mark_read',
-        messageIds,
-        chatId
-      }));
-    }
-  };
-  
+  }, [chatId, send]);
+
+  const sendTyping = useCallback((isTyping: boolean) => {
+    send({
+      type: 'typing',
+      chatId,
+      isTyping
+    });
+  }, [chatId, send]);
+
+  const markAsRead = useCallback((messageIds: string[]) => {
+    send({
+      type: 'mark_read',
+      chatId,
+      messageIds
+    });
+
+    // Optimistically update local state
+    setMessages(prev =>
+      prev.map(msg =>
+        messageIds.includes(msg.id) ? { ...msg, status: 'read' as const } : msg
+      )
+    );
+  }, [chatId, send]);
+
+  const sendReaction = useCallback((messageId: string, reaction: string) => {
+    send({
+      type: 'reaction',
+      chatId,
+      messageId,
+      reaction
+    });
+  }, [chatId, send]);
+
+  const deleteMessage = useCallback((messageId: string) => {
+    send({
+      type: 'delete_message',
+      chatId,
+      messageId
+    });
+
+    // Optimistically remove
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+  }, [chatId, send]);
+
+  // Cleanup typing timeouts on unmount
+  useEffect(() => {
+    return () => {
+      typingTimeoutRef.current.forEach(timeout => clearTimeout(timeout));
+      typingTimeoutRef.current.clear();
+    };
+  }, []);
+
   return {
+    messages,
     isConnected,
+    connectionState,
+    typingUsers: Array.from(typingUsers),
     sendMessage,
     sendTyping,
-    markAsRead
+    markAsRead,
+    sendReaction,
+    deleteMessage,
+    setMessages
   };
 };
