@@ -34,6 +34,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { compressImage } from '@/utils/imageCompression';
 
 const DNA_CATEGORIES = [
   { id: 'values', icon: '⚖️', label: 'Values & Beliefs' },
@@ -77,7 +78,7 @@ export default function EditPostScreen() {
     setAddLocation(true);
   }, [postId]);
 
-  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
     if (media.length + files.length > 5) {
@@ -85,22 +86,50 @@ export default function EditPostScreen() {
       return;
     }
 
-    files.forEach(file => {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
-        return;
+    for (const file of files) {
+      if (file.type.startsWith('video/')) {
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error('Video size must be less than 50MB');
+          continue;
+        }
+        
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMedia(prev => [...prev, {
+            file,
+            preview: reader.result as string,
+            type: 'video'
+          }]);
+        };
+        reader.readAsDataURL(file);
+        continue;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setMedia(prev => [...prev, {
-          file,
-          preview: reader.result as string,
-          type: file.type.startsWith('video/') ? 'video' : 'image'
-        }]);
-      };
-      reader.readAsDataURL(file);
-    });
+      try {
+        toast.loading('Optimizing image...', { id: 'compress' });
+        const compressedFile = await compressImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 0.85,
+          maxSizeMB: 5
+        });
+        
+        toast.dismiss('compress');
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMedia(prev => [...prev, {
+            file: compressedFile,
+            preview: reader.result as string,
+            type: 'image'
+          }]);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        toast.error('Failed to optimize image', { id: 'compress' });
+        console.error('Image compression error:', error);
+      }
+    }
   };
 
   const removeMedia = (index: number) => {
