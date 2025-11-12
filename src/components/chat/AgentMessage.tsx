@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 
 interface AgentMessageProps {
   avatar?: string;
@@ -38,14 +39,18 @@ export const AgentMessage = ({
       {/* Avatar */}
       <div
         className={cn(
-          'flex-shrink-0 rounded-full flex items-center justify-center',
+          'flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden',
           'bg-gradient-to-br from-primary-forest to-[#4A8B8C]',
           'border-2 border-white shadow-sm',
           avatarSize
         )}
       >
         {avatar.startsWith('http') ? (
-          <img src={avatar} alt="Agent" className="w-full h-full rounded-full object-cover" />
+          <ProgressiveImage
+            src={avatar}
+            alt="Agent"
+            className="w-full h-full rounded-full"
+          />
         ) : (
           <span className="text-2xl">{avatar}</span>
         )}

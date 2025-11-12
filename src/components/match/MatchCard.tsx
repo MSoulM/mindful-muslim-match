@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { useState } from 'react';
 import { hoverLift } from '@/utils/animations';
+import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 
 interface MatchCardProps {
   match: {
@@ -36,7 +37,6 @@ export const MatchCard = ({
   variant = 'full',
   className,
 }: MatchCardProps) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
 
@@ -61,12 +61,11 @@ export const MatchCard = ({
       >
         {/* Photo */}
         <div className="w-[120px] h-[120px] flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center">
-          {match.photoUrl && imageLoaded ? (
-            <img
+          {match.photoUrl ? (
+            <ProgressiveImage
               src={match.photoUrl}
               alt={`Photo of ${match.name}`}
-              className="w-full h-full object-cover"
-              onLoad={() => setImageLoaded(true)}
+              className="w-full h-full"
             />
           ) : (
             <span className="text-6xl" aria-hidden="true">{match.emoji}</span>
@@ -157,21 +156,16 @@ export const MatchCard = ({
         role="img"
         aria-label={`Photo of ${match.name}`}
       >
-        {!imageLoaded && (
+        {match.photoUrl ? (
+          <ProgressiveImage
+            src={match.photoUrl}
+            alt={`Photo of ${match.name}`}
+            className="w-full h-full"
+          />
+        ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-[128px] opacity-50" aria-hidden="true">{match.emoji}</span>
           </div>
-        )}
-        {match.photoUrl && (
-          <img
-            src={match.photoUrl}
-            alt={`Photo of ${match.name}`}
-            className={cn(
-              'w-full h-full object-cover transition-opacity duration-300',
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            )}
-            onLoad={() => setImageLoaded(true)}
-          />
         )}
       </div>
 
