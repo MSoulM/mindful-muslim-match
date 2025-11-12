@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { compressImage, formatFileSize } from '@/utils/imageCompression';
+import { generateThumbnail } from '@/utils/thumbnailGenerator';
 
 const DNA_CATEGORIES = [
   { id: 'values', icon: '⚖️', label: 'Values & Beliefs' },
@@ -35,7 +36,9 @@ const DNA_CATEGORIES = [
 interface MediaItem {
   file: File;
   preview: string;
+  thumbnail?: string;
   type: 'image' | 'video';
+  isLoading?: boolean;
 }
 
 export default function CreatePostScreen() {
@@ -60,7 +63,7 @@ export default function CreatePostScreen() {
     }
 
     for (const file of files) {
-      // Skip size check for videos (will be handled differently)
+      // Handle videos
       if (file.type.startsWith('video/')) {
         if (file.size > 50 * 1024 * 1024) {
           toast.error('Video size must be less than 50MB');
@@ -79,11 +82,26 @@ export default function CreatePostScreen() {
         continue;
       }
 
-      // Compress images
+      // Generate instant thumbnail for images
       try {
+        const thumbnail = await generateThumbnail(file, {
+          width: 100,
+          quality: 0.6,
+          blur: 10
+        });
+
+        // Add with thumbnail first (instant feedback)
+        const tempId = Date.now();
+        setMedia(prev => [...prev, {
+          file,
+          preview: thumbnail,
+          thumbnail,
+          type: 'image',
+          isLoading: true
+        }]);
+
+        // Compress full image in background
         const originalSize = file.size;
-        toast.loading('Optimizing image...', { id: 'compress' });
-        
         const compressedFile = await compressImage(file, {
           maxWidth: 1920,
           maxHeight: 1920,
@@ -95,23 +113,28 @@ export default function CreatePostScreen() {
         const savedPercentage = Math.round((savedBytes / originalSize) * 100);
         
         if (savedPercentage > 10) {
-          toast.success(`Image optimized (${savedPercentage}% smaller)`, { id: 'compress' });
-        } else {
-          toast.dismiss('compress');
+          toast.success(`Image optimized (${savedPercentage}% smaller)`);
         }
 
+        // Update with full resolution image
         const reader = new FileReader();
         reader.onloadend = () => {
-          setMedia(prev => [...prev, {
-            file: compressedFile,
-            preview: reader.result as string,
-            type: 'image'
-          }]);
+          setMedia(prev => prev.map(item => 
+            item.isLoading && item.thumbnail === thumbnail
+              ? {
+                  file: compressedFile,
+                  preview: reader.result as string,
+                  thumbnail,
+                  type: 'image',
+                  isLoading: false
+                }
+              : item
+          ));
         };
         reader.readAsDataURL(compressedFile);
       } catch (error) {
-        toast.error('Failed to optimize image', { id: 'compress' });
-        console.error('Image compression error:', error);
+        toast.error('Failed to process image');
+        console.error('Image processing error:', error);
       }
     }
   };
@@ -206,8 +229,18 @@ export default function CreatePostScreen() {
               <img 
                 src={media[0].preview} 
                 alt="Post media"
-                className="w-full h-full object-cover"
+                className={cn(
+                  "w-full h-full object-cover transition-all duration-500",
+                  media[0].isLoading && "blur-sm scale-105"
+                )}
               />
+              
+              {/* Loading overlay */}
+              {media[0].isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-sm">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+                </div>
+              )}
               
               {/* Edit/Remove Overlay */}
               <div className="absolute top-3 right-3 flex gap-2">
