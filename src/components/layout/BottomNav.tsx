@@ -23,7 +23,7 @@ interface BottomNavProps {
 const defaultTabs: NavTab[] = [
   { id: 'discover', label: 'Discover', icon: Compass },
   { id: 'myagent', label: 'MyAgent', icon: Bot },
-  { id: 'dna', label: 'MySoul DNA', icon: Fingerprint, isHero: true },
+  { id: 'dna', label: 'MySoulDNA', icon: Fingerprint, isHero: true },
   { id: 'chaichat', label: 'ChaiChat', icon: MessageCircle, badge: 2 },
   { id: 'messages', label: 'Messages', icon: MessageCircle, badge: 3 },
 ];

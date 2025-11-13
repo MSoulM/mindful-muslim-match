@@ -68,21 +68,27 @@ export const NotificationCenterScreen = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
-    <ScreenContainer>
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-        <h1 className="text-xl font-bold">Notifications</h1>
-        {unreadCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={markAllAsRead}
-            className="text-primary"
-          >
-            <Check className="h-4 w-4 mr-1" />
-            Mark All Read
-          </Button>
-        )}
-      </div>
+    <>
+      <TopBar 
+        variant="logo"
+        onNotificationClick={() => navigate('/notifications')}
+        onProfileClick={() => navigate('/profile')}
+      />
+      <ScreenContainer hasTopBar hasBottomNav>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+          <h1 className="text-xl font-bold">Notifications</h1>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={markAllAsRead}
+              className="text-primary"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Mark All Read
+            </Button>
+          )}
+        </div>
       
       {/* Filter Chips */}
       <div className="px-4 py-3 border-b border-border bg-card">
@@ -210,8 +216,9 @@ export const NotificationCenterScreen = () => {
           </div>
         )}
       </ScrollArea>
+      </ScreenContainer>
       
       <BottomNav activeTab="notifications" onTabChange={(tab) => navigate(`/${tab}`)} />
-    </ScreenContainer>
+    </>
   );
 };
