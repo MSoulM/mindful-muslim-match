@@ -142,6 +142,12 @@ All colors MUST be HSL.
     --safe-area-inset-right: env(safe-area-inset-right, 0px);
     --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
     --safe-area-inset-left: env(safe-area-inset-left, 0px);
+
+    /* Theme customization variables */
+    --base-font-size: 0.9375rem;
+    --font-scale: 1.0;
+    --spacing-scale: 1.0;
+    --animation-duration: 200ms;
   }
 
   /* Smooth scrolling */
