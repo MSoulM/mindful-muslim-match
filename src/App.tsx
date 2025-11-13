@@ -50,6 +50,7 @@ import TutorialScreen from "./pages/TutorialScreen";
 import CreatePostScreen from "./pages/CreatePostScreen";
 import EditPostScreen from "./pages/EditPostScreen";
 import PostSuccessScreen from "./pages/PostSuccessScreen";
+import ShareReceiverScreen from "./pages/ShareReceiverScreen";
 import { AnalyticsScreen } from "./pages/AnalyticsScreen";
 import { DNAAnalyticsScreen } from "./pages/DNAAnalyticsScreen";
 import { EngagementAnalyticsScreen } from "./pages/EngagementAnalyticsScreen";
@@ -238,6 +239,11 @@ const AnimatedRoutes = () => {
         } />
         
         {/* Post Routes */}
+        <Route path="/share" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ShareReceiverScreen />
+          </motion.div>
+        } />
         <Route path="/create-post" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <CreatePostScreen />
