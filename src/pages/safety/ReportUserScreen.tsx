@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { MobileTextArea } from '@/components/ui/Input/MobileTextArea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, CheckCircle2, Shield } from 'lucide-react';
@@ -186,21 +186,19 @@ export const ReportUserScreen = () => {
               <p className="text-sm text-muted-foreground">{selectedReason}</p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="details">Additional Details {requiresDetails && '*'}</Label>
-              <Textarea
-                id="details"
-                placeholder="Provide more context to help us understand the situation..."
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                className="min-h-[120px]"
-              />
-              {requiresDetails && (
-                <p className="text-xs text-muted-foreground">
-                  Minimum 20 characters required ({details.length}/20)
-                </p>
-              )}
-            </div>
+            <MobileTextArea
+              label={`Additional Details ${requiresDetails ? '*' : ''}`}
+              value={details}
+              onChange={(value) => setDetails(value)}
+              placeholder="Provide more context to help us understand the situation..."
+              minRows={6}
+              maxRows={10}
+              required={requiresDetails}
+              maxLength={500}
+              helperText={requiresDetails ? `Minimum 20 characters required (${details.length}/20)` : undefined}
+              floatingLabel={false}
+              autoFocus
+            />
 
             <div className="flex items-start gap-2 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />

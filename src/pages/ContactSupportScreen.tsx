@@ -4,8 +4,8 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { MobileTextInput } from '@/components/ui/Input/MobileTextInput';
+import { MobileTextArea } from '@/components/ui/Input/MobileTextArea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -201,16 +201,16 @@ export default function ContactSupportScreen() {
         <BaseCard padding="md" className="mb-6">
           <h3 className="font-semibold mb-4">Send us a message</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="subject">Subject</Label>
-              <Input
-                id="subject"
-                value={formData.subject}
-                onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                placeholder="Brief description of your issue"
-                maxLength={100}
-              />
-            </div>
+            <MobileTextInput
+              label="Subject"
+              value={formData.subject}
+              onChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}
+              placeholder="Brief description of your issue"
+              maxLength={100}
+              required
+              autoFocus
+              floatingLabel={false}
+            />
 
             <div>
               <Label htmlFor="category">Category</Label>
@@ -231,20 +231,17 @@ export default function ContactSupportScreen() {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="message">Message</Label>
-              <Textarea
-                id="message"
-                value={formData.message}
-                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                placeholder="Describe your issue in detail..."
-                rows={6}
-                maxLength={1000}
-              />
-              <p className="text-xs text-muted-foreground mt-1 text-right">
-                {formData.message.length}/1000
-              </p>
-            </div>
+            <MobileTextArea
+              label="Message"
+              value={formData.message}
+              onChange={(value) => setFormData(prev => ({ ...prev, message: value }))}
+              placeholder="Describe your issue in detail..."
+              minRows={6}
+              maxRows={10}
+              maxLength={1000}
+              required
+              floatingLabel={false}
+            />
 
             <Button
               type="button"
