@@ -12,7 +12,7 @@ export const SkeletonBase = ({
   animated = true,
   variant = 'shimmer' 
 }: SkeletonBaseProps) => {
-  // Shimmer animation with gradient sweep
+  // Shimmer animation with enhanced wave gradient
   if (variant === 'shimmer' && animated) {
     return (
       <motion.div
@@ -27,8 +27,9 @@ export const SkeletonBase = ({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
       >
+        {/* Primary wave */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-background/40 to-transparent"
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-background/60 to-transparent"
           animate={{
             x: ['-100%', '200%'],
           }}
@@ -36,6 +37,20 @@ export const SkeletonBase = ({
             duration: 1.5,
             repeat: Infinity,
             ease: 'easeInOut',
+          }}
+          style={{ willChange: 'transform' }}
+        />
+        {/* Secondary wave for depth */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent"
+          animate={{
+            x: ['-100%', '200%'],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: 0.3,
           }}
           style={{ willChange: 'transform' }}
         />

@@ -10,3 +10,4 @@ export { SkeletonDiscoverScreen } from './SkeletonDiscoverScreen';
 export { SkeletonMessagesScreen } from './SkeletonMessagesScreen';
 export { SkeletonDNAScreen } from './SkeletonDNAScreen';
 export { SkeletonProfileScreen } from './SkeletonProfileScreen';
+export { SkeletonToContent } from './SkeletonToContent';
