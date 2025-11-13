@@ -9,11 +9,13 @@ import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { SwipeableCard } from '@/components/ui/SwipeableCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 const MessagesScreen = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('messages');
   const { pendingCount } = useChaiChatPending();
+  const { unreadCount: unreadMessagesCount } = useUnreadMessages();
   // Mock data - replace with real data later
   const messages = [
     {
@@ -131,6 +133,7 @@ const MessagesScreen = () => {
         activeTab={activeTab} 
         onTabChange={handleTabChange}
         chaiChatBadge={pendingCount}
+        messagesBadge={unreadMessagesCount}
       />
     </div>
   );
