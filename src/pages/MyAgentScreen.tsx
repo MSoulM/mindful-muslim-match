@@ -9,12 +9,14 @@ import { AgentMessage } from '@/components/chat/AgentMessage';
 import { FeatureCard } from '@/components/ui/Cards/FeatureCard';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { Button } from '@/components/ui/Button';
+import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { cn } from '@/lib/utils';
 
 const MyAgentScreen = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('myagent');
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const { pendingCount } = useChaiChatPending();
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -205,8 +207,11 @@ const MyAgentScreen = () => {
         </motion.div>
       )}
 
-      <BottomNav activeTab={activeTab} onTabChange={(tabId) => {
-        setActiveTab(tabId);
+      <BottomNav 
+        activeTab={activeTab} 
+        chaiChatBadge={pendingCount}
+        onTabChange={(tabId) => {
+          setActiveTab(tabId);
         if (tabId === 'discover') navigate('/discover');
         else if (tabId === 'myagent') navigate('/myagent');
         else if (tabId === 'dna') navigate('/dna');

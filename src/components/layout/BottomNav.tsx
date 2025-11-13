@@ -37,13 +37,13 @@ export const BottomNav = ({
   chaiChatBadge,
   messagesBadge,
 }: BottomNavProps) => {
-  // Override default badge counts with dynamic ones
+  // Override default badge counts with dynamic ones - only show if > 0
   const tabsWithDynamicBadges = tabs.map(tab => {
-    if (tab.id === 'chaichat' && chaiChatBadge && chaiChatBadge > 0) {
-      return { ...tab, badge: chaiChatBadge };
+    if (tab.id === 'chaichat') {
+      return { ...tab, badge: chaiChatBadge && chaiChatBadge > 0 ? chaiChatBadge : undefined };
     }
-    if (tab.id === 'messages' && messagesBadge && messagesBadge > 0) {
-      return { ...tab, badge: messagesBadge };
+    if (tab.id === 'messages') {
+      return { ...tab, badge: messagesBadge && messagesBadge > 0 ? messagesBadge : undefined };
     }
     return tab;
   });
