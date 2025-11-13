@@ -61,6 +61,7 @@ import EmptyStateShowcase from "./pages/EmptyStateShowcase";
 import FormOptimizationDemo from "./pages/FormOptimizationDemo";
 import FormNavigationDemo from "./pages/FormNavigationDemo";
 import ResponsiveDemo from "./pages/ResponsiveDemo";
+import AccessibilityDemo from "./pages/AccessibilityDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -348,6 +349,16 @@ const AnimatedRoutes = () => {
             <Route path="/dev/form-navigation" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <FormNavigationDemo />
+              </motion.div>
+            } />
+            <Route path="/dev/responsive" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <ResponsiveDemo />
+              </motion.div>
+            } />
+            <Route path="/dev/accessibility" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <AccessibilityDemo />
               </motion.div>
             } />
           </>
