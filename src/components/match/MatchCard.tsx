@@ -102,6 +102,9 @@ export const MatchCard = ({
     <motion.article
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      style={{ willChange: 'transform, opacity' }}
       {...hoverLift}
       className={cn('bg-white rounded-2xl border border-neutral-200 shadow-lg overflow-hidden', className)}
       role="article"

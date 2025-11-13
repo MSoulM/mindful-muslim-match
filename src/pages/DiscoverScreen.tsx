@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { TopBar } from '@/components/layout/TopBar';
@@ -12,9 +12,12 @@ import { Skeleton } from '@/components/ui/Feedback/Skeleton';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { SkipLink } from '@/components/ui/accessibility/SkipLink';
 import { ScreenReaderAnnounce } from '@/components/ui/accessibility/ScreenReaderAnnounce';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { listStagger, listItem, respectMotionPreference } from '@/utils/animations';
+import { haptics } from '@/utils/haptics';
 
 interface Match {
   id: string;
@@ -173,7 +176,7 @@ export default function DiscoverScreen() {
   };
 
   const handleTabChange = (tabId: string) => {
-    hapticFeedback('light');
+    haptics.tap();
     setActiveTab(tabId);
     
     // Navigate to different screens based on tab
@@ -194,6 +197,23 @@ export default function DiscoverScreen() {
         navigate('/messages');
         break;
     }
+  };
+
+  // Pull to refresh handler
+  const handleRefresh = async () => {
+    haptics.success();
+    setLoading(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Reset matches
+    setMatches(sampleMatches);
+    setError(null);
+    setLoading(false);
+    
+    showToast('success', 'Matches refreshed!');
+    setAnnouncement('Matches have been refreshed');
   };
 
   if (error) {
@@ -259,7 +279,8 @@ export default function DiscoverScreen() {
           scrollable
           padding
         >
-          <div className="space-y-6 pb-8">
+          <PullToRefresh onRefresh={handleRefresh}>
+            <div className="space-y-6 pb-8">
             {/* Welcome Message */}
             <AgentMessage
               avatar="🤖"
@@ -280,17 +301,16 @@ export default function DiscoverScreen() {
 
             {/* Match Cards */}
             {!loading && matches.length > 0 && (
-              <div className="space-y-6">
+              <motion.div
+                variants={respectMotionPreference(listStagger)}
+                initial="hidden"
+                animate="visible"
+                className="space-y-6"
+              >
                 {matches.map((match, index) => (
                   <motion.div
                     key={match.id}
-                    initial="hidden"
-                    animate="visible"
-                    variants={cardVariants}
-                    transition={{
-                      delay: index * 0.15,
-                      duration: 0.5,
-                    }}
+                    variants={respectMotionPreference(listItem)}
                   >
                     <MatchCard
                       match={match}
@@ -300,7 +320,7 @@ export default function DiscoverScreen() {
                     />
                   </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
 
             {/* In Progress ChaiChat Section */}
@@ -380,6 +400,7 @@ export default function DiscoverScreen() {
               </div>
             )}
           </div>
+          </PullToRefresh>
         </ScreenContainer>
 
         {/* Bottom Navigation */}
