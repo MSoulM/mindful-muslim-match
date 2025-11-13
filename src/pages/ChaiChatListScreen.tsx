@@ -7,10 +7,14 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/states/EmptyState';
+import { ErrorState } from '@/components/ui/states/ErrorState';
+import { SkeletonList } from '@/components/ui/skeletons';
 import { cn } from '@/lib/utils';
 import { useChaiChatNotifications } from '@/hooks/useChaiChatNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useLoadingState } from '@/hooks/useLoadingState';
 import { toast } from 'sonner';
 
 interface ChaiChatItem {
@@ -31,6 +35,89 @@ const ChaiChatListScreen = () => {
   const { unreadChaiChatCount, chaiChatNotifications, markAllChaiChatAsRead } = useChaiChatNotifications();
   const { pendingCount } = useChaiChatPending();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
+  
+  // Loading state management
+  const {
+    isLoading,
+    loadingType,
+    error,
+    setLoading,
+    setIdle,
+    setError,
+  } = useLoadingState('initial');
+
+  const [pendingChats, setPendingChats] = useState<ChaiChatItem[]>([]);
+  const [inProgressChats, setInProgressChats] = useState<ChaiChatItem[]>([]);
+  const [completedChats, setCompletedChats] = useState<ChaiChatItem[]>([]);
+
+  // Simulate initial data fetch
+  useEffect(() => {
+    const fetchChaiChats = async () => {
+      try {
+        setLoading('initial');
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        setPendingChats([
+          {
+            id: '1',
+            name: 'Sarah M.',
+            avatar: '👩‍🦰',
+            compatibility: 95,
+            status: 'pending',
+            messageCount: 23,
+            recommendation: 'Highly recommended',
+          },
+          {
+            id: '2',
+            name: 'Layla H.',
+            avatar: '👩',
+            compatibility: 91,
+            status: 'pending',
+            messageCount: 18,
+            recommendation: 'Recommended',
+          },
+        ]);
+        
+        setInProgressChats([
+          {
+            id: '3',
+            name: 'Ahmad R.',
+            avatar: '👤',
+            compatibility: 0,
+            status: 'in-progress',
+            messageCount: 8,
+          },
+        ]);
+        
+        setCompletedChats([
+          {
+            id: '4',
+            name: 'Fatima K.',
+            avatar: '👩',
+            compatibility: 89,
+            status: 'completed',
+            messageCount: 21,
+            recommendation: 'Reviewed',
+          },
+          {
+            id: '5',
+            name: 'Zainab A.',
+            avatar: '👩',
+            compatibility: 87,
+            status: 'completed',
+            messageCount: 19,
+            recommendation: 'Reviewed',
+          },
+        ]);
+        
+        setIdle();
+      } catch (err) {
+        setError(err as Error);
+      }
+    };
+
+    fetchChaiChats();
+  }, []);
 
   // Mark all ChaiChat notifications as read when viewing this screen
   useEffect(() => {
@@ -46,60 +133,7 @@ const ChaiChatListScreen = () => {
       }
       markAllChaiChatAsRead();
     }
-  }, []);
-
-  const pendingChats: ChaiChatItem[] = [
-    {
-      id: '1',
-      name: 'Sarah M.',
-      avatar: '👩‍🦰',
-      compatibility: 95,
-      status: 'pending',
-      messageCount: 23,
-      recommendation: 'Highly recommended',
-    },
-    {
-      id: '2',
-      name: 'Layla H.',
-      avatar: '👩',
-      compatibility: 91,
-      status: 'pending',
-      messageCount: 18,
-      recommendation: 'Recommended',
-    },
-  ];
-
-  const inProgressChats: ChaiChatItem[] = [
-    {
-      id: '3',
-      name: 'Ahmad R.',
-      avatar: '👤',
-      compatibility: 0,
-      status: 'in-progress',
-      messageCount: 8,
-    },
-  ];
-
-  const completedChats: ChaiChatItem[] = [
-    {
-      id: '4',
-      name: 'Fatima K.',
-      avatar: '👩',
-      compatibility: 89,
-      status: 'completed',
-      messageCount: 21,
-      recommendation: 'Reviewed',
-    },
-    {
-      id: '5',
-      name: 'Zainab A.',
-      avatar: '👩',
-      compatibility: 87,
-      status: 'completed',
-      messageCount: 19,
-      recommendation: 'Reviewed',
-    },
-  ];
+  }, [unreadChaiChatCount, chaiChatNotifications, markAllChaiChatAsRead]);
 
   const renderChatCard = (chat: ChaiChatItem) => {
     const isClickable = chat.status === 'pending' || chat.status === 'completed';
@@ -231,8 +265,8 @@ const ChaiChatListScreen = () => {
 
         {hasAnyChats ? (
           <>
-            {/* Pending Review Section */}
-            {pendingChats.length > 0 && (
+              {/* Pending Review Section */}
+              {pendingChats.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -257,8 +291,8 @@ const ChaiChatListScreen = () => {
               </motion.div>
             )}
 
-            {/* In Progress Section */}
-            {inProgressChats.length > 0 && (
+              {/* In Progress Section */}
+              {inProgressChats.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -283,8 +317,8 @@ const ChaiChatListScreen = () => {
               </motion.div>
             )}
 
-            {/* Completed Section */}
-            {completedChats.length > 0 && (
+              {/* Completed Section */}
+              {completedChats.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
