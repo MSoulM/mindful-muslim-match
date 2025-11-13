@@ -208,7 +208,7 @@ const ProfileScreen = () => {
           <FeatureCard
             icon={<Bell className="w-6 h-6" />}
             title="Notifications"
-            onClick={() => navigate('/settings/notifications')}
+            onClick={() => navigate('/settings/notification-preferences')}
             className="rounded-none"
             rightElement={
               <Badge className="bg-green-500 text-white hover:bg-green-600">
