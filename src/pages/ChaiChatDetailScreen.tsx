@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { ChaiChatRecommendation } from '@/components/chaichat/ChaiChatRecommendation';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const ChaiChatDetailScreen = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [showContinueModal, setShowContinueModal] = useState(false);
 
   // Mock data - replace with actual data fetch
   const chatData = {
@@ -64,19 +66,31 @@ const ChaiChatDetailScreen = () => {
 
   const handleAccept = async () => {
     setIsLoading(true);
-    // Simulate API call
+    // Simulate API call to create new conversation
     setTimeout(() => {
-      navigate('/messages');
+      // Navigate to messages with new chat - using the match ID to open specific chat
+      navigate(`/chat/${id}`);
+      toast.success(`Chat started with ${chatData.name}!`);
     }, 1000);
   };
 
   const handleContinueChat = () => {
-    // Request more conversation
-    console.log('Continue ChaiChat');
+    // Show confirmation modal
+    setShowContinueModal(true);
+  };
+
+  const handleConfirmContinue = () => {
+    // Close modal
+    setShowContinueModal(false);
+    // Simulate API request to arrange another ChaiChat
+    setTimeout(() => {
+      toast.success(`Another ChaiChat with ${chatData.name}'s Agent has been arranged!`);
+      navigate('/discover');
+    }, 500);
   };
 
   const handleDecline = () => {
-    navigate('/chaichat');
+    navigate('/discover');
   };
 
   return (
@@ -311,6 +325,69 @@ const ChaiChatDetailScreen = () => {
           </Button>
         </div>
       </motion.div>
+
+      {/* Continue ChaiChat Confirmation Modal */}
+      <AnimatePresence>
+        {showContinueModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50"
+              onClick={() => setShowContinueModal(false)}
+            />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-md mx-auto"
+            >
+              <div className="bg-white rounded-2xl shadow-2xl p-6">
+                {/* Agent Avatar */}
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center text-3xl">
+                    🤖
+                  </div>
+                </div>
+
+                {/* Message */}
+                <h3 className="text-xl font-bold text-center text-foreground mb-2">
+                  Sure, I'll arrange that!
+                </h3>
+                <p className="text-center text-muted-foreground mb-6">
+                  I will arrange another ChaiChat with <span className="font-semibold text-foreground">{chatData.name}'s Agent</span>. 
+                  You'll be notified when the new conversation is ready for review.
+                </p>
+
+                {/* Actions */}
+                <div className="space-y-3">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={handleConfirmContinue}
+                    className="w-full min-h-[48px] bg-gradient-to-r from-primary-forest to-primary-forest/90 text-white font-bold"
+                  >
+                    Perfect, Thank You!
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    onClick={() => setShowContinueModal(false)}
+                    className="w-full min-h-[48px] border-2 border-neutral-300 text-neutral-600"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
