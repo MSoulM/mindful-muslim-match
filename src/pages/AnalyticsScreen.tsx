@@ -214,11 +214,11 @@ export const AnalyticsScreen = () => {
                       }}
                     />
                     <Legend />
-                    <Area type="monotone" dataKey="values" stackId="1" stroke="#0D7377" fill="#0D7377" fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="interests" stackId="1" stroke="#FF6B6B" fill="#FF6B6B" fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="personality" stackId="1" stroke="#8B7AB8" fill="#8B7AB8" fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="lifestyle" stackId="1" stroke="#0066CC" fill="#0066CC" fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="goals" stackId="1" stroke="#FDB813" fill="#FDB813" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="values" stackId="1" stroke="hsl(var(--dna-values))" fill="hsl(var(--dna-values))" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="interests" stackId="1" stroke="hsl(var(--dna-interests))" fill="hsl(var(--dna-interests))" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="personality" stackId="1" stroke="hsl(var(--dna-personality))" fill="hsl(var(--dna-personality))" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="lifestyle" stackId="1" stroke="hsl(var(--dna-lifestyle))" fill="hsl(var(--dna-lifestyle))" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="goals" stackId="1" stroke="hsl(var(--dna-goals))" fill="hsl(var(--dna-goals))" fillOpacity={0.6} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
