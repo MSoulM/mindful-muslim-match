@@ -4,6 +4,8 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSwipeable } from 'react-swipeable';
 import {
   Radar,
   RadarChart,
@@ -22,8 +24,16 @@ import { useDNAAnalytics } from '@/hooks/useAnalytics';
 import { cn } from '@/lib/utils';
 
 export const DNAAnalyticsScreen = () => {
+  const navigate = useNavigate();
   const { categoryAnalytics, loading } = useDNAAnalytics();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  // Swipe handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => navigate('/analytics/engagement'),
+    trackMouse: true,
+    trackTouch: true,
+  });
 
   // Prepare radar chart data
   const radarData = categoryAnalytics.map((cat) => ({
@@ -40,7 +50,14 @@ export const DNAAnalyticsScreen = () => {
     <ScreenContainer className="bg-background" hasBottomNav={false}>
       <TopBar variant="back" title="MySoulDNA Analytics" onBackClick={() => window.history.back()} />
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Screen Indicator Dots */}
+      <div className="flex justify-center gap-2 py-3 bg-background border-b border-border">
+        <div className="w-2 h-2 rounded-full bg-primary" />
+        <div className="w-2 h-2 rounded-full bg-muted" />
+        <div className="w-2 h-2 rounded-full bg-muted" />
+      </div>
+
+      <div {...swipeHandlers} className="flex-1 overflow-y-auto">
         {/* DNA Composition Radar */}
         <div className="px-4 py-4">
           <Card className="p-4">

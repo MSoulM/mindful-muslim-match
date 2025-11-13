@@ -3,6 +3,8 @@
  * Content performance and audience behavior analysis
  */
 
+import { useNavigate } from 'react-router-dom';
+import { useSwipeable } from 'react-swipeable';
 import {
   BarChart,
   Bar,
@@ -20,7 +22,16 @@ import { Card } from '@/components/ui/card';
 import { useEngagementAnalytics } from '@/hooks/useAnalytics';
 
 export const EngagementAnalyticsScreen = () => {
+  const navigate = useNavigate();
   const { metrics, funnel, loading } = useEngagementAnalytics();
+
+  // Swipe handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => navigate('/analytics/export'),
+    onSwipedRight: () => navigate('/analytics/dna'),
+    trackMouse: true,
+    trackTouch: true,
+  });
 
   const contentPerformanceData = [
     { type: 'Photos', value: metrics?.photoPerformance || 0, color: '#0066CC' },
@@ -39,7 +50,14 @@ export const EngagementAnalyticsScreen = () => {
     <ScreenContainer className="bg-background" hasBottomNav={false}>
       <TopBar variant="back" title="Engagement Analytics" onBackClick={() => window.history.back()} />
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Screen Indicator Dots */}
+      <div className="flex justify-center gap-2 py-3 bg-background border-b border-border">
+        <div className="w-2 h-2 rounded-full bg-muted" />
+        <div className="w-2 h-2 rounded-full bg-primary" />
+        <div className="w-2 h-2 rounded-full bg-muted" />
+      </div>
+
+      <div {...swipeHandlers} className="flex-1 overflow-y-auto">
         {/* Engagement Overview */}
         {metrics && (
           <div className="px-4 py-4">
