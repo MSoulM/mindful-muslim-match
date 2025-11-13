@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,8 @@ import {
   Camera, 
   X, 
   Image as ImageIcon,
-  Video
+  Video,
+  Share2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -39,7 +40,26 @@ export default function CreatePostScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [isSharedContent, setIsSharedContent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check for shared content on mount
+  useEffect(() => {
+    const sharedCaption = sessionStorage.getItem('shared_caption');
+    const shareSource = sessionStorage.getItem('share_source');
+    
+    if (sharedCaption || shareSource) {
+      if (sharedCaption) {
+        setCaption(sharedCaption);
+        setIsSharedContent(true);
+        toast.success('Shared content loaded!');
+      }
+      
+      // Clean up sessionStorage
+      sessionStorage.removeItem('shared_caption');
+      sessionStorage.removeItem('share_source');
+    }
+  }, []);
 
   const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -317,12 +337,23 @@ export default function CreatePostScreen() {
 
         {/* Caption Section */}
         <div className="bg-background p-5">
+          {/* Shared Content Indicator */}
+          {isSharedContent && (
+            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+              <Share2 className="w-4 h-4 text-primary" />
+              <span className="text-xs font-medium text-primary">
+                Shared from external app
+              </span>
+            </div>
+          )}
+          
           <Textarea
             placeholder="Share something about yourself..."
             value={caption}
             onChange={(e) => {
               if (e.target.value.length <= 500) {
                 setCaption(e.target.value);
+                if (isSharedContent) setIsSharedContent(false); // Remove indicator once user edits
               }
             }}
             className="min-h-[100px] max-h-[200px] resize-none text-base border-0 p-0 focus-visible:ring-0"
