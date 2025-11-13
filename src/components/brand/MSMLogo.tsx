@@ -28,8 +28,8 @@ export const MSMLogo = ({
     );
   }
 
-  // Logo Icon Component
-  const LogoIcon = ({ size = 42 }: { size?: number }) => (
+  // Logo Icon Component (20% bigger)
+  const LogoIcon = ({ size = 50 }: { size?: number }) => (
     <motion.div
       className={cn(
         "flex items-center justify-center"
@@ -60,7 +60,7 @@ export const MSMLogo = ({
         whileTap={{ scale: 0.97 }}
         aria-label="MuslimSoulmate.ai"
       >
-        <LogoIcon size={42} />
+        <LogoIcon size={50} />
       </motion.button>
     );
   }
@@ -81,7 +81,7 @@ export const MSMLogo = ({
         whileTap={onClick ? { scale: 0.97, opacity: 0.9 } : undefined}
         aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
       >
-        <LogoIcon size={37} />
+        <LogoIcon size={44} />
         <span className="text-lg font-bold text-primary-forest leading-none">
           MuslimSoulmate.ai
         </span>
@@ -104,7 +104,7 @@ export const MSMLogo = ({
       whileTap={onClick ? { scale: 0.97, opacity: 0.9 } : undefined}
       aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
     >
-      <LogoIcon size={42} />
+      <LogoIcon size={50} />
       <div className="flex flex-col items-start">
         <span className="text-xl font-bold text-primary-forest leading-none">
           MuslimSoulmate.ai

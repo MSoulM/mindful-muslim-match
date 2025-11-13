@@ -185,7 +185,7 @@ const ProfileScreen = () => {
             icon={<Edit2 className="w-6 h-6" />}
             title="Edit Profile"
             description="Photos, bio, basics"
-            onClick={() => console.log('Edit profile')}
+            onClick={() => navigate('/onboarding/basic-info')}
             className="rounded-none"
           />
           
@@ -193,7 +193,7 @@ const ProfileScreen = () => {
             icon={<Sliders className="w-6 h-6" />}
             title="Preferences"
             description="Age, location, values"
-            onClick={() => console.log('Preferences')}
+            onClick={() => navigate('/onboarding/preferences')}
             className="rounded-none"
           />
           
