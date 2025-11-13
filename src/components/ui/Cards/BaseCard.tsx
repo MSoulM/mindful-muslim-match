@@ -53,7 +53,7 @@ export const BaseCard = ({
           }
         : {})}
       className={cn(
-        'bg-white border border-neutral-200',
+        'bg-card border-border',
         'transition-all duration-200',
         paddingClasses[padding],
         shadowClasses[shadow],

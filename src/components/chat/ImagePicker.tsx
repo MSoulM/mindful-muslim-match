@@ -173,10 +173,10 @@ export const ImagePicker = ({
 
                     {/* File info */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                      <p className="text-xs text-white truncate">
+                      <p className="text-xs text-overlay-light truncate">
                         {selectedFiles[index].name}
                       </p>
-                      <p className="text-xs text-white/70">
+                      <p className="text-xs text-overlay-light/70">
                         {(selectedFiles[index].size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>

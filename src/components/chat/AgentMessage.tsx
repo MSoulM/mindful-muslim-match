@@ -64,7 +64,7 @@ export const AgentMessage = ({
             'px-4 py-3',
             variant === 'highlight'
               ? 'bg-primary-gold/5 border-primary-gold/20'
-              : 'bg-white border-neutral-100'
+              : 'bg-card border-border'
           )}
         >
           {/* Title */}
