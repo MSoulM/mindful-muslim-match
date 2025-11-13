@@ -116,7 +116,7 @@ export const PerformanceMonitor = () => {
             }`}
             title={fps >= 55 ? 'Excellent' : fps >= 30 ? 'Acceptable' : 'Poor'}
           />
-          <span className="text-[10px] text-white/60">
+          <span className="text-xs text-white/60">
             {fps >= 55 ? 'Excellent' : fps >= 30 ? 'Acceptable' : 'Poor'}
           </span>
         </div>
@@ -129,7 +129,7 @@ export const PerformanceMonitor = () => {
               <div>
                 <div className="font-semibold mb-1 text-yellow-400">Slowest Renders (p95):</div>
                 {report.overall.slowestRenders.map((item, i) => (
-                  <div key={i} className="flex justify-between text-[10px] text-white/80">
+                  <div key={i} className="flex justify-between text-xs text-white/80">
                     <span className="truncate mr-2">{item.name}</span>
                     <span className="whitespace-nowrap">{item.p95.toFixed(1)}ms</span>
                   </div>
@@ -141,7 +141,7 @@ export const PerformanceMonitor = () => {
               <div>
                 <div className="font-semibold mb-1 text-blue-400">Slowest APIs (p95):</div>
                 {report.overall.slowestApis.map((item, i) => (
-                  <div key={i} className="flex justify-between text-[10px] text-white/80">
+                  <div key={i} className="flex justify-between text-xs text-white/80">
                     <span className="truncate mr-2">{item.name}</span>
                     <span className="whitespace-nowrap">{item.p95.toFixed(0)}ms</span>
                   </div>
@@ -149,7 +149,7 @@ export const PerformanceMonitor = () => {
               </div>
             )}
 
-            <div className="text-[10px] text-white/60 pt-2 border-t border-white/10">
+            <div className="text-xs text-white/60 pt-2 border-t border-white/10">
               Total metrics: {report.overall.totalMetrics}
             </div>
           </div>

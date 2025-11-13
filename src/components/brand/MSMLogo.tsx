@@ -109,7 +109,7 @@ export const MSMLogo = ({
         <span className="text-xl font-bold text-primary-forest leading-none">
           MuslimSoulmate.ai
         </span>
-        <span className="text-[10px] font-semibold text-primary-gold leading-none mt-0.5">
+        <span className="text-xs font-semibold text-primary-gold leading-none mt-0.5">
           Mindful Matchmaking
         </span>
       </div>
