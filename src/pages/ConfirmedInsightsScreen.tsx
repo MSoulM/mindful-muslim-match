@@ -10,6 +10,16 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/states/EmptyState';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Insight {
   id: string;
@@ -25,6 +35,8 @@ interface Insight {
 const ConfirmedInsightsScreen = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [insightToDelete, setInsightToDelete] = useState<{ id: string; title: string } | null>(null);
   
   const [confirmedInsights, setConfirmedInsights] = useState<Insight[]>([
     {
@@ -69,18 +81,28 @@ const ConfirmedInsightsScreen = () => {
     },
   ]);
 
-  const handleDelete = (insightId: string, title: string) => {
-    setConfirmedInsights(prev => prev.filter(insight => insight.id !== insightId));
+  const openDeleteDialog = (insightId: string, title: string) => {
+    setInsightToDelete({ id: insightId, title });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!insightToDelete) return;
+
+    setConfirmedInsights(prev => prev.filter(insight => insight.id !== insightToDelete.id));
     
     toast({
       title: "Insight removed",
-      description: `"${title}" has been removed from your confirmed insights.`,
+      description: `"${insightToDelete.title}" has been removed from your confirmed insights.`,
     });
 
     // Haptic feedback
     if ('vibrate' in navigator) {
       navigator.vibrate(10);
     }
+
+    setDeleteDialogOpen(false);
+    setInsightToDelete(null);
   };
 
   return (
@@ -172,7 +194,7 @@ const ConfirmedInsightsScreen = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(insight.id, insight.title)}
+                      onClick={() => openDeleteDialog(insight.id, insight.title)}
                       className="w-full text-semantic-error hover:text-semantic-error hover:bg-semantic-error/10"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -185,6 +207,27 @@ const ConfirmedInsightsScreen = () => {
           </>
         )}
       </ScreenContainer>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Insight?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove "{insightToDelete?.title}"? This insight will no longer be used for matching.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-semantic-error hover:bg-semantic-error/90 text-white"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
