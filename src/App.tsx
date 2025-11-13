@@ -62,8 +62,9 @@ import FormOptimizationDemo from "./pages/FormOptimizationDemo";
 import FormNavigationDemo from "./pages/FormNavigationDemo";
 import ResponsiveDemo from "./pages/ResponsiveDemo";
 import AccessibilityDemo from "./pages/AccessibilityDemo";
-import ThemeCustomizationScreen from "./pages/ThemeCustomizationScreen";
 import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -360,11 +361,6 @@ const AnimatedRoutes = () => {
                 <AccessibilityDemo />
               </motion.div>
             } />
-            <Route path="/dev/theme" element={
-              <motion.div {...pageTransition} transition={pageTransitionConfig}>
-                <ThemeCustomizationScreen />
-              </motion.div>
-            } />
           </>
         )}
         
@@ -380,13 +376,23 @@ const AnimatedRoutes = () => {
 };
 
 const App = () => (
-  <TooltipProvider>
-    <Toaster />
-    <Sonner />
-    <BrowserRouter>
-      <AnimatedRoutes />
-    </BrowserRouter>
-  </TooltipProvider>
+  <QueryClientProvider client={queryClient}>
+    <AppProvider>
+      <UserProvider>
+        <MatchesProvider>
+          <DNAProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AnimatedRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </DNAProvider>
+        </MatchesProvider>
+      </UserProvider>
+    </AppProvider>
+  </QueryClientProvider>
 );
 
 export default App;
