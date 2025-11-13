@@ -15,7 +15,6 @@ import {
 } from 'recharts';
 import { Camera, Video, Clock, MapPin } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
-import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Card } from '@/components/ui/card';
 import { useEngagementAnalytics } from '@/hooks/useAnalytics';
@@ -37,10 +36,10 @@ export const EngagementAnalyticsScreen = () => {
   ] : [];
 
   return (
-    <ScreenContainer className="bg-background">
+    <ScreenContainer className="bg-background" hasBottomNav={false}>
       <TopBar variant="back" title="Engagement Analytics" onBackClick={() => window.history.back()} />
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto">
         {/* Engagement Overview */}
         {metrics && (
           <div className="px-4 py-4">
@@ -172,8 +171,6 @@ export const EngagementAnalyticsScreen = () => {
           </Card>
         </div>
       </div>
-
-      <BottomNav activeTab="analytics" onTabChange={() => {}} />
     </ScreenContainer>
   );
 };

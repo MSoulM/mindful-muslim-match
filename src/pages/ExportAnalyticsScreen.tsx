@@ -6,7 +6,6 @@
 import { useState } from 'react';
 import { FileDown, Mail, Save, Calendar, Check } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
-import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -91,10 +90,10 @@ export const ExportAnalyticsScreen = () => {
   };
 
   return (
-    <ScreenContainer className="bg-background">
+    <ScreenContainer className="bg-background" hasBottomNav={false}>
       <TopBar variant="back" title="Export Analytics" onBackClick={() => window.history.back()} />
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto">
         {/* Export Format */}
         <div className="px-4 py-4">
           <h3 className="text-lg font-semibold mb-3">Export Format</h3>
@@ -206,8 +205,6 @@ export const ExportAnalyticsScreen = () => {
           </Button>
         </div>
       </div>
-
-      <BottomNav activeTab="analytics" onTabChange={() => {}} />
     </ScreenContainer>
   );
 };
