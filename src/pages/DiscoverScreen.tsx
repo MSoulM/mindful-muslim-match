@@ -30,6 +30,13 @@ interface Match {
   };
 }
 
+interface InProgressChat {
+  id: string;
+  name: string;
+  avatar: string;
+  messageCount: number;
+}
+
 const sampleMatches: Match[] = [
   {
     id: 'match-1',
@@ -75,6 +82,21 @@ const sampleMatches: Match[] = [
       topicsCount: 16,
       strength: 'Moderate'
     }
+  },
+];
+
+const inProgressChats: InProgressChat[] = [
+  {
+    id: '3',
+    name: 'Ahmad R.',
+    avatar: '👤',
+    messageCount: 8,
+  },
+  {
+    id: '4',
+    name: 'Fatima K.',
+    avatar: '👩',
+    messageCount: 5,
   },
 ];
 
@@ -275,6 +297,58 @@ export default function DiscoverScreen() {
                   </motion.div>
                 ))}
               </div>
+            )}
+
+            {/* In Progress ChaiChat Section */}
+            {inProgressChats.length > 0 && (matches.length > 0 || matches.length === 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="mt-8"
+              >
+                <h2 className="text-lg font-bold text-foreground mb-3">
+                  💬 ChaiChat In Progress ({inProgressChats.length})
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  AI is analyzing these conversations to determine compatibility
+                </p>
+                <div className="space-y-3">
+                  {inProgressChats.map((chat, index) => (
+                    <motion.div
+                      key={chat.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: 0.4 + index * 0.05 }}
+                      className="bg-card rounded-xl shadow-sm border-l-4 border-warning overflow-hidden animate-pulse"
+                    >
+                      <div className="p-4 flex items-center gap-3">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-2xl bg-muted">
+                          {chat.avatar}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-foreground">{chat.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-warning">⏳ In progress</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{chat.messageCount} messages analyzed</span>
+                          </div>
+                        </div>
+
+                        {/* Loading Indicator */}
+                        <div className="flex-shrink-0">
+                          <div className="w-6 h-6 border-2 border-warning border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
             )}
 
             {/* Empty State */}
