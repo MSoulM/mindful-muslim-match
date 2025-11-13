@@ -4,22 +4,13 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { 
   Camera, 
   X, 
-  ChevronDown, 
-  ChevronUp,
-  MapPin,
-  Calendar,
-  MessageSquare,
   Image as ImageIcon,
   Video
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { compressImage, formatFileSize } from '@/utils/imageCompression';
@@ -46,11 +37,6 @@ export default function CreatePostScreen() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [caption, setCaption] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [privacy, setPrivacy] = useState('everyone');
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [enableComments, setEnableComments] = useState(true);
-  const [addLocation, setAddLocation] = useState(false);
-  const [schedulePost, setSchedulePost] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -341,118 +327,6 @@ export default function CreatePostScreen() {
               </button>
             ))}
           </div>
-        </div>
-
-          
-          <RadioGroup value={privacy} onValueChange={setPrivacy} className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem value="everyone" id="everyone" />
-              <Label htmlFor="everyone" className="flex-1 cursor-pointer">
-                <div>
-                  <p className="font-medium text-sm">Everyone</p>
-                  <p className="text-xs text-muted-foreground">Public to all users</p>
-                </div>
-              </Label>
-            </div>
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem value="matches" id="matches" />
-              <Label htmlFor="matches" className="flex-1 cursor-pointer">
-                <div>
-                  <p className="font-medium text-sm">Matches Only</p>
-                  <p className="text-xs text-muted-foreground">Only your matches can see</p>
-                </div>
-              </Label>
-            </div>
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem value="premium" id="premium" />
-              <Label htmlFor="premium" className="flex-1 cursor-pointer">
-                <div>
-                  <p className="font-medium text-sm">Premium Members</p>
-                  <p className="text-xs text-muted-foreground">Only premium users</p>
-                </div>
-              </Label>
-            </div>
-            <div className="flex items-center space-x-3">
-              <RadioGroupItem value="private" id="private" />
-              <Label htmlFor="private" className="flex-1 cursor-pointer">
-                <div>
-                  <p className="font-medium text-sm">Private</p>
-                  <p className="text-xs text-muted-foreground">Only you can see</p>
-                </div>
-              </Label>
-            </div>
-          </RadioGroup>
-
-          <p className="text-xs text-muted-foreground mt-3">
-            This affects your DNA score visibility
-          </p>
-        </div>
-
-        <Separator />
-
-        {/* Advanced Options */}
-        <div className="bg-background">
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between p-5 hover:bg-muted/50 transition-colors"
-          >
-            <h3 className="font-semibold text-sm">Advanced Options</h3>
-            {showAdvanced ? (
-              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            )}
-          </button>
-
-          <AnimatePresence>
-            {showAdvanced && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="px-5 pb-5 space-y-4">
-                  {/* Enable Comments */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-sm">Enable Comments</p>
-                        <p className="text-xs text-muted-foreground">Allow others to comment</p>
-                      </div>
-                    </div>
-                    <Switch checked={enableComments} onCheckedChange={setEnableComments} />
-                  </div>
-
-                  {/* Add Location */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-sm">Add Location</p>
-                        <p className="text-xs text-muted-foreground">Shows city only</p>
-                      </div>
-                    </div>
-                    <Switch checked={addLocation} onCheckedChange={setAddLocation} />
-                  </div>
-
-                  {/* Schedule Post */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-sm">Schedule Post</p>
-                        <p className="text-xs text-muted-foreground">Post at a later time</p>
-                      </div>
-                    </div>
-                    <Switch checked={schedulePost} onCheckedChange={setSchedulePost} />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {/* Bottom Spacing */}
