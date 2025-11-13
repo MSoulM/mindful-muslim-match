@@ -113,7 +113,7 @@ export default function DNAScreen() {
 
   const handleCreatePost = () => {
     hapticFeedback('medium');
-    navigate('/dna/create');
+    navigate('/create-post');
   };
 
   const handlePostTypeClick = (typeId: string) => {
@@ -283,7 +283,7 @@ export default function DNAScreen() {
                 {/* Content */}
                 <div className="flex-1 text-left">
                   <p className="text-lg font-bold text-white mb-0.5">
-                    Create a Post
+                    Share Something
                   </p>
                   <p className="text-sm text-white/85">
                     Share to enhance your DNA

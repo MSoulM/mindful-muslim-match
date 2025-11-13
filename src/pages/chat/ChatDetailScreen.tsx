@@ -302,22 +302,35 @@ export const ChatDetailScreen = () => {
           <Button
             variant="ghost"
             size="icon"
-            disabled
-            className="opacity-50"
-            title="Coming Soon"
+            onClick={() => {
+              toast({
+                title: "Video Call",
+                description: "Starting video call with " + matchName,
+              });
+            }}
+            title="Video Call"
           >
             <Video className="h-5 w-5" />
           </Button>
+          
           <Button
             variant="ghost"
             size="icon"
-            disabled
-            className="opacity-50"
-            title="Coming Soon"
+            onClick={() => {
+              toast({
+                title: "Voice Call",
+                description: "Starting voice call with " + matchName,
+              });
+            }}
+            title="Voice Call"
           >
             <Phone className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon">
+          
+          <Button
+            variant="ghost"
+            size="icon"
+          >
             <MoreVertical className="h-5 w-5" />
           </Button>
         </div>

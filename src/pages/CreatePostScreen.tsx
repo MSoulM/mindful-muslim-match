@@ -196,7 +196,7 @@ export default function CreatePostScreen() {
           <Button variant="ghost" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
-          <h1 className="text-base font-semibold">Create Post</h1>
+          <h1 className="text-base font-semibold">Share Something</h1>
           <Button 
             variant="ghost" 
             size="sm"
@@ -487,6 +487,7 @@ export default function CreatePostScreen() {
         ref={fileInputRef}
         type="file"
         accept="image/*,video/*"
+        capture="environment"
         multiple
         onChange={handleMediaSelect}
         className="hidden"
