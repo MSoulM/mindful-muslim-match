@@ -14,12 +14,13 @@ interface DNACategoryCardProps {
   onClick?: () => void;
   className?: string;
 }
+// DNA category color mapping using semantic tokens
 const categoryColors: Record<string, string> = {
-  'values': '#0D7377',
-  'interests': '#FF6B6B',
-  'personality': '#8B7AB8',
-  'lifestyle': '#0066CC',
-  'goals': '#FDB813'
+  'values': 'dna-values',
+  'interests': 'dna-interests',
+  'personality': 'dna-personality',
+  'lifestyle': 'dna-lifestyle',
+  'goals': 'dna-goals'
 };
 const rarityEmoji = {
   'ultra-rare': '🏆',
@@ -44,7 +45,8 @@ export const DNACategoryCard = ({
   onClick,
   className
 }: DNACategoryCardProps) => {
-  const fingerprintColor = categoryId ? categoryColors[categoryId] || '#0A3A2E' : '#0A3A2E';
+  // Get fingerprint color from category
+  const fingerprintColor = categoryId ? `hsl(var(--dna-${categoryId}))` : 'hsl(var(--primary-forest))';
   return <BaseCard padding="md" shadow="sm" interactive={!!onClick} onClick={onClick} className={cn('min-h-[96px]', className)}>
       <div className="flex items-start gap-4">
         {/* Icon */}
