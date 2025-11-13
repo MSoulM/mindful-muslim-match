@@ -101,7 +101,7 @@ export const BottomNav = ({
                 {/* Label */}
                 <span
                   className={cn(
-                    "text-[11px] font-medium leading-none",
+                    "text-sm font-medium leading-none",
                     isActive ? "text-primary-forest" : "text-neutral-500"
                   )}
                 >
@@ -165,7 +165,7 @@ export const BottomNav = ({
                     role="status"
                     aria-label={`${tab.badge} ${tab.label.toLowerCase()} notifications`}
                   >
-                    <span className="text-[10px] font-bold text-white leading-none" aria-hidden="true">
+                    <span className="text-xs font-bold text-white leading-none" aria-hidden="true">
                       {tab.badge > 9 ? '9+' : tab.badge}
                     </span>
                   </motion.div>
@@ -175,7 +175,7 @@ export const BottomNav = ({
               {/* Label */}
               <span
                 className={cn(
-                  "text-[11px] font-medium leading-none transition-colors duration-200",
+                  "text-sm font-medium leading-none transition-colors duration-200",
                   isActive ? "text-primary-forest" : "text-neutral-500"
                 )}
               >

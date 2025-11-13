@@ -22,9 +22,9 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          forest: '#0A3A2E',
-          gold: '#D4A574',
-          pink: '#F8B4D9',
+          forest: "hsl(var(--primary-forest))",
+          gold: "hsl(var(--primary-gold))",
+          pink: "hsl(var(--primary-pink))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -73,10 +73,21 @@ export default {
           900: '#171717',
         },
         semantic: {
-          success: '#10B981',
-          error: '#EF4444',
-          warning: '#F59E0B',
-          info: '#3B82F6',
+          success: "hsl(var(--success))",
+          error: "hsl(var(--error))",
+          warning: "hsl(var(--warning))",
+          info: "hsl(var(--info))",
+        },
+        dna: {
+          values: "hsl(var(--dna-values))",
+          interests: "hsl(var(--dna-interests))",
+          personality: "hsl(var(--dna-personality))",
+          lifestyle: "hsl(var(--dna-lifestyle))",
+          goals: "hsl(var(--dna-goals))",
+        },
+        overlay: {
+          dark: "hsl(var(--overlay-dark))",
+          light: "hsl(var(--overlay-light))",
         },
       },
       spacing: {

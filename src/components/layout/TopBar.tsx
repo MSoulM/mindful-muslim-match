@@ -100,7 +100,7 @@ export const TopBar = ({
                   className="absolute top-2 right-2 w-[18px] h-[18px] rounded-full bg-semantic-error flex items-center justify-center"
                   aria-label={`${notificationCount} unread notifications`}
                 >
-                  <span className="text-[10px] font-bold text-white leading-none" aria-hidden="true">
+                  <span className="text-xs font-bold text-white leading-none" aria-hidden="true">
                     {notificationCount > 99 ? '99+' : notificationCount}
                   </span>
                 </motion.div>
