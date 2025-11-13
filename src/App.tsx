@@ -60,6 +60,7 @@ import AnimationDemoScreen from "./pages/AnimationDemoScreen";
 import EmptyStateShowcase from "./pages/EmptyStateShowcase";
 import FormOptimizationDemo from "./pages/FormOptimizationDemo";
 import FormNavigationDemo from "./pages/FormNavigationDemo";
+import ResponsiveDemo from "./pages/ResponsiveDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
