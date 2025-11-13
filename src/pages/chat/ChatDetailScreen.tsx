@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSwipeable } from 'react-swipeable';
 import { ArrowLeft, MoreVertical } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -41,6 +42,14 @@ export const ChatDetailScreen = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Swipe gesture for back navigation
+  const swipeHandlers = useSwipeable({
+    onSwipedRight: () => navigate(-1),
+    trackMouse: false,
+    delta: 50, // minimum swipe distance
+    preventScrollOnSwipe: false,
+  });
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -253,7 +262,7 @@ export const ChatDetailScreen = () => {
   const messageGroups = groupMessagesByDate(messages);
   
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div {...swipeHandlers} className="flex flex-col h-screen bg-background">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-card border-b border-border safe-top">
         <div className="flex items-center gap-3 flex-1 min-w-0">
