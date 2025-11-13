@@ -58,7 +58,7 @@ const ProfileScreen = () => {
   };
 
   const handleEditProfile = () => {
-    console.log('Edit profile');
+    navigate('/edit-profile');
   };
 
   if (!user) {
@@ -185,7 +185,7 @@ const ProfileScreen = () => {
             icon={<Edit2 className="w-6 h-6" />}
             title="Edit Profile"
             description="Photos, bio, basics"
-            onClick={() => navigate('/onboarding/basic-info')}
+            onClick={() => navigate('/edit-profile')}
             className="rounded-none"
           />
           
