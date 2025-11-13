@@ -14,6 +14,7 @@ import { SkipLink } from '@/components/ui/accessibility/SkipLink';
 import { ScreenReaderAnnounce } from '@/components/ui/accessibility/ScreenReaderAnnounce';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface Match {
   id: string;
@@ -121,6 +122,7 @@ export default function DiscoverScreen() {
   const [announcement, setAnnouncement] = useState('');
   const { unreadCount } = useNotifications();
   const { pendingCount } = useChaiChatPending();
+  const { unreadCount: unreadMessagesCount } = useUnreadMessages();
   const [toast, setToast] = useState<{
     isOpen: boolean;
     type: 'success' | 'error' | 'warning' | 'info';
@@ -385,7 +387,7 @@ export default function DiscoverScreen() {
           activeTab={activeTab}
           onTabChange={handleTabChange}
           chaiChatBadge={pendingCount}
-          messagesBadge={3}
+          messagesBadge={unreadMessagesCount}
         />
 
         {/* Toast Notifications */}

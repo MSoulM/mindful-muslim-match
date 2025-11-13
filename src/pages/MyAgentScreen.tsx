@@ -10,6 +10,7 @@ import { FeatureCard } from '@/components/ui/Cards/FeatureCard';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { Button } from '@/components/ui/Button';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { cn } from '@/lib/utils';
 
 const MyAgentScreen = () => {
@@ -17,6 +18,7 @@ const MyAgentScreen = () => {
   const [activeTab, setActiveTab] = useState('myagent');
   const [showQuickActions, setShowQuickActions] = useState(false);
   const { pendingCount } = useChaiChatPending();
+  const { unreadCount: unreadMessagesCount } = useUnreadMessages();
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -210,6 +212,7 @@ const MyAgentScreen = () => {
       <BottomNav 
         activeTab={activeTab} 
         chaiChatBadge={pendingCount}
+        messagesBadge={unreadMessagesCount}
         onTabChange={(tabId) => {
           setActiveTab(tabId);
         if (tabId === 'discover') navigate('/discover');

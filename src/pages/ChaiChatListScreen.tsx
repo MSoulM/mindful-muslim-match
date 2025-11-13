@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { useChaiChatNotifications } from '@/hooks/useChaiChatNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { toast } from 'sonner';
 
 interface ChaiChatItem {
@@ -29,6 +30,7 @@ const ChaiChatListScreen = () => {
   const [showCompleted, setShowCompleted] = useState(false);
   const { unreadChaiChatCount, chaiChatNotifications, markAllChaiChatAsRead } = useChaiChatNotifications();
   const { pendingCount } = useChaiChatPending();
+  const { unreadCount: unreadMessagesCount } = useUnreadMessages();
 
   // Mark all ChaiChat notifications as read when viewing this screen
   useEffect(() => {
@@ -352,7 +354,7 @@ const ChaiChatListScreen = () => {
       <BottomNav 
         activeTab={activeTab} 
         chaiChatBadge={pendingCount}
-        messagesBadge={3}
+        messagesBadge={unreadMessagesCount}
         onTabChange={(tabId) => {
           setActiveTab(tabId);
           if (tabId === 'discover') navigate('/discover');

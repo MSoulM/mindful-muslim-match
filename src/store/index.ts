@@ -50,3 +50,6 @@ export type * from '@/types/store.types';
 // ChaiChat Hooks
 export { useChaiChatPending } from '@/hooks/useChaiChatPending';
 export { useChaiChatNotifications } from '@/hooks/useChaiChatNotifications';
+
+// Messages Hooks
+export { useUnreadMessages } from '@/hooks/useUnreadMessages';
