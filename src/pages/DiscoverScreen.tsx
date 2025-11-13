@@ -361,7 +361,7 @@ export default function DiscoverScreen() {
                 description="Your agent is carefully curating matches that align with your values. New matches arrive every Sunday."
                 action={{
                   label: "Improve My Profile",
-                  onClick: () => navigate('/profile/edit')
+                  onClick: () => navigate('/dna')
                 }}
               />
             )}
