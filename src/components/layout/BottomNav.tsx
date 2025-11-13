@@ -18,6 +18,8 @@ interface BottomNavProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
   tabs?: NavTab[];
+  chaiChatBadge?: number;
+  messagesBadge?: number;
 }
 
 const defaultTabs: NavTab[] = [
@@ -32,7 +34,20 @@ export const BottomNav = ({
   activeTab,
   onTabChange,
   tabs = defaultTabs,
+  chaiChatBadge = 0,
+  messagesBadge = 0,
 }: BottomNavProps) => {
+  // Override default badge counts with dynamic ones
+  const tabsWithDynamicBadges = tabs.map(tab => {
+    if (tab.id === 'chaichat') {
+      return { ...tab, badge: chaiChatBadge };
+    }
+    if (tab.id === 'messages') {
+      return { ...tab, badge: messagesBadge };
+    }
+    return tab;
+  });
+
   return (
     <motion.nav
       role="navigation"
@@ -44,7 +59,7 @@ export const BottomNav = ({
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="h-[60px] flex items-stretch justify-around">
-        {tabs.map((tab) => {
+        {tabsWithDynamicBadges.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
 
