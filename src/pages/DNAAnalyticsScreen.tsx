@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
+import { motion } from 'framer-motion';
 import {
   Radar,
   RadarChart,
@@ -57,7 +58,14 @@ export const DNAAnalyticsScreen = () => {
         <div className="w-2 h-2 rounded-full bg-muted" />
       </div>
 
-      <div {...swipeHandlers} className="flex-1 overflow-y-auto">
+      <motion.div 
+        {...swipeHandlers} 
+        className="flex-1 overflow-y-auto"
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: -100, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
         {/* DNA Composition Radar */}
         <div className="px-4 py-4">
           <Card className="p-4">
@@ -210,7 +218,7 @@ export const DNAAnalyticsScreen = () => {
             </div>
           </Card>
         </div>
-      </div>
+      </motion.div>
     </ScreenContainer>
   );
 };

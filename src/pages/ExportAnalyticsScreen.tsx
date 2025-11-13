@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
+import { motion } from 'framer-motion';
 import { FileDown, Mail, Save, Calendar, Check } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -110,7 +111,14 @@ export const ExportAnalyticsScreen = () => {
         <div className="w-2 h-2 rounded-full bg-primary" />
       </div>
 
-      <div {...swipeHandlers} className="flex-1 overflow-y-auto">
+      <motion.div 
+        {...swipeHandlers} 
+        className="flex-1 overflow-y-auto"
+        initial={{ x: 100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 100, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
         {/* Export Format */}
         <div className="px-4 py-4">
           <h3 className="text-lg font-semibold mb-3">Export Format</h3>
@@ -221,7 +229,7 @@ export const ExportAnalyticsScreen = () => {
             {isExporting ? 'Exporting...' : 'Export Analytics'}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </ScreenContainer>
   );
 };

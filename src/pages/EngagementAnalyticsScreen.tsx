@@ -5,6 +5,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
+import { motion } from 'framer-motion';
 import {
   BarChart,
   Bar,
@@ -57,7 +58,14 @@ export const EngagementAnalyticsScreen = () => {
         <div className="w-2 h-2 rounded-full bg-muted" />
       </div>
 
-      <div {...swipeHandlers} className="flex-1 overflow-y-auto">
+      <motion.div 
+        {...swipeHandlers} 
+        className="flex-1 overflow-y-auto"
+        initial={{ x: 0, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: 100, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
         {/* Engagement Overview */}
         {metrics && (
           <div className="px-4 py-4">
@@ -188,7 +196,7 @@ export const EngagementAnalyticsScreen = () => {
             </ul>
           </Card>
         </div>
-      </div>
+      </motion.div>
     </ScreenContainer>
   );
 };
