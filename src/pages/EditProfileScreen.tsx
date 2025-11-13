@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { TextInput } from '@/components/ui/Input/TextInput';
 import { TextArea } from '@/components/ui/Input/TextArea';
-import { Camera, MapPin, Calendar } from 'lucide-react';
+import { Camera, MapPin, Calendar, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
+import { compressImage } from '@/utils/imageCompression';
 
 const EditProfileScreen = () => {
   const navigate = useNavigate();
@@ -22,6 +23,9 @@ const EditProfileScreen = () => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -35,7 +39,57 @@ const EditProfileScreen = () => {
   };
 
   const handlePhotoEdit = () => {
-    toast.info('Photo upload coming soon!');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (20MB max)
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Image must be smaller than 20MB');
+      return;
+    }
+
+    try {
+      setIsCompressing(true);
+      
+      // Compress image
+      const compressedFile = await compressImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.8,
+        maxSizeMB: 2
+      });
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(compressedFile);
+      setPhotoPreview(previewUrl);
+      
+      toast.success('Photo uploaded successfully!');
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      toast.error('Failed to process image');
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   if (!user) return null;
@@ -54,18 +108,49 @@ const EditProfileScreen = () => {
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handlePhotoEdit}
+            disabled={isCompressing}
             className="relative inline-block"
           >
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 to-primary/60 flex items-center justify-center">
-              <span className="text-4xl font-bold text-white">{user.initials}</span>
-            </div>
+            {photoPreview ? (
+              <img 
+                src={photoPreview} 
+                alt="Profile preview"
+                className="w-32 h-32 rounded-full object-cover border-4 border-primary/20"
+              />
+            ) : (
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 to-primary/60 flex items-center justify-center">
+                <span className="text-4xl font-bold text-white">{user.initials}</span>
+              </div>
+            )}
             <div className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center border-4 border-background shadow-lg">
               <Camera className="w-5 h-5 text-primary-foreground" />
             </div>
           </motion.button>
+          
+          {photoPreview && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              onClick={handleRemovePhoto}
+              className="mt-3 text-sm text-destructive hover:text-destructive/80 flex items-center gap-2 mx-auto"
+            >
+              <X className="w-4 h-4" />
+              Remove photo
+            </motion.button>
+          )}
+          
           <p className="text-sm text-muted-foreground mt-3">
-            Tap to change photo
+            {isCompressing ? 'Compressing image...' : 'Tap to change photo'}
           </p>
+          
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
         </div>
 
         {/* Form Fields */}
