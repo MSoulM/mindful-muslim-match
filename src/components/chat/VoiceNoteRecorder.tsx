@@ -146,7 +146,7 @@ export const VoiceNoteRecorder = ({
           <div className="relative">
             <div className="absolute inset-0 bg-destructive/20 rounded-full animate-ping" />
             <div className="relative h-20 w-20 bg-destructive rounded-full flex items-center justify-center">
-              <div className="h-6 w-6 bg-white rounded-full" />
+              <div className="h-6 w-6 bg-background rounded-full" />
             </div>
           </div>
 
