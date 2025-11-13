@@ -55,6 +55,8 @@ import { AnalyticsScreen } from "./pages/AnalyticsScreen";
 import { DNAAnalyticsScreen } from "./pages/DNAAnalyticsScreen";
 import { EngagementAnalyticsScreen } from "./pages/EngagementAnalyticsScreen";
 import { ExportAnalyticsScreen } from "./pages/ExportAnalyticsScreen";
+import AnimationShowcase from "./pages/AnimationShowcase";
+import AnimationDemoScreen from "./pages/AnimationDemoScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -257,6 +259,18 @@ const AnimatedRoutes = () => {
         <Route path="/post-success" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <PostSuccessScreen />
+          </motion.div>
+        } />
+        
+        {/* Animation Demo Routes */}
+        <Route path="/animations-demo" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <AnimationDemoScreen />
+          </motion.div>
+        } />
+        <Route path="/animations-showcase" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <AnimationShowcase />
           </motion.div>
         } />
         
