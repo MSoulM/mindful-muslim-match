@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 import { compressImage } from '@/utils/imageCompression';
+import { CropModal } from '@/components/ui/CropModal';
 
 const EditProfileScreen = () => {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ const EditProfileScreen = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
@@ -61,24 +64,56 @@ const EditProfileScreen = () => {
     try {
       setIsCompressing(true);
       
-      // Compress image
-      const compressedFile = await compressImage(file, {
+      // Create preview URL for cropping
+      const previewUrl = URL.createObjectURL(file);
+      setImageToCrop(previewUrl);
+      setCropModalOpen(true);
+    } catch (error) {
+      console.error('Error loading image:', error);
+      toast.error('Failed to load image');
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    try {
+      setIsCompressing(true);
+
+      // Convert blob to file for compression
+      const croppedFile = new File([croppedImageBlob], 'cropped-image.jpg', {
+        type: 'image/jpeg',
+      });
+
+      // Compress the cropped image
+      const compressedFile = await compressImage(croppedFile, {
         maxWidth: 1024,
         maxHeight: 1024,
         quality: 0.8,
-        maxSizeMB: 2
+        maxSizeMB: 2,
       });
 
       // Create preview URL
       const previewUrl = URL.createObjectURL(compressedFile);
-      setPhotoPreview(previewUrl);
       
-      toast.success('Photo uploaded successfully!');
+      // Clean up old preview if exists
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+      }
+      
+      setPhotoPreview(previewUrl);
+      toast.success('Photo cropped and uploaded successfully!');
     } catch (error) {
-      console.error('Error compressing image:', error);
-      toast.error('Failed to process image');
+      console.error('Error processing cropped image:', error);
+      toast.error('Failed to process cropped image');
     } finally {
       setIsCompressing(false);
+      
+      // Clean up crop image URL
+      if (imageToCrop) {
+        URL.revokeObjectURL(imageToCrop);
+        setImageToCrop(null);
+      }
     }
   };
 
@@ -96,7 +131,20 @@ const EditProfileScreen = () => {
 
   return (
     <>
-      <TopBar 
+      <CropModal
+        open={cropModalOpen}
+        image={imageToCrop || ''}
+        onClose={() => {
+          setCropModalOpen(false);
+          if (imageToCrop) {
+            URL.revokeObjectURL(imageToCrop);
+            setImageToCrop(null);
+          }
+        }}
+        onCropComplete={handleCropComplete}
+      />
+
+      <TopBar
         variant="back"
         title="Edit Profile"
         onBackClick={() => navigate('/profile')}
