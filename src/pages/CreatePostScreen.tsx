@@ -143,23 +143,37 @@ export default function CreatePostScreen() {
   };
 
   const handlePost = async () => {
+    // Validate required fields with helpful messages
     if (media.length === 0) {
-      toast.error('Please add at least one photo or video');
+      toast.error('Please add at least one photo or video to share');
+      fileInputRef.current?.click(); // Open file picker to help user
       return;
     }
+
     if (selectedCategories.length === 0) {
-      toast.error('Please select at least one DNA category');
+      toast.error('Please select at least one DNA category to continue');
+      return;
+    }
+
+    // Validate caption length
+    if (caption.length > 500) {
+      toast.error('Caption must be less than 500 characters');
       return;
     }
 
     setIsPosting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsPosting(false);
-    toast.success('Post shared successfully!');
-    navigate('/post-success');
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast.success('Post shared successfully!');
+      navigate('/post-success');
+    } catch (error) {
+      toast.error('Failed to share post. Please try again.');
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -187,7 +201,7 @@ export default function CreatePostScreen() {
             variant="ghost" 
             size="sm"
             onClick={handlePost}
-            disabled={!isValid || isPosting}
+            disabled={isPosting}
             className="text-primary disabled:text-muted-foreground"
           >
             {isPosting ? 'Posting...' : 'Post'}
@@ -337,14 +351,18 @@ export default function CreatePostScreen() {
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-5 safe-area-bottom z-30">
         <Button
           onClick={handlePost}
-          disabled={!isValid || isPosting}
+          disabled={isPosting}
           className="w-full h-12"
           size="lg"
         >
           {isPosting ? (
             <span>Posting...</span>
           ) : !isValid ? (
-            <span>Add photo and category</span>
+            media.length === 0 ? (
+              <span>Add photo to continue</span>
+            ) : (
+              <span>Select DNA category to continue</span>
+            )
           ) : (
             <span>Share Post</span>
           )}
