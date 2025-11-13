@@ -272,24 +272,24 @@ const AgentChatScreen = () => {
                   
                   {/* Timestamp and Status */}
                   <div className="flex items-center gap-1 mt-1 px-1">
-                    <span className="text-[11px] text-neutral-500">
+                    <span className="text-xs text-neutral-500">
                       {formatTime(message.timestamp)}
                     </span>
                     {message.role === 'user' && message.status && (
                       <>
                         {message.status === 'sending' && (
-                          <span className="text-[11px] text-neutral-400">●</span>
+                          <span className="text-xs text-neutral-400">●</span>
                         )}
                         {message.status === 'sent' && (
-                          <span className="text-[11px] text-neutral-500">✓</span>
+                          <span className="text-xs text-neutral-500">✓</span>
                         )}
                         {message.status === 'delivered' && (
-                          <span className="text-[11px] text-primary-forest">✓✓</span>
+                          <span className="text-xs text-primary-forest">✓✓</span>
                         )}
                         {message.status === 'error' && (
                           <button
                             onClick={() => retryMessage(message.id)}
-                            className="text-[11px] text-semantic-error hover:underline"
+                            className="text-xs text-semantic-error hover:underline"
                           >
                             Retry
                           </button>
