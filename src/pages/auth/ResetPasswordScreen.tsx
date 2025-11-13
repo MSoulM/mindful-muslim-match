@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Key, Mail, Phone, Eye, EyeOff, Check, X, Lock as LockIcon } from 'lucide-react';
 import { AuthLayout } from '@/layouts/AuthLayout';
-import { Input } from '@/components/ui/input';
+import { MobileTextInput } from '@/components/ui/Input/MobileTextInput';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/utils/LoadingSpinner';
 import { cn } from '@/lib/utils';
@@ -227,34 +227,23 @@ export const ResetPasswordScreen = ({ token, onReset }: ResetPasswordScreenProps
 
           <form onSubmit={handleRequestReset} className="space-y-6">
             {/* Contact Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">
-                Email or Phone Number
-              </label>
-              <div className="relative">
-                {inputType === 'email' ? (
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                ) : (
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                )}
-                <Input
-                  type="text"
-                  placeholder="your.email@example.com or +44 7XXX"
-                  value={formData.contact}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData(prev => ({ ...prev, contact: value }));
-                    setInputType(detectInputType(value));
-                    setErrors(prev => ({ ...prev, contact: '' }));
-                  }}
-                  className="h-12 pl-11 rounded-xl border-neutral-300 focus:border-primary"
-                  disabled={isLoading}
-                />
-              </div>
-              {errors.contact && (
-                <p className="text-xs text-destructive mt-1">{errors.contact}</p>
-              )}
-            </div>
+            <MobileTextInput
+              label="Email or Phone Number"
+              type={inputType === 'email' ? 'email' : 'tel'}
+              placeholder={inputType === 'email' ? 'your.email@example.com' : '+44 7XXX'}
+              value={formData.contact}
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, contact: value }));
+                setInputType(detectInputType(value));
+                setErrors(prev => ({ ...prev, contact: '' }));
+              }}
+              icon={inputType === 'email' ? <Mail className="w-5 h-5" /> : <Phone className="w-5 h-5" />}
+              error={errors.contact}
+              disabled={isLoading}
+              required
+              autoFocus
+              floatingLabel={false}
+            />
 
             {/* Submit Button */}
             <Button
@@ -338,33 +327,22 @@ export const ResetPasswordScreen = ({ token, onReset }: ResetPasswordScreenProps
 
         <form onSubmit={handleResetPassword} className="space-y-6">
           {/* New Password Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">
-              New Password
-            </label>
-            <div className="relative">
-              <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-              <Input
-                ref={passwordRef}
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Enter new password"
-                value={formData.password}
-                onChange={(e) => {
-                  setFormData(prev => ({ ...prev, password: e.target.value }));
-                  setErrors(prev => ({ ...prev, password: '' }));
-                }}
-                className="h-12 pl-11 pr-11 rounded-xl border-neutral-300 focus:border-primary"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-neutral-600"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
+          {/* New Password Input */}
+          <MobileTextInput
+            label="New Password"
+            type="password"
+            placeholder="Enter new password"
+            value={formData.password}
+            onChange={(value) => {
+              setFormData(prev => ({ ...prev, password: value }));
+              setErrors(prev => ({ ...prev, password: '' }));
+            }}
+            icon={<LockIcon className="w-5 h-5" />}
+            disabled={isLoading}
+            required
+            floatingLabel={false}
+            showClearButton={false}
+          />
             
             {/* Password Strength Indicator */}
             {formData.password && (
@@ -391,36 +369,23 @@ export const ResetPasswordScreen = ({ token, onReset }: ResetPasswordScreenProps
             {errors.password && (
               <p className="text-xs text-destructive">{errors.password}</p>
             )}
-          </div>
 
           {/* Confirm Password Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">
-              Confirm Password
-            </label>
-            <div className="relative">
-              <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-              <Input
-                ref={confirmRef}
-                type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="Re-enter new password"
-                value={formData.confirmPassword}
-                onChange={(e) => {
-                  setFormData(prev => ({ ...prev, confirmPassword: e.target.value }));
-                  setErrors(prev => ({ ...prev, confirmPassword: '' }));
-                }}
-                className="h-12 pl-11 pr-11 rounded-xl border-neutral-300 focus:border-primary"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-neutral-600"
-                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-              >
-                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
+          <MobileTextInput
+            label="Confirm Password"
+            type="password"
+            placeholder="Re-enter new password"
+            value={formData.confirmPassword}
+            onChange={(value) => {
+              setFormData(prev => ({ ...prev, confirmPassword: value }));
+              setErrors(prev => ({ ...prev, confirmPassword: '' }));
+            }}
+            icon={<LockIcon className="w-5 h-5" />}
+            disabled={isLoading}
+            required
+            floatingLabel={false}
+            showClearButton={false}
+          />
             {formData.confirmPassword && (
               passwordsMatch ? (
                 <p className="text-xs text-green-600 flex items-center gap-1">
@@ -433,7 +398,6 @@ export const ResetPasswordScreen = ({ token, onReset }: ResetPasswordScreenProps
             {errors.confirmPassword && (
               <p className="text-xs text-destructive">{errors.confirmPassword}</p>
             )}
-          </div>
 
           {/* Reset Button */}
           <Button

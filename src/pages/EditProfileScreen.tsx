@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Button } from '@/components/ui/Button';
-import { TextInput } from '@/components/ui/Input/TextInput';
-import { TextArea } from '@/components/ui/Input/TextArea';
+import { MobileTextInput } from '@/components/ui/Input/MobileTextInput';
+import { MobileTextArea } from '@/components/ui/Input/MobileTextArea';
 import { Camera, MapPin, Calendar, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
@@ -205,64 +205,48 @@ const EditProfileScreen = () => {
         {/* Form Fields */}
         <div className="space-y-6">
           {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Full Name
-            </label>
-            <TextInput
-              value={formData.name}
-              onChange={(value) => setFormData({ ...formData, name: value })}
-              placeholder="Enter your name"
-              className="w-full"
-            />
-          </div>
+          <MobileTextInput
+            label="Full Name"
+            value={formData.name}
+            onChange={(value) => setFormData({ ...formData, name: value })}
+            placeholder="Enter your name"
+            required
+            autoFocus
+            floatingLabel={false}
+          />
 
           {/* Bio */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Bio
-            </label>
-            <TextArea
-              value={formData.bio}
-              onChange={(value) => setFormData({ ...formData, bio: value })}
-              placeholder="Tell others about yourself..."
-              maxLength={150}
-              rows={4}
-              className="w-full resize-none"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {formData.bio.length}/150 characters
-            </p>
-          </div>
+          <MobileTextArea
+            label="Bio"
+            value={formData.bio}
+            onChange={(value) => setFormData({ ...formData, bio: value })}
+            placeholder="Tell others about yourself..."
+            maxLength={150}
+            minRows={4}
+            maxRows={6}
+            floatingLabel={false}
+          />
 
           {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              Location
-            </label>
-            <TextInput
-              value={formData.location}
-              onChange={(value) => setFormData({ ...formData, location: value })}
-              placeholder="City, Country"
-              className="w-full"
-            />
-          </div>
+          <MobileTextInput
+            label="Location"
+            value={formData.location}
+            onChange={(value) => setFormData({ ...formData, location: value })}
+            placeholder="City, Country"
+            icon={<MapPin className="w-5 h-5" />}
+            floatingLabel={false}
+          />
 
           {/* Age */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Age
-            </label>
-            <TextInput
-              value={String(formData.age)}
-              onChange={(value) => setFormData({ ...formData, age: value })}
-              placeholder="Your age"
-              type="number"
-              className="w-full"
-            />
-          </div>
+          <MobileTextInput
+            label="Age"
+            value={String(formData.age)}
+            onChange={(value) => setFormData({ ...formData, age: value })}
+            placeholder="Your age"
+            type="number"
+            icon={<Calendar className="w-5 h-5" />}
+            floatingLabel={false}
+          />
         </div>
 
         {/* Save Button */}
