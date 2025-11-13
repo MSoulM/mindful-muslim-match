@@ -8,12 +8,16 @@ import { ChaiChatRecommendation } from '@/components/chaichat/ChaiChatRecommenda
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useChaiChatNotifications } from '@/hooks/useChaiChatNotifications';
 
 const ChaiChatDetailScreen = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showContinueModal, setShowContinueModal] = useState(false);
+  const { addNotification } = useNotifications();
+  const { scheduleChaiChatReady } = useChaiChatNotifications();
 
   // Mock data - replace with actual data fetch
   const chatData = {
@@ -82,9 +86,26 @@ const ChaiChatDetailScreen = () => {
   const handleConfirmContinue = () => {
     // Close modal
     setShowContinueModal(false);
-    // Simulate API request to arrange another ChaiChat
+    
+    // Schedule ChaiChat to be ready in 5 seconds (for demo purposes)
+    scheduleChaiChatReady(id || 'match-1', chatData.name, 5000);
+    
+    // Add system notification
+    addNotification({
+      type: 'chaichat',
+      title: 'ChaiChat Request Submitted',
+      body: `Your agents are arranging another conversation with ${chatData.name}. You'll be notified when it's ready!`,
+      icon: '💬',
+      actionUrl: '/chaichat'
+    });
+    
+    // Show success toast
+    toast.success(`Another ChaiChat with ${chatData.name}'s Agent has been arranged!`, {
+      description: 'You\'ll receive a notification when it\'s ready to review'
+    });
+    
+    // Navigate to discover
     setTimeout(() => {
-      toast.success(`Another ChaiChat with ${chatData.name}'s Agent has been arranged!`);
       navigate('/discover');
     }, 500);
   };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
@@ -8,6 +8,8 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+import { useChaiChatNotifications } from '@/hooks/useChaiChatNotifications';
+import { toast } from 'sonner';
 
 interface ChaiChatItem {
   id: string;
@@ -24,6 +26,23 @@ const ChaiChatListScreen = () => {
   const [activeTab, setActiveTab] = useState('chaichat');
   const [expandedExplanation, setExpandedExplanation] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const { unreadChaiChatCount, chaiChatNotifications, markAllChaiChatAsRead } = useChaiChatNotifications();
+
+  // Mark all ChaiChat notifications as read when viewing this screen
+  useEffect(() => {
+    if (unreadChaiChatCount > 0) {
+      // Show toast for new ChaiChats
+      const readyChats = chaiChatNotifications.filter(n => n.type === 'ready' && !n.read);
+      if (readyChats.length > 0) {
+        readyChats.forEach(chat => {
+          toast.success(`New ChaiChat ready with ${chat.matchName}!`, {
+            description: 'Tap to review the conversation analysis'
+          });
+        });
+      }
+      markAllChaiChatAsRead();
+    }
+  }, []);
 
   const pendingChats: ChaiChatItem[] = [
     {
@@ -328,14 +347,19 @@ const ChaiChatListScreen = () => {
         <div className="h-20" />
       </ScreenContainer>
 
-      <BottomNav activeTab={activeTab} onTabChange={(tabId) => {
-        setActiveTab(tabId);
-        if (tabId === 'discover') navigate('/discover');
-        else if (tabId === 'myagent') navigate('/myagent');
-        else if (tabId === 'dna') navigate('/dna');
-        else if (tabId === 'chaichat') navigate('/chaichat');
-        else if (tabId === 'messages') navigate('/messages');
-      }} />
+      <BottomNav 
+        activeTab={activeTab} 
+        chaiChatBadge={unreadChaiChatCount}
+        messagesBadge={3}
+        onTabChange={(tabId) => {
+          setActiveTab(tabId);
+          if (tabId === 'discover') navigate('/discover');
+          else if (tabId === 'myagent') navigate('/myagent');
+          else if (tabId === 'dna') navigate('/dna');
+          else if (tabId === 'chaichat') navigate('/chaichat');
+          else if (tabId === 'messages') navigate('/messages');
+        }} 
+      />
     </div>
   );
 };
