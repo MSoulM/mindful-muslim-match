@@ -4,6 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { VoiceMessage } from './VoiceMessage';
 import { MediaViewer } from './MediaViewer';
 import { cn } from '@/lib/utils';
+import { formatRelativeTime } from '@/utils/dateUtils';
 
 interface Message {
   id: string;
@@ -44,13 +45,6 @@ export const MessageBubble = ({
 }: MessageBubbleProps) => {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
-
-  const formatTime = (date: Date) => {
-    return new Date(date).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-  };
 
   const handleImageClick = (index: number) => {
     setViewerIndex(index);
@@ -167,7 +161,7 @@ export const MessageBubble = ({
           isOwn ? "flex-row-reverse" : "flex-row"
         )}>
           <span className="text-xs text-muted-foreground">
-            {formatTime(message.timestamp)}
+            {formatRelativeTime(message.timestamp)}
           </span>
           {isOwn && (
             <span className="text-muted-foreground opacity-70">
