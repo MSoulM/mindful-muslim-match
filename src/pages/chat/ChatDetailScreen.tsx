@@ -11,6 +11,7 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { DateSeparator } from '@/components/chat/DateSeparator';
 import { useChatSocket } from '@/hooks/useChatSocket';
 import { AudioRecordingResult } from '@/hooks/useAudioRecorder';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -42,6 +43,12 @@ export const ChatDetailScreen = () => {
   const { matchId } = useParams();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { decrementUnreadCount } = useUnreadMessages();
+  
+  // Decrease unread count when conversation is opened
+  useEffect(() => {
+    decrementUnreadCount();
+  }, [matchId]);
   
   // Swipe gesture for back navigation
   const swipeHandlers = useSwipeable({
