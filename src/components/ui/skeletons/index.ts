@@ -6,3 +6,7 @@ export { SkeletonInsightCard } from './SkeletonInsightCard';
 export { SkeletonChaiChatCard } from './SkeletonChaiChatCard';
 export { SkeletonMessageCard } from './SkeletonMessageCard';
 export { SkeletonList } from './SkeletonList';
+export { SkeletonDiscoverScreen } from './SkeletonDiscoverScreen';
+export { SkeletonMessagesScreen } from './SkeletonMessagesScreen';
+export { SkeletonDNAScreen } from './SkeletonDNAScreen';
+export { SkeletonProfileScreen } from './SkeletonProfileScreen';
