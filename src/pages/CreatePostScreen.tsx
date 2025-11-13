@@ -38,10 +38,16 @@ export default function CreatePostScreen() {
   const [caption, setCaption] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    
+    // Reset validation state when user adds media
+    if (attemptedSubmit) {
+      setAttemptedSubmit(false);
+    }
     
     if (media.length + files.length > 5) {
       toast.error('Maximum 5 media items allowed');
@@ -130,6 +136,11 @@ export default function CreatePostScreen() {
   };
 
   const toggleCategory = (categoryId: string) => {
+    // Reset validation state when user selects a category
+    if (attemptedSubmit) {
+      setAttemptedSubmit(false);
+    }
+    
     setSelectedCategories(prev => {
       if (prev.includes(categoryId)) {
         return prev.filter(id => id !== categoryId);
@@ -143,6 +154,9 @@ export default function CreatePostScreen() {
   };
 
   const handlePost = async () => {
+    // Mark that user has attempted to submit
+    setAttemptedSubmit(true);
+
     // Validate required fields with helpful messages
     if (media.length === 0) {
       toast.error('Please add at least one photo or video to share');
@@ -213,16 +227,29 @@ export default function CreatePostScreen() {
         {/* Media Section */}
         <div 
           className={cn(
-            "relative bg-neutral-100 flex items-center justify-center cursor-pointer",
-            media.length === 0 ? "min-h-[200px]" : "min-h-[300px] max-h-[400px]"
+            "relative bg-neutral-100 flex items-center justify-center cursor-pointer transition-all",
+            media.length === 0 ? "min-h-[200px]" : "min-h-[300px] max-h-[400px]",
+            attemptedSubmit && media.length === 0 && "border-4 border-destructive"
           )}
           onClick={() => media.length === 0 && fileInputRef.current?.click()}
         >
           {media.length === 0 ? (
             <div className="text-center p-8">
-              <Camera className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
-              <h3 className="font-semibold text-foreground mb-1">Add a photo or video</h3>
-              <p className="text-sm text-muted-foreground">Help others know you better</p>
+              <Camera 
+                className={cn(
+                  "w-12 h-12 mx-auto mb-3",
+                  attemptedSubmit ? "text-destructive" : "text-neutral-400"
+                )} 
+              />
+              <h3 className={cn(
+                "font-semibold mb-1",
+                attemptedSubmit ? "text-destructive" : "text-foreground"
+              )}>
+                {attemptedSubmit ? "⚠️ Photo or video required" : "Add a photo or video"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {attemptedSubmit ? "Tap here to add media" : "Help others know you better"}
+              </p>
             </div>
           ) : (
             <div className="relative w-full h-full">
@@ -313,14 +340,27 @@ export default function CreatePostScreen() {
         <Separator />
 
         {/* DNA Category Selection */}
-        <div className="bg-background p-5">
+        <div className={cn(
+          "bg-background p-5 transition-all",
+          attemptedSubmit && selectedCategories.length === 0 && "border-4 border-destructive"
+        )}>
           <div className="mb-3">
-            <h3 className="font-semibold text-sm flex items-center gap-1">
+            <h3 className={cn(
+              "font-semibold text-sm flex items-center gap-1",
+              attemptedSubmit && selectedCategories.length === 0 && "text-destructive"
+            )}>
+              {attemptedSubmit && selectedCategories.length === 0 && "⚠️ "}
               Add to Your DNA
               <span className="text-destructive">*</span>
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              This helps refine your profile • Select up to 2
+            <p className={cn(
+              "text-xs mt-0.5",
+              attemptedSubmit && selectedCategories.length === 0 ? "text-destructive" : "text-muted-foreground"
+            )}>
+              {attemptedSubmit && selectedCategories.length === 0 
+                ? "Please select at least one category to continue" 
+                : "This helps refine your profile • Select up to 2"
+              }
             </p>
           </div>
 
