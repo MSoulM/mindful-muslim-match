@@ -10,6 +10,7 @@ import { DNAStatsCard } from '@/components/dna/DNAStatsCard';
 import { DNACategoryCard } from '@/components/dna/DNACategoryCard';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { cn } from '@/lib/utils';
 
 const categories = [
@@ -65,6 +66,7 @@ export default function DNAScreen() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dna');
   const { unreadCount } = useNotifications();
+  const { pendingCount } = useChaiChatPending();
 
   const hapticFeedback = (style: 'light' | 'medium' | 'heavy' = 'light') => {
     if ('vibrate' in navigator) {
@@ -332,6 +334,7 @@ export default function DNAScreen() {
         <BottomNav
           activeTab={activeTab}
           onTabChange={handleTabChange}
+          chaiChatBadge={pendingCount}
         />
       </div>
     </PageTransition>

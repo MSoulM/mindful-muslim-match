@@ -13,7 +13,7 @@ import { Toast } from '@/components/ui/Feedback/Toast';
 import { SkipLink } from '@/components/ui/accessibility/SkipLink';
 import { ScreenReaderAnnounce } from '@/components/ui/accessibility/ScreenReaderAnnounce';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useChaiChatNotifications } from '@/hooks/useChaiChatNotifications';
+import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 
 interface Match {
   id: string;
@@ -120,7 +120,7 @@ export default function DiscoverScreen() {
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const { unreadCount } = useNotifications();
-  const { unreadChaiChatCount } = useChaiChatNotifications();
+  const { pendingCount } = useChaiChatPending();
   const [toast, setToast] = useState<{
     isOpen: boolean;
     type: 'success' | 'error' | 'warning' | 'info';
@@ -384,7 +384,7 @@ export default function DiscoverScreen() {
         <BottomNav
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          chaiChatBadge={unreadChaiChatCount}
+          chaiChatBadge={pendingCount}
           messagesBadge={3}
         />
 

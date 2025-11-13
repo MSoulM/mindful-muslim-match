@@ -8,10 +8,12 @@ import { MessageCard } from '@/components/message/MessageCard';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { SwipeableCard } from '@/components/ui/SwipeableCard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 
 const MessagesScreen = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('messages');
+  const { pendingCount } = useChaiChatPending();
   // Mock data - replace with real data later
   const messages = [
     {
@@ -125,7 +127,11 @@ const MessagesScreen = () => {
         )}
       </ScreenContainer>
 
-      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      <BottomNav 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange}
+        chaiChatBadge={pendingCount}
+      />
     </div>
   );
 };
