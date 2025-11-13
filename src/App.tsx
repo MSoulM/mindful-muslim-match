@@ -52,9 +52,6 @@ import { AnalyticsScreen } from "./pages/AnalyticsScreen";
 import { DNAAnalyticsScreen } from "./pages/DNAAnalyticsScreen";
 import { EngagementAnalyticsScreen } from "./pages/EngagementAnalyticsScreen";
 import { ExportAnalyticsScreen } from "./pages/ExportAnalyticsScreen";
-import { AdminDashboardScreen } from "./pages/AdminDashboardScreen";
-import { UserDetailAdminScreen } from "./pages/UserDetailAdminScreen";
-import { SystemMonitoringScreen } from "./pages/SystemMonitoringScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -225,23 +222,6 @@ const AnimatedRoutes = () => {
         <Route path="/analytics/export" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <ExportAnalyticsScreen />
-          </motion.div>
-        } />
-        
-        {/* Admin Routes */}
-        <Route path="/admin" element={
-          <motion.div {...pageTransition} transition={pageTransitionConfig}>
-            <AdminDashboardScreen />
-          </motion.div>
-        } />
-        <Route path="/admin/user/:userId" element={
-          <motion.div {...pageTransition} transition={pageTransitionConfig}>
-            <UserDetailAdminScreen />
-          </motion.div>
-        } />
-        <Route path="/admin/monitoring" element={
-          <motion.div {...pageTransition} transition={pageTransitionConfig}>
-            <SystemMonitoringScreen />
           </motion.div>
         } />
         
