@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { 
   Mail, Phone, CheckCircle, Globe, Bell, Palette, 
   Eye, UserX, Lock, HelpCircle, MessageSquare, 
-  FileText, PauseCircle, Trash2
+  FileText, PauseCircle, Trash2, Info, Send
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
@@ -133,21 +133,28 @@ export default function SettingsScreen() {
             <FeatureCard
               icon={<HelpCircle className="w-6 h-6" />}
               title="Help Center"
-              onClick={() => window.open('https://help.muslimsoulmateai.com', '_blank')}
+              onClick={() => navigate('/help')}
             />
             
             <FeatureCard
               icon={<MessageSquare className="w-6 h-6" />}
-              title="Contact Us"
-              description="Get help"
-              onClick={() => {/* Navigate to contact */}}
+              title="Send Feedback"
+              description="Share your thoughts"
+              onClick={() => navigate('/settings/feedback')}
+            />
+            
+            <FeatureCard
+              icon={<Info className="w-6 h-6" />}
+              title="About"
+              description="v2.1.0"
+              onClick={() => navigate('/settings/about')}
             />
             
             <FeatureCard
               icon={<FileText className="w-6 h-6" />}
               title="Terms & Privacy"
-              description="v2.1"
-              onClick={() => {/* Navigate to terms */}}
+              description="Legal information"
+              onClick={() => navigate('/settings/terms')}
             />
           </div>
         </div>

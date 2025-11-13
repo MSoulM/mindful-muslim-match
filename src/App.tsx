@@ -43,6 +43,10 @@ import ManageSubscriptionScreen from "./pages/ManageSubscriptionScreen";
 import SettingsScreen from "./pages/SettingsScreen";
 import PrivacyScreen from "./pages/settings/PrivacyScreen";
 import DeleteAccountScreen from "./pages/settings/DeleteAccountScreen";
+import AboutScreen from "./pages/settings/AboutScreen";
+import PrivacyPolicyScreen from "./pages/settings/PrivacyPolicyScreen";
+import TermsOfServiceScreen from "./pages/settings/TermsOfServiceScreen";
+import FeedbackScreen from "./pages/settings/FeedbackScreen";
 import HelpCenterScreen from "./pages/HelpCenterScreen";
 import FAQScreen from "./pages/FAQScreen";
 import ContactSupportScreen from "./pages/ContactSupportScreen";
@@ -62,6 +66,7 @@ import FormOptimizationDemo from "./pages/FormOptimizationDemo";
 import FormNavigationDemo from "./pages/FormNavigationDemo";
 import ResponsiveDemo from "./pages/ResponsiveDemo";
 import AccessibilityDemo from "./pages/AccessibilityDemo";
+import PremiumPolishDemo from "./pages/PremiumPolishDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -295,6 +300,26 @@ const AnimatedRoutes = () => {
             <DeleteAccountScreen />
           </motion.div>
         } />
+        <Route path="/settings/about" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <AboutScreen />
+          </motion.div>
+        } />
+        <Route path="/settings/privacy-policy" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <PrivacyPolicyScreen />
+          </motion.div>
+        } />
+        <Route path="/settings/terms" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <TermsOfServiceScreen />
+          </motion.div>
+        } />
+        <Route path="/settings/feedback" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <FeedbackScreen />
+          </motion.div>
+        } />
         
         {/* Help Center Routes */}
         <Route path="/help" element={
@@ -359,6 +384,11 @@ const AnimatedRoutes = () => {
             <Route path="/dev/accessibility" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <AccessibilityDemo />
+              </motion.div>
+            } />
+            <Route path="/dev/premium-polish" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <PremiumPolishDemo />
               </motion.div>
             } />
           </>
