@@ -18,6 +18,7 @@ import DiscoverScreen from "./pages/DiscoverScreen";
 import DNAScreen from "./pages/DNAScreen";
 import MyAgentScreen from "./pages/MyAgentScreen";
 import InsightsScreen from "./pages/InsightsScreen";
+import ConfirmedInsightsScreen from "./pages/ConfirmedInsightsScreen";
 import AgentChatScreen from "./pages/AgentChatScreen";
 import StatsScreen from "./pages/StatsScreen";
 import ChaiChatListScreen from "./pages/ChaiChatListScreen";
@@ -115,6 +116,11 @@ const AnimatedRoutes = () => {
         <Route path="/insights" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <InsightsScreen />
+          </motion.div>
+        } />
+        <Route path="/confirmed-insights" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ConfirmedInsightsScreen />
           </motion.div>
         } />
         <Route path="/agent-chat" element={

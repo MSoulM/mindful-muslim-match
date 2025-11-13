@@ -271,7 +271,7 @@ const InsightsScreen = () => {
             icon={<span className="text-2xl">✓</span>}
             title="View Confirmed Insights"
             description="142 insights help match you accurately"
-            onClick={() => navigate('/insights/confirmed')}
+            onClick={() => navigate('/confirmed-insights')}
             className="bg-gradient-to-br from-semantic-success/5 to-semantic-success/10 border-2 border-semantic-success/20"
           />
         </motion.div>
