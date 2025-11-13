@@ -37,10 +37,10 @@ export const DNAAnalyticsScreen = () => {
   };
 
   return (
-    <ScreenContainer className="bg-background">
+    <ScreenContainer className="bg-background" hasBottomNav={false}>
       <TopBar variant="back" title="MySoulDNA Analytics" onBackClick={() => window.history.back()} />
 
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto">
         {/* DNA Composition Radar */}
         <div className="px-4 py-4">
           <Card className="p-4">
