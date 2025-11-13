@@ -1,21 +1,52 @@
 import { SkeletonBase } from './SkeletonBase';
+import { motion } from 'framer-motion';
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { 
+    opacity: 1, 
+    y: 0
+  },
+};
 
 export const SkeletonDiscoverScreen = () => {
   return (
-    <div className="space-y-6 pb-8">
+    <motion.div 
+      className="space-y-6 pb-8"
+      variants={staggerContainer}
+      initial="initial"
+      animate="animate"
+    >
       {/* Agent Message Skeleton */}
-      <div className="flex gap-3 p-4 bg-card rounded-xl">
+      <motion.div 
+        className="flex gap-3 p-4 bg-card rounded-xl"
+        variants={fadeInUp}
+        transition={{ duration: 0.4 }}
+      >
         <SkeletonBase className="w-10 h-10 rounded-full flex-shrink-0" />
         <div className="flex-1 space-y-2">
           <SkeletonBase className="h-4 w-24 rounded" />
           <SkeletonBase className="h-3 w-full rounded" />
           <SkeletonBase className="h-3 w-4/5 rounded" />
         </div>
-      </div>
+      </motion.div>
 
       {/* Match Cards Skeleton */}
       {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-card rounded-2xl shadow-sm overflow-hidden">
+        <motion.div 
+          key={i} 
+          className="bg-card rounded-2xl shadow-sm overflow-hidden"
+          variants={fadeInUp}
+          transition={{ duration: 0.4 }}
+        >
           {/* Header */}
           <div className="flex items-center gap-3 p-4">
             <SkeletonBase className="w-12 h-12 rounded-full" />
@@ -41,8 +72,8 @@ export const SkeletonDiscoverScreen = () => {
             <SkeletonBase className="h-12 w-full rounded-full" />
             <SkeletonBase className="h-10 w-32 rounded-full" />
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };

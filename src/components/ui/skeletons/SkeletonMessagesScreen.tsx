@@ -1,10 +1,37 @@
 import { SkeletonBase } from './SkeletonBase';
+import { motion } from 'framer-motion';
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
+
+const fadeIn = {
+  initial: { opacity: 0, x: -10 },
+  animate: { 
+    opacity: 1, 
+    x: 0
+  },
+};
 
 export const SkeletonMessagesScreen = () => {
   return (
-    <div className="space-y-2 pb-4">
+    <motion.div 
+      className="space-y-2 pb-4"
+      variants={staggerContainer}
+      initial="initial"
+      animate="animate"
+    >
       {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-        <div key={i} className="flex gap-3 p-4 hover:bg-muted/50 transition-colors">
+        <motion.div 
+          key={i} 
+          className="flex gap-3 p-4 hover:bg-muted/50 transition-colors"
+          variants={fadeIn}
+          transition={{ duration: 0.3 }}
+        >
           {/* Avatar */}
           <SkeletonBase className="w-14 h-14 rounded-full flex-shrink-0" />
 
@@ -22,8 +49,8 @@ export const SkeletonMessagesScreen = () => {
           {i % 3 === 0 && (
             <SkeletonBase className="w-6 h-6 rounded-full flex-shrink-0" />
           )}
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };
