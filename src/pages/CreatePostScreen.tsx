@@ -343,11 +343,6 @@ export default function CreatePostScreen() {
           </div>
         </div>
 
-        <Separator />
-
-        {/* Privacy Settings */}
-        <div className="bg-background p-5">
-          <h3 className="font-semibold text-sm mb-3">Who can see this?</h3>
           
           <RadioGroup value={privacy} onValueChange={setPrivacy} className="space-y-3">
             <div className="flex items-center space-x-3">
