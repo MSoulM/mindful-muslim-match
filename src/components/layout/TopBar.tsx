@@ -112,7 +112,7 @@ export const TopBar = ({
           {userInitials && onProfileClick && (
             <motion.button
               onClick={onProfileClick}
-              className="p-[5px] touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
+              className="p-xs touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
               whileTap={{ scale: 0.95 }}
               aria-label={`Profile, ${userInitials}`}
             >

@@ -42,8 +42,8 @@ export const PlanCard = ({
     >
       {/* Gradient border effect when selected */}
       {isSelected && (
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-forest to-primary-forest/70 p-[2px]">
-          <div className="absolute inset-[2px] rounded-2xl bg-white" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-forest to-primary-forest/70 p-0.5">
+          <div className="absolute inset-0.5 rounded-2xl bg-white" />
         </div>
       )}
       
