@@ -4,6 +4,8 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSwipeable } from 'react-swipeable';
 import { FileDown, Mail, Save, Calendar, Check } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -16,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 type ExportFormat = 'pdf' | 'csv' | 'json';
 
 export const ExportAnalyticsScreen = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('pdf');
   const [selectedSections, setSelectedSections] = useState<string[]>([
@@ -26,6 +29,13 @@ export const ExportAnalyticsScreen = () => {
     'audience',
   ]);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Swipe handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedRight: () => navigate('/analytics/engagement'),
+    trackMouse: true,
+    trackTouch: true,
+  });
 
   const exportFormats = [
     { value: 'pdf' as const, label: 'PDF Report', description: 'Formatted report with charts' },
@@ -93,7 +103,14 @@ export const ExportAnalyticsScreen = () => {
     <ScreenContainer className="bg-background" hasBottomNav={false}>
       <TopBar variant="back" title="Export Analytics" onBackClick={() => window.history.back()} />
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Screen Indicator Dots */}
+      <div className="flex justify-center gap-2 py-3 bg-background border-b border-border">
+        <div className="w-2 h-2 rounded-full bg-muted" />
+        <div className="w-2 h-2 rounded-full bg-muted" />
+        <div className="w-2 h-2 rounded-full bg-primary" />
+      </div>
+
+      <div {...swipeHandlers} className="flex-1 overflow-y-auto">
         {/* Export Format */}
         <div className="px-4 py-4">
           <h3 className="text-lg font-semibold mb-3">Export Format</h3>
