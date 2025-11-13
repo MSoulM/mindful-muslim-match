@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Video, Phone, MoreVertical } from 'lucide-react';
+import { ArrowLeft, MoreVertical } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -64,8 +64,6 @@ export const ChatDetailScreen = () => {
   ]);
   
   const [isTyping, setIsTyping] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
-  const [lastSeen, setLastSeen] = useState<Date>(new Date());
   
   const currentUserId = 'me';
   const matchName = 'Sarah Ahmed';
@@ -223,11 +221,6 @@ export const ChatDetailScreen = () => {
     }
   };
   
-  const getStatusText = () => {
-    if (isTyping) return 'Typing...';
-    if (isOnline) return 'Online';
-    return `Last seen ${lastSeen.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-  };
   
   const groupMessagesByDate = (messages: Message[]) => {
     const groups: { date: string; messages: Message[] }[] = [];
@@ -274,59 +267,20 @@ export const ChatDetailScreen = () => {
           </Button>
           
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative shrink-0">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={matchPhoto} alt={matchName} />
-                <AvatarFallback>{matchName[0]}</AvatarFallback>
-              </Avatar>
-              {isOnline && (
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card" />
-              )}
-            </div>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={matchPhoto} alt={matchName} />
+              <AvatarFallback>{matchName[0]}</AvatarFallback>
+            </Avatar>
             
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-semibold text-foreground truncate">
                 {matchName}
               </h2>
-              <p className={cn(
-                "text-xs truncate",
-                isTyping ? "text-primary" : isOnline ? "text-green-500" : "text-muted-foreground"
-              )}>
-                {getStatusText()}
-              </p>
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              toast({
-                title: "Video Call",
-                description: "Starting video call with " + matchName,
-              });
-            }}
-            title="Video Call"
-          >
-            <Video className="h-5 w-5" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              toast({
-                title: "Voice Call",
-                description: "Starting voice call with " + matchName,
-              });
-            }}
-            title="Voice Call"
-          >
-            <Phone className="h-5 w-5" />
-          </Button>
-          
           <Button
             variant="ghost"
             size="icon"
