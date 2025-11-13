@@ -34,15 +34,15 @@ export const BottomNav = ({
   activeTab,
   onTabChange,
   tabs = defaultTabs,
-  chaiChatBadge = 0,
-  messagesBadge = 0,
+  chaiChatBadge,
+  messagesBadge,
 }: BottomNavProps) => {
   // Override default badge counts with dynamic ones
   const tabsWithDynamicBadges = tabs.map(tab => {
-    if (tab.id === 'chaichat') {
+    if (tab.id === 'chaichat' && chaiChatBadge && chaiChatBadge > 0) {
       return { ...tab, badge: chaiChatBadge };
     }
-    if (tab.id === 'messages') {
+    if (tab.id === 'messages' && messagesBadge && messagesBadge > 0) {
       return { ...tab, badge: messagesBadge };
     }
     return tab;
