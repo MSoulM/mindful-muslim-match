@@ -48,6 +48,10 @@ import TutorialScreen from "./pages/TutorialScreen";
 import CreatePostScreen from "./pages/CreatePostScreen";
 import EditPostScreen from "./pages/EditPostScreen";
 import PostSuccessScreen from "./pages/PostSuccessScreen";
+import { AnalyticsScreen } from "./pages/AnalyticsScreen";
+import { DNAAnalyticsScreen } from "./pages/DNAAnalyticsScreen";
+import { EngagementAnalyticsScreen } from "./pages/EngagementAnalyticsScreen";
+import { ExportAnalyticsScreen } from "./pages/ExportAnalyticsScreen";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -196,6 +200,28 @@ const AnimatedRoutes = () => {
         <Route path="/subscription/manage" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <ManageSubscriptionScreen />
+          </motion.div>
+        } />
+        
+        {/* Analytics Routes */}
+        <Route path="/analytics" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <AnalyticsScreen />
+          </motion.div>
+        } />
+        <Route path="/analytics/dna" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <DNAAnalyticsScreen />
+          </motion.div>
+        } />
+        <Route path="/analytics/engagement" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <EngagementAnalyticsScreen />
+          </motion.div>
+        } />
+        <Route path="/analytics/export" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ExportAnalyticsScreen />
           </motion.div>
         } />
         

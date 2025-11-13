@@ -94,6 +94,29 @@ const StatsScreen = () => {
           </div>
         </motion.div>
 
+        {/* Analytics Link Card */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.3, delay: 0.15 }}
+          className="mb-6"
+        >
+          <button
+            onClick={() => navigate('/analytics')}
+            className="w-full bg-gradient-to-r from-primary-pink to-primary-gold rounded-2xl p-5 shadow-lg flex items-center justify-between"
+          >
+            <div className="text-left">
+              <h3 className="text-lg font-bold text-white mb-1">
+                📊 View Detailed Analytics
+              </h3>
+              <p className="text-sm text-white/90">
+                Track growth, engagement, and DNA evolution
+              </p>
+            </div>
+            <TrendingUp className="w-6 h-6 text-white" />
+          </button>
+        </motion.div>
+
         {/* Stats Grid */}
         <motion.div initial={{
         opacity: 0
