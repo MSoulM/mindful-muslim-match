@@ -57,6 +57,7 @@ import { EngagementAnalyticsScreen } from "./pages/EngagementAnalyticsScreen";
 import { ExportAnalyticsScreen } from "./pages/ExportAnalyticsScreen";
 import AnimationShowcase from "./pages/AnimationShowcase";
 import AnimationDemoScreen from "./pages/AnimationDemoScreen";
+import EmptyStateShowcase from "./pages/EmptyStateShowcase";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -324,6 +325,16 @@ const AnimatedRoutes = () => {
             <Route path="/dev/preview" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <DevicePreview />
+              </motion.div>
+            } />
+            <Route path="/dev/animations" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <AnimationDemoScreen />
+              </motion.div>
+            } />
+            <Route path="/dev/empty-states" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <EmptyStateShowcase />
               </motion.div>
             } />
           </>
