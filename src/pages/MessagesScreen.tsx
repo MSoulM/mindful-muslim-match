@@ -49,8 +49,7 @@ const MessagesScreen = () => {
   const hasMessages = messages.length > 0;
 
   const handleMessageClick = (id: string) => {
-    // Navigate to conversation detail screen
-    console.log('Navigate to message:', id);
+    navigate(`/chat/${id}`);
   };
 
   const handleArchive = (id: string) => {

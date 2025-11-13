@@ -193,7 +193,7 @@ const ProfileScreen = () => {
             icon={<Sliders className="w-6 h-6" />}
             title="Preferences"
             description="Age, location, values"
-            onClick={() => navigate('/onboarding/preferences')}
+            onClick={() => navigate('/preferences')}
             className="rounded-none"
           />
           
