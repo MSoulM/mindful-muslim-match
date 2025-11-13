@@ -107,7 +107,7 @@ export const DNATimelineChart = ({
           <div
             key={index}
             className={cn(
-              'text-[10px] text-center flex-1',
+              'text-xs text-center flex-1',
               index === currentIndex
                 ? 'font-semibold text-neutral-900'
                 : 'text-neutral-500'

@@ -57,9 +57,9 @@ export const IconButton = ({
 
   // Badge sizes
   const badgeSizes = {
-    sm: 'w-4 h-4 text-[9px]',
-    md: 'w-[18px] h-[18px] text-[10px]',
-    lg: 'w-5 h-5 text-[11px]',
+    sm: 'w-4 h-4 text-xs',
+    md: 'w-[18px] h-[18px] text-xs',
+    lg: 'w-5 h-5 text-xs',
   };
 
   // Variant styles
