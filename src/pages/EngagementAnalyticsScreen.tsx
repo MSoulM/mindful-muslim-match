@@ -35,9 +35,9 @@ export const EngagementAnalyticsScreen = () => {
   });
 
   const contentPerformanceData = [
-    { type: 'Photos', value: metrics?.photoPerformance || 0, color: '#0066CC' },
-    { type: 'Videos', value: metrics?.videoPerformance || 0, color: '#FF6B6B' },
-    { type: 'Captions', value: metrics?.captionLengthImpact || 0, color: '#8B7AB8' },
+    { type: 'Photos', value: metrics?.photoPerformance || 0, color: 'hsl(var(--dna-lifestyle))' },
+    { type: 'Videos', value: metrics?.videoPerformance || 0, color: 'hsl(var(--dna-interests))' },
+    { type: 'Captions', value: metrics?.captionLengthImpact || 0, color: 'hsl(var(--dna-personality))' },
   ];
 
   const funnelData = funnel ? [
