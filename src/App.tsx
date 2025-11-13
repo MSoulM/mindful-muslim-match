@@ -25,6 +25,7 @@ import ChaiChatDetailScreen from "./pages/ChaiChatDetailScreen";
 import MessagesScreen from "./pages/MessagesScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import EditProfileScreen from "./pages/EditProfileScreen";
+import { PreferencesScreen } from "./pages/onboarding/PreferencesScreen";
 import ValuesDetailScreen from "./pages/dna/ValuesDetailScreen";
 import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
 import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
@@ -151,6 +152,11 @@ const AnimatedRoutes = () => {
         <Route path="/edit-profile" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <EditProfileScreen />
+          </motion.div>
+        } />
+        <Route path="/preferences" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <PreferencesScreen />
           </motion.div>
         } />
         <Route path="/dna/values" element={

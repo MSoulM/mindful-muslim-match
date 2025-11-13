@@ -15,7 +15,6 @@ import {
 } from 'recharts';
 import { ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
-import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,7 +38,7 @@ export const DNAAnalyticsScreen = () => {
 
   return (
     <ScreenContainer className="bg-background">
-      <TopBar variant="back" title="DNA Analytics" onBackClick={() => window.history.back()} />
+      <TopBar variant="back" title="MySoulDNA Analytics" onBackClick={() => window.history.back()} />
 
       <div className="flex-1 overflow-y-auto pb-20">
         {/* DNA Composition Radar */}
@@ -195,8 +194,6 @@ export const DNAAnalyticsScreen = () => {
           </Card>
         </div>
       </div>
-
-      <BottomNav activeTab="analytics" onTabChange={() => {}} />
     </ScreenContainer>
   );
 };
