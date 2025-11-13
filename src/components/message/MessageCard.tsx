@@ -8,7 +8,6 @@ interface MessageCardProps {
   preview: string;
   time: string;
   unreadCount?: number;
-  isOnline?: boolean;
   isFromUser?: boolean;
   onClick?: () => void;
   className?: string;
@@ -20,7 +19,6 @@ export const MessageCard = ({
   preview,
   time,
   unreadCount,
-  isOnline = false,
   isFromUser = false,
   onClick,
   className,

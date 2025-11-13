@@ -21,7 +21,6 @@ const MessagesScreen = () => {
       preview: 'That sounds wonderful! When...',
       time: '5m',
       unreadCount: 3,
-      isOnline: true,
       isFromUser: false,
     },
     {
@@ -31,7 +30,6 @@ const MessagesScreen = () => {
       preview: "I'd love to! Let me...",
       time: '2h',
       unreadCount: 0,
-      isOnline: true,
       isFromUser: true,
     },
     {
@@ -41,7 +39,6 @@ const MessagesScreen = () => {
       preview: 'Thank you for the lovely...',
       time: '1d',
       unreadCount: 1,
-      isOnline: false,
       isFromUser: false,
     },
   ];
@@ -101,7 +98,6 @@ const MessagesScreen = () => {
                     preview={message.preview}
                     time={message.time}
                     unreadCount={message.unreadCount}
-                    isOnline={message.isOnline}
                     isFromUser={message.isFromUser}
                     onClick={() => handleMessageClick(message.id)}
                   />
