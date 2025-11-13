@@ -59,6 +59,7 @@ import AnimationShowcase from "./pages/AnimationShowcase";
 import AnimationDemoScreen from "./pages/AnimationDemoScreen";
 import EmptyStateShowcase from "./pages/EmptyStateShowcase";
 import FormOptimizationDemo from "./pages/FormOptimizationDemo";
+import FormNavigationDemo from "./pages/FormNavigationDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -341,6 +342,11 @@ const AnimatedRoutes = () => {
             <Route path="/dev/forms" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <FormOptimizationDemo />
+              </motion.div>
+            } />
+            <Route path="/dev/form-navigation" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <FormNavigationDemo />
               </motion.div>
             } />
           </>

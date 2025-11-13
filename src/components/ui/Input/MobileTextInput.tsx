@@ -21,6 +21,10 @@ interface MobileTextInputProps extends Omit<InputHTMLAttributes<HTMLInputElement
   floatingLabel?: boolean;
   onValidate?: (value: string) => string | undefined;
   validateOnBlur?: boolean;
+  fieldId?: string;
+  onNext?: () => void;
+  onSubmit?: () => void;
+  returnKeyType?: 'next' | 'done' | 'go' | 'search';
 }
 
 export const MobileTextInput = forwardRef<HTMLInputElement, MobileTextInputProps>(
@@ -45,6 +49,10 @@ export const MobileTextInput = forwardRef<HTMLInputElement, MobileTextInputProps
       onValidate,
       validateOnBlur = true,
       autoFocus,
+      fieldId,
+      onNext,
+      onSubmit,
+      returnKeyType,
       ...props
     },
     ref
@@ -82,6 +90,24 @@ export const MobileTextInput = forwardRef<HTMLInputElement, MobileTextInputProps
       onChange('');
       setInternalError(undefined);
       inputRef.current?.focus();
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        
+        // If returnKeyType is 'done' or onSubmit is provided, submit
+        if (returnKeyType === 'done' || onSubmit) {
+          onSubmit?.();
+        } 
+        // If returnKeyType is 'next' or onNext is provided, go to next field
+        else if (returnKeyType === 'next' || onNext) {
+          onNext?.();
+        }
+      }
+      
+      // Call original onKeyDown if provided
+      props.onKeyDown?.(e);
     };
 
     // Determine if input is valid
@@ -146,6 +172,8 @@ export const MobileTextInput = forwardRef<HTMLInputElement, MobileTextInputProps
             disabled={disabled}
             onFocus={() => setIsFocused(true)}
             onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            enterKeyHint={returnKeyType}
             inputMode={
               type === 'email' ? 'email' :
               type === 'tel' ? 'tel' :

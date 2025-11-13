@@ -22,6 +22,11 @@ interface MobileTextAreaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaEl
   floatingLabel?: boolean;
   onValidate?: (value: string) => string | undefined;
   validateOnBlur?: boolean;
+  fieldId?: string;
+  onNext?: () => void;
+  onSubmit?: () => void;
+  returnKeyType?: 'next' | 'done' | 'go' | 'search';
+  allowEnterKey?: boolean;
 }
 
 export const MobileTextArea = forwardRef<HTMLTextAreaElement, MobileTextAreaProps>(
@@ -47,6 +52,11 @@ export const MobileTextArea = forwardRef<HTMLTextAreaElement, MobileTextAreaProp
       onValidate,
       validateOnBlur = true,
       autoFocus,
+      fieldId,
+      onNext,
+      onSubmit,
+      returnKeyType,
+      allowEnterKey = true,
       ...props
     },
     ref
@@ -108,6 +118,25 @@ export const MobileTextArea = forwardRef<HTMLTextAreaElement, MobileTextAreaProp
       textareaRef.current?.focus();
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Handle Enter key if not allowing multiline or if specific action is set
+      if (e.key === 'Enter' && !e.shiftKey) {
+        // If allowEnterKey is false, prevent default and trigger navigation
+        if (!allowEnterKey) {
+          e.preventDefault();
+          
+          if (returnKeyType === 'done' || onSubmit) {
+            onSubmit?.();
+          } else if (returnKeyType === 'next' || onNext) {
+            onNext?.();
+          }
+        }
+      }
+      
+      // Call original onKeyDown if provided
+      props.onKeyDown?.(e);
+    };
+
     const showSuccess = showSuccessIndicator && hasValue && !internalError && (isValid !== undefined ? isValid : true);
 
     return (
@@ -160,6 +189,8 @@ export const MobileTextArea = forwardRef<HTMLTextAreaElement, MobileTextAreaProp
             rows={minRows}
             onFocus={() => setIsFocused(true)}
             onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            enterKeyHint={returnKeyType}
             className={cn(
               'w-full px-4 text-base', // 16px minimum font size
               'bg-background border rounded-lg',
