@@ -1,46 +1,41 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send } from 'lucide-react';
+import { Send, ArrowLeft } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
+import { ChatThreadList } from '@/components/chat/ChatThreadList';
+import { useChatThreads, ChatMessage } from '@/hooks/useChatThreads';
 import { cn } from '@/lib/utils';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  status?: 'sending' | 'sent' | 'delivered' | 'error';
-}
+import { useToast } from '@/hooks/use-toast';
 
 const AgentChatScreen = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Assalamu alaikum Ahmed! I'm here to help you on your journey to find your life partner. What would you like to know?",
-      timestamp: new Date(Date.now() - 120000), // 2 minutes ago
-    },
-    {
-      id: '2',
-      role: 'user',
-      content: "What should I know about Sarah before our chat?",
-      timestamp: new Date(Date.now() - 60000), // 1 minute ago
-    },
-    {
-      id: '3',
-      role: 'assistant',
-      content: "Great question! Based on your ChaiChat conversation, Sarah values work-life balance and has a wonderful sense of humor. She mentioned loving hiking and reading - perhaps ask about her favorite trails or recent books. She appreciates depth in conversation, so don't hesitate to share your genuine thoughts. Your 95% compatibility suggests natural conversation flow. Be yourself - that's who she matched with! 😊",
-      timestamp: new Date(Date.now() - 30000), // 30 seconds ago
-    },
-  ]);
+  
+  const {
+    activeThreads,
+    recentThreads,
+    archivedThreads,
+    searchQuery,
+    setSearchQuery,
+    createThread,
+    addMessageToThread,
+    updateMessageInThread,
+    archiveThread,
+    deleteThread,
+    getThread,
+  } = useChatThreads();
+
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
+
+  const activeThread = activeThreadId ? getThread(activeThreadId) : null;
+  const messages = activeThread?.messages || [];
 
   const quickReplies = [
     { id: '1', text: '🎯 My Matches', value: 'Tell me about my matches' },
@@ -63,10 +58,8 @@ const AgentChatScreen = () => {
     scrollToBottom('smooth');
   }, [messages]);
 
-  // Handle keyboard showing/hiding
   useEffect(() => {
     const handleResize = () => {
-      // Scroll to bottom when keyboard appears
       setTimeout(() => scrollToBottom('auto'), 100);
     };
 
@@ -74,9 +67,40 @@ const AgentChatScreen = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const handleNewChat = () => {
+    setActiveThreadId(null);
+    setShowQuickReplies(true);
+  };
+
+  const handleThreadSelect = (threadId: string) => {
+    setActiveThreadId(threadId);
+    setShowQuickReplies(false);
+  };
+
+  const handleArchiveThread = (threadId: string) => {
+    archiveThread(threadId);
+    if (threadId === activeThreadId) {
+      setActiveThreadId(null);
+    }
+    toast({
+      title: 'Chat archived',
+      description: 'The conversation has been moved to archived chats.',
+    });
+  };
+
+  const handleDeleteThread = (threadId: string) => {
+    deleteThread(threadId);
+    if (threadId === activeThreadId) {
+      setActiveThreadId(null);
+    }
+    toast({
+      title: 'Chat deleted',
+      description: 'The conversation has been permanently deleted.',
+    });
+  };
+
   const copyMessage = (content: string) => {
     navigator.clipboard.writeText(content).then(() => {
-      // Show a brief toast or feedback
       if ('vibrate' in navigator) {
         navigator.vibrate(10);
       }
@@ -86,8 +110,27 @@ const AgentChatScreen = () => {
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    const messageId = Date.now().toString();
-    const userMessage: Message = {
+    let threadId = activeThreadId;
+    
+    // Create new thread if none exists
+    if (!threadId) {
+      const newThread = createThread(inputValue.trim());
+      threadId = newThread.id;
+      setActiveThreadId(threadId);
+      
+      // Add welcome message
+      const welcomeMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        role: 'assistant',
+        content: "Assalamu alaikum! I'm here to help you on your journey to find your life partner. What would you like to know?",
+        timestamp: new Date(),
+        status: 'sent',
+      };
+      addMessageToThread(threadId, welcomeMessage);
+    }
+
+    const messageId = `msg-${Date.now()}`;
+    const userMessage: ChatMessage = {
       id: messageId,
       role: 'user',
       content: inputValue.trim(),
@@ -95,61 +138,41 @@ const AgentChatScreen = () => {
       status: 'sending',
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    addMessageToThread(threadId, userMessage);
     setInputValue('');
     setShowQuickReplies(false);
     setIsLoading(true);
 
-    // Auto-resize textarea back to default
     if (inputRef.current) {
       inputRef.current.style.height = '44px';
     }
 
-    // Update status to sent
-    setTimeout(() => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId ? { ...msg, status: 'sent' as const } : msg
-        )
-      );
-    }, 300);
-
-    // Simulate AI response (replace with actual API call)
+    // Simulate AI response
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
-      // Update to delivered
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId ? { ...msg, status: 'delivered' as const } : msg
-        )
-      );
+      updateMessageInThread(threadId, messageId, { status: 'sent' });
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+      const assistantMessage: ChatMessage = {
+        id: `msg-${Date.now() + 1}`,
         role: 'assistant',
         content: "I understand you're interested in that topic. Let me help you with some insights based on your profile and preferences. What specific aspect would you like to explore further?",
         timestamp: new Date(),
-        status: 'delivered',
+        status: 'sent',
       };
-      setMessages((prev) => [...prev, assistantMessage]);
+      
+      addMessageToThread(threadId, assistantMessage);
       setIsLoading(false);
     } catch (error) {
-      // Handle error
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId ? { ...msg, status: 'error' as const } : msg
-        )
-      );
+      updateMessageInThread(threadId, messageId, { status: 'failed' });
       setIsLoading(false);
     }
   };
 
   const retryMessage = (messageId: string) => {
     const message = messages.find((m) => m.id === messageId);
-    if (message && message.status === 'error') {
+    if (message && message.status === 'failed') {
       setInputValue(message.content);
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
       setTimeout(() => handleSend(), 100);
     }
   };
@@ -161,7 +184,6 @@ const AgentChatScreen = () => {
     }
     setInputValue(value);
     setShowQuickReplies(false);
-    // Auto-send quick reply
     setTimeout(() => {
       handleSend();
     }, 100);
@@ -170,7 +192,6 @@ const AgentChatScreen = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
     
-    // Auto-grow textarea
     e.target.style.height = '44px';
     const scrollHeight = e.target.scrollHeight;
     e.target.style.height = Math.min(scrollHeight, 120) + 'px';
@@ -191,12 +212,44 @@ const AgentChatScreen = () => {
     });
   };
 
+  // Show thread list if no active thread
+  if (!activeThreadId) {
+    return (
+      <div className="relative h-screen flex flex-col bg-neutral-50">
+        <TopBar
+          variant="back"
+          title="Talk to MMAgent"
+          onBackClick={() => navigate('/myagent')}
+        />
+        <div 
+          className="flex-1 overflow-hidden"
+          style={{
+            paddingTop: 'calc(56px + env(safe-area-inset-top))',
+          }}
+        >
+          <ChatThreadList
+            activeThreads={activeThreads}
+            recentThreads={recentThreads}
+            archivedThreads={archivedThreads}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onThreadSelect={handleThreadSelect}
+            onNewChat={handleNewChat}
+            onArchiveThread={handleArchiveThread}
+            onDeleteThread={handleDeleteThread}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show chat interface for active thread
   return (
     <div className="relative h-screen flex flex-col bg-neutral-50">
       <TopBar
         variant="back"
-        title="Talk to MMAgent"
-        onBackClick={() => navigate('/myagent')}
+        title={activeThread?.topic || 'Chat'}
+        onBackClick={handleNewChat}
       />
 
       {/* Messages Container */}
@@ -222,79 +275,64 @@ const AgentChatScreen = () => {
                   message.role === 'user' ? 'justify-end' : 'justify-start'
                 )}
               >
-                {/* Agent Avatar */}
                 {message.role === 'assistant' && (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center flex-shrink-0 text-lg">
                     🤖
                   </div>
                 )}
 
-                {/* Message Bubble */}
                 <div
                   className={cn(
-                    'flex flex-col',
-                    message.role === 'user' ? 'items-end' : 'items-start'
+                    'max-w-[75%] rounded-2xl px-4 py-2.5 relative group',
+                    message.role === 'user'
+                      ? 'bg-primary text-white'
+                      : 'bg-white border border-border/50'
                   )}
-                  style={{ maxWidth: '85%' }}
-                >
-                  <div
-                    onContextMenu={(e) => {
-                      e.preventDefault();
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    copyMessage(message.content);
+                  }}
+                  onTouchStart={(e) => {
+                    const touch = e.touches[0];
+                    const timer = setTimeout(() => {
                       copyMessage(message.content);
-                    }}
-                    onTouchStart={(e) => {
-                      const touch = e.touches[0];
-                      const timer = setTimeout(() => {
-                        copyMessage(message.content);
-                      }, 500);
-                      
-                      const clearTimer = () => {
-                        clearTimeout(timer);
-                        document.removeEventListener('touchend', clearTimer);
-                        document.removeEventListener('touchmove', clearTimer);
-                      };
-                      
-                      document.addEventListener('touchend', clearTimer);
-                      document.addEventListener('touchmove', clearTimer);
-                    }}
-                    className={cn(
-                      'px-4 py-3 break-words cursor-pointer select-text',
-                      message.role === 'assistant'
-                        ? 'bg-white rounded-2xl rounded-tl-sm shadow-sm'
-                        : 'bg-gradient-to-br from-primary-forest to-primary-forest/90 text-white rounded-2xl rounded-br-sm',
-                      message.status === 'error' && 'opacity-60'
-                    )}
-                  >
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
-                  </div>
-                  
-                  {/* Timestamp and Status */}
-                  <div className="flex items-center gap-1 mt-1 px-1">
-                    <span className="text-xs text-neutral-500">
+                    }, 500);
+                    e.currentTarget.addEventListener('touchend', () => clearTimeout(timer), {
+                      once: true,
+                    });
+                  }}
+                >
+                  <p className={cn(
+                    'text-sm leading-relaxed whitespace-pre-wrap break-words',
+                    message.role === 'user' ? 'text-white' : 'text-foreground'
+                  )}>
+                    {message.content}
+                  </p>
+
+                  <div className={cn(
+                    'flex items-center gap-2 mt-1',
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                  )}>
+                    <span className={cn(
+                      'text-xs',
+                      message.role === 'user' ? 'text-white/70' : 'text-muted-foreground'
+                    )}>
                       {formatTime(message.timestamp)}
                     </span>
+                    
                     {message.role === 'user' && message.status && (
-                      <>
-                        {message.status === 'sending' && (
-                          <span className="text-xs text-neutral-400">●</span>
-                        )}
-                        {message.status === 'sent' && (
-                          <span className="text-xs text-neutral-500">✓</span>
-                        )}
-                        {message.status === 'delivered' && (
-                          <span className="text-xs text-primary-forest">✓✓</span>
-                        )}
-                        {message.status === 'error' && (
+                      <span className="text-xs text-white/70">
+                        {message.status === 'sending' && '○'}
+                        {message.status === 'sent' && '✓'}
+                        {message.status === 'failed' && (
                           <button
                             onClick={() => retryMessage(message.id)}
-                            className="text-xs text-semantic-error hover:underline"
+                            className="text-semantic-error hover:underline"
                           >
                             Retry
                           </button>
                         )}
-                      </>
+                      </span>
                     )}
                   </div>
                 </div>
@@ -302,32 +340,31 @@ const AgentChatScreen = () => {
             ))}
           </AnimatePresence>
 
-          {/* Loading Indicator */}
           {isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex gap-2 items-start"
+              className="flex gap-2"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center flex-shrink-0 text-lg">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center text-lg">
                 🤖
               </div>
-              <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
+              <div className="bg-white border border-border/50 rounded-2xl px-4 py-2.5">
                 <div className="flex gap-1">
                   <motion.div
-                    className="w-2 h-2 bg-neutral-400 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                    className="w-2 h-2 rounded-full bg-muted-foreground"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0 }}
                   />
                   <motion.div
-                    className="w-2 h-2 bg-neutral-400 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                    className="w-2 h-2 rounded-full bg-muted-foreground"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
                   />
                   <motion.div
-                    className="w-2 h-2 bg-neutral-400 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                    className="w-2 h-2 rounded-full bg-muted-foreground"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
                   />
                 </div>
               </div>
@@ -338,70 +375,60 @@ const AgentChatScreen = () => {
         </div>
       </div>
 
-      {/* Quick Reply Pills */}
-      <AnimatePresence>
-        {showQuickReplies && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="bg-white border-t border-neutral-200 px-4 py-3 overflow-x-auto"
-            style={{
-              bottom: 'calc(68px + env(safe-area-inset-bottom))',
-            }}
-          >
-            <div className="flex gap-2 max-w-2xl mx-auto">
+      {/* Quick Replies */}
+      {showQuickReplies && messages.length <= 1 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 pb-2"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 84px)' }}
+        >
+          <div className="max-w-2xl mx-auto">
+            <p className="text-xs text-muted-foreground mb-2 text-center">
+              Quick actions
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
               {quickReplies.map((reply) => (
                 <button
                   key={reply.id}
                   onClick={() => handleQuickReply(reply.value)}
-                  className="flex-shrink-0 px-4 py-2 bg-white border-2 border-neutral-200 rounded-full text-sm font-medium text-neutral-700 hover:border-primary-forest active:scale-95 transition-all whitespace-nowrap"
+                  className="px-4 py-2 bg-white border border-border/50 rounded-full text-sm hover:bg-muted/50 transition-colors active:scale-95"
                 >
                   {reply.text}
                 </button>
               ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
 
       {/* Input Area */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 px-4 py-3 z-50"
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-border/50"
         style={{
-          paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)',
         }}
       >
-        <div className="max-w-2xl mx-auto flex items-end gap-2">
-          {/* Input Field */}
-          <textarea
-            ref={inputRef}
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyPress}
-            placeholder="Ask me anything..."
-            rows={1}
-            className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 bg-neutral-50 border-2 border-neutral-200 rounded-3xl text-[15px] resize-none focus:outline-none focus:border-primary-forest transition-colors"
-            style={{ height: '44px' }}
-          />
-
-          {/* Send Button */}
-          <motion.button
-            onClick={handleSend}
-            disabled={!inputValue.trim() || isLoading}
-            whileTap={{ scale: 0.9 }}
-            className={cn(
-              'w-11 h-11 rounded-full bg-gradient-to-br from-primary-forest to-primary-forest/90 flex items-center justify-center shadow-md transition-all',
-              (!inputValue.trim() || isLoading) && 'opacity-50'
-            )}
-          >
-            <motion.div
-              animate={isLoading ? { rotate: 360 } : { rotate: 0 }}
-              transition={{ duration: 0.3 }}
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <div className="flex gap-2 items-end">
+            <textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask MMAgent anything..."
+              className="flex-1 resize-none rounded-2xl border border-border/50 px-4 py-3 text-sm bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[44px] max-h-[120px]"
+              rows={1}
+              style={{ height: '44px' }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!inputValue.trim() || isLoading}
+              className="flex-shrink-0 w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
             >
-              <Send className="w-5 h-5 text-white" />
-            </motion.div>
-          </motion.button>
+              <Send size={18} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
