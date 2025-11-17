@@ -25,6 +25,7 @@ const AgentChatScreen = () => {
     addMessageToThread,
     updateMessageInThread,
     archiveThread,
+    unarchiveThread,
     deleteThread,
     getThread,
   } = useChatThreads();
@@ -85,6 +86,14 @@ const AgentChatScreen = () => {
     toast({
       title: 'Chat archived',
       description: 'The conversation has been moved to archived chats.',
+    });
+  };
+
+  const handleUnarchiveThread = (threadId: string) => {
+    unarchiveThread(threadId);
+    toast({
+      title: 'Chat unarchived',
+      description: 'The conversation has been moved back to your active chats.',
     });
   };
 
@@ -236,6 +245,7 @@ const AgentChatScreen = () => {
             onThreadSelect={handleThreadSelect}
             onNewChat={handleNewChat}
             onArchiveThread={handleArchiveThread}
+            onUnarchiveThread={handleUnarchiveThread}
             onDeleteThread={handleDeleteThread}
           />
         </div>
