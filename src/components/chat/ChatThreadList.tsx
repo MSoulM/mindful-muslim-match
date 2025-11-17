@@ -16,6 +16,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ChevronDown } from 'lucide-react';
 
 interface ChatThreadListProps {
@@ -43,6 +53,21 @@ export const ChatThreadList = ({
 }: ChatThreadListProps) => {
   const [recentOpen, setRecentOpen] = useState(true);
   const [archivedOpen, setArchivedOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [threadToDelete, setThreadToDelete] = useState<{ id: string; topic: string } | null>(null);
+
+  const openDeleteDialog = (threadId: string, topic: string) => {
+    setThreadToDelete({ id: threadId, topic });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (threadToDelete) {
+      onDeleteThread(threadToDelete.id);
+      setDeleteDialogOpen(false);
+      setThreadToDelete(null);
+    }
+  };
 
   const renderThread = (thread: ChatThread, showMenu: boolean = true) => {
     const lastMessage = thread.messages[thread.messages.length - 1];
@@ -102,7 +127,7 @@ export const ChatThreadList = ({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDeleteThread(thread.id);
+                  openDeleteDialog(thread.id, thread.topic);
                 }}
                 className="text-semantic-error"
               >
@@ -117,7 +142,8 @@ export const ChatThreadList = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <>
+      <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between mb-4">
@@ -222,6 +248,28 @@ export const ChatThreadList = ({
           </div>
         )}
       </div>
-    </div>
+      </div>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{threadToDelete?.topic}"? This will permanently remove all messages in this conversation. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-semantic-error hover:bg-semantic-error/90 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
