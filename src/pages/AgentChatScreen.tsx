@@ -26,6 +26,8 @@ const AgentChatScreen = () => {
     updateMessageInThread,
     archiveThread,
     unarchiveThread,
+    pinThread,
+    unpinThread,
     deleteThread,
     getThread,
   } = useChatThreads();
@@ -94,6 +96,22 @@ const AgentChatScreen = () => {
     toast({
       title: 'Chat unarchived',
       description: 'The conversation has been moved back to your active chats.',
+    });
+  };
+
+  const handlePinThread = (threadId: string) => {
+    pinThread(threadId);
+    toast({
+      title: 'Chat pinned',
+      description: 'This conversation will stay at the top of your active chats.',
+    });
+  };
+
+  const handleUnpinThread = (threadId: string) => {
+    unpinThread(threadId);
+    toast({
+      title: 'Chat unpinned',
+      description: 'This conversation has been unpinned.',
     });
   };
 
@@ -246,6 +264,8 @@ const AgentChatScreen = () => {
             onNewChat={handleNewChat}
             onArchiveThread={handleArchiveThread}
             onUnarchiveThread={handleUnarchiveThread}
+            onPinThread={handlePinThread}
+            onUnpinThread={handleUnpinThread}
             onDeleteThread={handleDeleteThread}
           />
         </div>

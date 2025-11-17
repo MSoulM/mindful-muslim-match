@@ -15,6 +15,7 @@ export interface ChatThread {
   createdAt: Date;
   lastMessageAt: Date;
   isArchived: boolean;
+  isPinned: boolean;
 }
 
 const STORAGE_KEY = 'mmgent_chat_threads';
@@ -91,7 +92,8 @@ export const useChatThreads = () => {
       messages: [],
       createdAt: now,
       lastMessageAt: now,
-      isArchived: false
+      isArchived: false,
+      isPinned: false
     };
     
     saveThreads([newThread, ...threads]);
@@ -139,6 +141,22 @@ export const useChatThreads = () => {
     saveThreads(updatedThreads);
   };
 
+  // Pin thread
+  const pinThread = (threadId: string) => {
+    const updatedThreads = threads.map(t => 
+      t.id === threadId ? { ...t, isPinned: true } : t
+    );
+    saveThreads(updatedThreads);
+  };
+
+  // Unpin thread
+  const unpinThread = (threadId: string) => {
+    const updatedThreads = threads.map(t => 
+      t.id === threadId ? { ...t, isPinned: false } : t
+    );
+    saveThreads(updatedThreads);
+  };
+
   // Delete thread
   const deleteThread = (threadId: string) => {
     saveThreads(threads.filter(t => t.id !== threadId));
@@ -160,7 +178,13 @@ export const useChatThreads = () => {
 
   const activeThreads = filteredThreads
     .filter(t => !t.isArchived)
-    .sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime())
+    .sort((a, b) => {
+      // Pinned threads always come first
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      // Then sort by last message time
+      return b.lastMessageAt.getTime() - a.lastMessageAt.getTime();
+    })
     .slice(0, 10);
 
   const recentThreads = filteredThreads
@@ -184,6 +208,8 @@ export const useChatThreads = () => {
     updateMessageInThread,
     archiveThread,
     unarchiveThread,
+    pinThread,
+    unpinThread,
     deleteThread,
     getThread
   };

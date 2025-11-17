@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare, Search, Archive, Plus, Trash2, MoreVertical } from 'lucide-react';
+import { MessageSquare, Search, Archive, Plus, Trash2, MoreVertical, Pin } from 'lucide-react';
 import { ChatThread } from '@/hooks/useChatThreads';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,8 @@ interface ChatThreadListProps {
   onNewChat: () => void;
   onArchiveThread: (threadId: string) => void;
   onUnarchiveThread: (threadId: string) => void;
+  onPinThread: (threadId: string) => void;
+  onUnpinThread: (threadId: string) => void;
   onDeleteThread: (threadId: string) => void;
 }
 
@@ -51,6 +53,8 @@ export const ChatThreadList = ({
   onNewChat,
   onArchiveThread,
   onUnarchiveThread,
+  onPinThread,
+  onUnpinThread,
   onDeleteThread,
 }: ChatThreadListProps) => {
   const [recentOpen, setRecentOpen] = useState(true);
@@ -88,9 +92,14 @@ export const ChatThreadList = ({
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-medium text-sm text-foreground truncate">
-              {thread.topic}
-            </h3>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {thread.isPinned && (
+                <Pin className="w-3.5 h-3.5 text-primary flex-shrink-0" fill="currentColor" />
+              )}
+              <h3 className="font-medium text-sm text-foreground truncate">
+                {thread.topic}
+              </h3>
+            </div>
             <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
               {formatDistanceToNow(thread.lastMessageAt, { addSuffix: true })}
             </span>
@@ -115,17 +124,41 @@ export const ChatThreadList = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {!thread.isArchived ? (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onArchiveThread(thread.id);
-                  }}
-                >
-                  <Archive className="w-4 h-4 mr-2" />
-                  Archive
-                </DropdownMenuItem>
-              ) : (
+              {!thread.isArchived && (
+                <>
+                  {thread.isPinned ? (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUnpinThread(thread.id);
+                      }}
+                    >
+                      <Pin className="w-4 h-4 mr-2" />
+                      Unpin
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPinThread(thread.id);
+                      }}
+                    >
+                      <Pin className="w-4 h-4 mr-2" />
+                      Pin
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onArchiveThread(thread.id);
+                    }}
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    Archive
+                  </DropdownMenuItem>
+                </>
+              )}
+              {thread.isArchived && (
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
