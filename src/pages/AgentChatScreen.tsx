@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowLeft } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { ChatThreadList } from '@/components/chat/ChatThreadList';
+import { NewChatScreen } from '@/components/chat/NewChatScreen';
 import { useChatThreads, ChatMessage } from '@/hooks/useChatThreads';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +37,7 @@ const AgentChatScreen = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(true);
+  const [showNewChatScreen, setShowNewChatScreen] = useState(false);
 
   const activeThread = activeThreadId ? getThread(activeThreadId) : null;
   const messages = activeThread?.messages || [];
@@ -73,11 +75,13 @@ const AgentChatScreen = () => {
   const handleNewChat = () => {
     setActiveThreadId(null);
     setShowQuickReplies(true);
+    setShowNewChatScreen(true);
   };
 
   const handleThreadSelect = (threadId: string) => {
     setActiveThreadId(threadId);
     setShowQuickReplies(false);
+    setShowNewChatScreen(false);
   };
 
   const handleArchiveThread = (threadId: string) => {
@@ -239,8 +243,85 @@ const AgentChatScreen = () => {
     });
   };
 
-  // Show thread list if no active thread
-  if (!activeThreadId) {
+  // Show New Chat Screen if explicitly requested
+  if (showNewChatScreen && !activeThreadId) {
+    return (
+      <div className="relative h-screen flex flex-col bg-neutral-50">
+        <TopBar
+          variant="back"
+          title="Start New Chat"
+          onBackClick={() => setShowNewChatScreen(false)}
+        />
+        <div 
+          className="flex-1 overflow-y-auto"
+          style={{
+            paddingTop: 'calc(56px + env(safe-area-inset-top))',
+          }}
+        >
+          <NewChatScreen
+            onQuickReply={(value) => {
+              if (value) {
+                setInputValue(value);
+                // Need to wait for state update before sending
+                setTimeout(() => {
+                  const messageText = value;
+                  if (!messageText.trim()) return;
+
+                  // Create new thread with this message
+                  const newThread = createThread(messageText.trim());
+                  setActiveThreadId(newThread.id);
+                  
+                  // Add welcome message
+                  const welcomeMessage: ChatMessage = {
+                    id: `msg-${Date.now()}`,
+                    role: 'assistant',
+                    content: "Assalamu alaikum! I'm here to help you on your journey to find your life partner. What would you like to know?",
+                    timestamp: new Date(),
+                    status: 'sent',
+                  };
+                  addMessageToThread(newThread.id, welcomeMessage);
+
+                  // Add user message
+                  const userMessage: ChatMessage = {
+                    id: `msg-${Date.now() + 1}`,
+                    role: 'user',
+                    content: messageText.trim(),
+                    timestamp: new Date(),
+                    status: 'sent',
+                  };
+                  addMessageToThread(newThread.id, userMessage);
+
+                  // Simulate AI response
+                  setIsLoading(true);
+                  setTimeout(() => {
+                    const assistantMessage: ChatMessage = {
+                      id: `msg-${Date.now() + 2}`,
+                      role: 'assistant',
+                      content: "I understand you're interested in that topic. Let me help you with some insights based on your profile and preferences. What specific aspect would you like to explore further?",
+                      timestamp: new Date(),
+                      status: 'sent',
+                    };
+                    addMessageToThread(newThread.id, assistantMessage);
+                    setIsLoading(false);
+                  }, 1500);
+
+                  setShowNewChatScreen(false);
+                  setShowQuickReplies(false);
+                }, 0);
+              } else {
+                // "Ask Anything" - just close new chat screen and show chat input
+                setShowNewChatScreen(false);
+                setTimeout(() => inputRef.current?.focus(), 100);
+              }
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show thread list if no active thread and not in new chat mode
+  if (!activeThreadId && !showNewChatScreen) {
     return (
       <div className="relative h-screen flex flex-col bg-neutral-50">
         <TopBar
