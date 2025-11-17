@@ -37,6 +37,7 @@ interface ChatThreadListProps {
   onThreadSelect: (threadId: string) => void;
   onNewChat: () => void;
   onArchiveThread: (threadId: string) => void;
+  onUnarchiveThread: (threadId: string) => void;
   onDeleteThread: (threadId: string) => void;
 }
 
@@ -49,6 +50,7 @@ export const ChatThreadList = ({
   onThreadSelect,
   onNewChat,
   onArchiveThread,
+  onUnarchiveThread,
   onDeleteThread,
 }: ChatThreadListProps) => {
   const [recentOpen, setRecentOpen] = useState(true);
@@ -113,7 +115,7 @@ export const ChatThreadList = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {!thread.isArchived && (
+              {!thread.isArchived ? (
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
@@ -122,6 +124,16 @@ export const ChatThreadList = ({
                 >
                   <Archive className="w-4 h-4 mr-2" />
                   Archive
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUnarchiveThread(thread.id);
+                  }}
+                >
+                  <Archive className="w-4 h-4 mr-2" />
+                  Unarchive
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -220,7 +232,7 @@ export const ChatThreadList = ({
             </div>
             <CollapsibleContent>
               <div className="px-4 pb-2 space-y-1">
-                {archivedThreads.map(thread => renderThread(thread, false))}
+                {archivedThreads.map(thread => renderThread(thread))}
               </div>
             </CollapsibleContent>
           </Collapsible>

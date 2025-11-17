@@ -131,6 +131,14 @@ export const useChatThreads = () => {
     saveThreads(updatedThreads);
   };
 
+  // Unarchive thread
+  const unarchiveThread = (threadId: string) => {
+    const updatedThreads = threads.map(t => 
+      t.id === threadId ? { ...t, isArchived: false } : t
+    );
+    saveThreads(updatedThreads);
+  };
+
   // Delete thread
   const deleteThread = (threadId: string) => {
     saveThreads(threads.filter(t => t.id !== threadId));
@@ -175,6 +183,7 @@ export const useChatThreads = () => {
     addMessageToThread,
     updateMessageInThread,
     archiveThread,
+    unarchiveThread,
     deleteThread,
     getThread
   };
