@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { pageTransition, pageTransitionConfig } from "@/utils/animations";
 import { AppProvider } from "@/context/AppContext";
@@ -27,6 +27,17 @@ import MessagesScreen from "./pages/MessagesScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import EditProfileScreen from "./pages/EditProfileScreen";
 import { PreferencesScreen } from "./pages/onboarding/PreferencesScreen";
+import { WelcomeScreen } from "./pages/onboarding/WelcomeScreen";
+import { BasicInfoScreen } from "./pages/onboarding/BasicInfoScreen";
+import { ReligiousPreferencesScreen } from "./pages/onboarding/ReligiousPreferencesScreen";
+import { PhotoUploadScreen } from "./pages/onboarding/PhotoUploadScreen";
+import { DNAQuestionnaireScreen } from "./pages/onboarding/DNAQuestionnaireScreen";
+import NotificationsScreen from "./pages/onboarding/NotificationsScreen";
+import CommunicationPrefsScreen from "./pages/onboarding/CommunicationPrefsScreen";
+import ProfileCompleteScreen from "./pages/onboarding/ProfileCompleteScreen";
+import { LoginScreen } from "./pages/auth/LoginScreen";
+import { OTPScreen } from "./pages/auth/OTPScreen";
+import { ResetPasswordScreen } from "./pages/auth/ResetPasswordScreen";
 import ValuesDetailScreen from "./pages/dna/ValuesDetailScreen";
 import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
 import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
@@ -74,6 +85,7 @@ const queryClient = new QueryClient();
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   return (
     <AnimatePresence mode="wait">
@@ -346,6 +358,85 @@ const AnimatedRoutes = () => {
         <Route path="/help/tutorial/:id" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <TutorialScreen />
+          </motion.div>
+        } />
+        
+        {/* Auth Routes */}
+        <Route path="/auth/login" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <LoginScreen />
+          </motion.div>
+        } />
+        <Route path="/auth/otp" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <OTPScreen />
+          </motion.div>
+        } />
+        <Route path="/auth/reset-password" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ResetPasswordScreen />
+          </motion.div>
+        } />
+        
+        {/* Onboarding Routes */}
+        <Route path="/onboarding/welcome" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <WelcomeScreen />
+          </motion.div>
+        } />
+        <Route path="/onboarding/basic-info" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <BasicInfoScreen />
+          </motion.div>
+        } />
+        <Route path="/onboarding/religious-preferences" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ReligiousPreferencesScreen />
+          </motion.div>
+        } />
+        <Route path="/onboarding/photo-upload" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <PhotoUploadScreen />
+          </motion.div>
+        } />
+        <Route path="/onboarding/dna-questionnaire" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <DNAQuestionnaireScreen />
+          </motion.div>
+        } />
+        <Route path="/onboarding/preferences" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <PreferencesScreen />
+          </motion.div>
+        } />
+        <Route path="/onboarding/notifications" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <NotificationsScreen 
+              onAllow={() => navigate('/onboarding/communication-prefs')}
+              onSkip={() => navigate('/onboarding/communication-prefs')}
+            />
+          </motion.div>
+        } />
+        <Route path="/onboarding/communication-prefs" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <CommunicationPrefsScreen 
+              onNext={() => navigate('/onboarding/complete')}
+              onBack={() => navigate('/onboarding/notifications')}
+            />
+          </motion.div>
+        } />
+        <Route path="/onboarding/complete" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ProfileCompleteScreen 
+              profile={{
+                name: 'User',
+                age: 0,
+                location: '',
+                dnaScore: 0
+              }}
+              onViewProfile={() => navigate('/profile')}
+              onStartMatching={() => navigate('/discover')}
+            />
           </motion.div>
         } />
         
