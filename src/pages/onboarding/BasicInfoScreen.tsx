@@ -246,6 +246,9 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
                       disabled={(date) =>
                         date > new Date() || date < new Date('1940-01-01')
                       }
+                      captionLayout="dropdown-buttons"
+                      fromYear={1940}
+                      toYear={new Date().getFullYear()}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
