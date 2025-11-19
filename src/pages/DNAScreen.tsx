@@ -328,6 +328,18 @@ export default function DNAScreen() {
                   );
                 })}
               </div>
+
+              {/* Learn More Link */}
+              <motion.button
+                onClick={() => navigate('/tutorial')}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.3 }}
+                className="flex items-center justify-center gap-2 mx-auto mt-6 text-sm font-medium text-primary-forest hover:text-primary-forest/80 transition-colors"
+              >
+                <span>See how MySoulDNA works</span>
+                <ChevronRight className="w-4 h-4" />
+              </motion.button>
             </motion.div>
           </div>
         </ScreenContainer>
