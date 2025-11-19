@@ -12,6 +12,7 @@ import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useJourney, STAGE_INFO } from '@/hooks/useJourney';
 import { cn } from '@/lib/utils';
 
 const categories = [
@@ -69,6 +70,7 @@ export default function DNAScreen() {
   const { unreadCount } = useNotifications();
   const { pendingCount } = useChaiChatPending();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
+  const { journeyStatus, getProgressPercentage } = useJourney();
 
   const hapticFeedback = (style: 'light' | 'medium' | 'heavy' = 'light') => {
     if ('vibrate' in navigator) {
@@ -160,6 +162,16 @@ export default function DNAScreen() {
                 }}
                 gradient="default"
                 className="min-h-[140px] relative"
+                journeyProgress={
+                  journeyStatus
+                    ? {
+                        stage: journeyStatus.current_stage,
+                        stageLabel: STAGE_INFO[journeyStatus.current_stage].name,
+                        progressPercentage: getProgressPercentage(),
+                        daysInStage: journeyStatus.days_in_current_stage,
+                      }
+                    : undefined
+                }
               />
             </motion.div>
 
