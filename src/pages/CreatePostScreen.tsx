@@ -270,7 +270,15 @@ export default function CreatePostScreen() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast.success('Post shared successfully!');
-      navigate('/post-success');
+      
+      // Navigate with depth data
+      navigate('/post-success', {
+        state: {
+          depthLevel,
+          multiplier: getMultiplier(depthLevel),
+          selectedCategories
+        }
+      });
     } catch (error) {
       toast.error('Failed to share post. Please try again.');
     } finally {
