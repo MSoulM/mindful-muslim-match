@@ -226,6 +226,31 @@ export default function HowMySoulDNAWorksScreen() {
                 revealing layers impossible to capture upfront.
               </p>
             </motion.div>
+
+            {/* Depth System Demo CTA */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3 }}
+            >
+              <button
+                onClick={() => navigate('/depth-demo')}
+                className="w-full bg-gradient-to-r from-primary to-[#4A8B8C] text-white rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                      <Sparkles className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-lg">DNA Depth Multiplier</div>
+                      <div className="text-sm text-white/80">See how quality sharing builds stronger DNA</div>
+                    </div>
+                  </div>
+                  <ChevronLeft className="w-6 h-6 rotate-180" />
+                </div>
+              </button>
+            </motion.div>
           </div>
         </ScreenContainer>
       </div>
