@@ -63,6 +63,7 @@ import HelpCenterScreen from "./pages/HelpCenterScreen";
 import FAQScreen from "./pages/FAQScreen";
 import ContactSupportScreen from "./pages/ContactSupportScreen";
 import TutorialScreen from "./pages/TutorialScreen";
+import HowMySoulDNAWorksScreen from "./pages/HowMySoulDNAWorksScreen";
 import CreatePostScreen from "./pages/CreatePostScreen";
 import EditPostScreen from "./pages/EditPostScreen";
 import PostSuccessScreen from "./pages/PostSuccessScreen";
@@ -358,6 +359,11 @@ const AnimatedRoutes = () => {
         <Route path="/help/tutorial/:id" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <TutorialScreen />
+          </motion.div>
+        } />
+        <Route path="/how-mysouldna-works" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <HowMySoulDNAWorksScreen />
           </motion.div>
         } />
         
