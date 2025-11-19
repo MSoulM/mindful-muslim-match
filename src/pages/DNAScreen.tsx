@@ -331,7 +331,7 @@ export default function DNAScreen() {
 
               {/* Learn More Link */}
               <motion.button
-                onClick={() => navigate('/tutorial')}
+                onClick={() => navigate('/how-mysouldna-works')}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.3 }}
