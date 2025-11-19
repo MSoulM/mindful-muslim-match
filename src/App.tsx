@@ -81,6 +81,7 @@ import FormNavigationDemo from "./pages/FormNavigationDemo";
 import ResponsiveDemo from "./pages/ResponsiveDemo";
 import AccessibilityDemo from "./pages/AccessibilityDemo";
 import PremiumPolishDemo from "./pages/PremiumPolishDemo";
+import DepthSystemDemo from "./pages/DepthSystemDemo";
 import NotFound from "./pages/NotFound";
 import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
@@ -403,6 +404,11 @@ const AnimatedRoutes = () => {
         <Route path="/journey-dashboard" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <JourneyDashboardScreen />
+          </motion.div>
+        } />
+        <Route path="/depth-demo" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <DepthSystemDemo />
           </motion.div>
         } />
         
