@@ -7,6 +7,7 @@ import { FeatureCard } from '@/components/ui/Cards/FeatureCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
+import { DepthProgress } from '@/components/profile/DepthProgress';
 import { 
   Edit2, 
   Sliders, 
@@ -177,6 +178,11 @@ const ProfileScreen = () => {
               </div>
             </BaseCard>
           )}
+        </div>
+
+        {/* Depth Progress */}
+        <div className="mx-5 mb-5">
+          <DepthProgress />
         </div>
 
         {/* Profile Sections */}
