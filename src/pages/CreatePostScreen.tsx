@@ -10,12 +10,18 @@ import {
   X, 
   Image as ImageIcon,
   Video,
-  Share2
+  Share2,
+  ChevronDown,
+  ChevronUp,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { compressImage, formatFileSize } from '@/utils/imageCompression';
 import { generateThumbnail } from '@/utils/thumbnailGenerator';
+import { DepthIndicator } from '@/components/profile/DepthIndicator';
+import { DepthCoachingPrompts } from '@/components/profile/DepthCoachingPrompts';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const DNA_CATEGORIES = [
   { id: 'values', icon: '⚖️', label: 'Values & Beliefs' },
@@ -41,7 +47,11 @@ export default function CreatePostScreen() {
   const [isPosting, setIsPosting] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [isSharedContent, setIsSharedContent] = useState(false);
+  const [depthLevel, setDepthLevel] = useState<1 | 2 | 3 | 4>(1);
+  const [showDepthCoaching, setShowDepthCoaching] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const debouncedCaption = useDebounce(caption, 500);
 
   // Check for shared content on mount
   useEffect(() => {
@@ -60,6 +70,64 @@ export default function CreatePostScreen() {
       sessionStorage.removeItem('share_source');
     }
   }, []);
+
+  // Analyze caption depth when user stops typing
+  useEffect(() => {
+    if (debouncedCaption.length > 10) {
+      analyzeDepth(debouncedCaption);
+    }
+  }, [debouncedCaption]);
+
+  const analyzeDepth = async (text: string) => {
+    setIsAnalyzing(true);
+    
+    try {
+      // Client-side depth analysis based on text characteristics
+      const depth = calculateDepth(text);
+      setDepthLevel(depth);
+    } catch (error) {
+      console.error('Depth analysis failed:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const calculateDepth = (text: string): 1 | 2 | 3 | 4 => {
+    const wordCount = text.split(/\s+/).length;
+    
+    // Emotional indicators
+    const emotionalWords = /\b(feel|felt|feeling|love|fear|hope|dream|heart|soul|passion|anxious|excited|nervous|grateful|blessed|overwhelmed)\b/gi;
+    const emotionalMatches = (text.match(emotionalWords) || []).length;
+    
+    // Transformational indicators
+    const transformationalWords = /\b(changed|grew|learned|realized|discovered|transformed|became|journey|growth|evolution|before|after|now|understand)\b/gi;
+    const transformationalMatches = (text.match(transformationalWords) || []).length;
+    
+    // Context indicators
+    const contextWords = /\b(because|since|therefore|reason|why|means|important|matters|helps|allows)\b/gi;
+    const contextMatches = (text.match(contextWords) || []).length;
+    
+    // Scoring system
+    if (transformationalMatches >= 3 && emotionalMatches >= 2 && wordCount > 80) {
+      return 4; // Transformational
+    } else if (emotionalMatches >= 2 && wordCount > 50) {
+      return 3; // Emotional
+    } else if (contextMatches >= 2 && wordCount > 30) {
+      return 2; // Context
+    } else {
+      return 1; // Surface
+    }
+  };
+
+  const getMultiplier = (level: number): 1 | 2 | 3 | 5 => {
+    switch(level) {
+      case 1: return 1;
+      case 2: return 2;
+      case 3: return 3;
+      case 4: return 5;
+      default: return 1;
+    }
+  };
 
   const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -336,36 +404,118 @@ export default function CreatePostScreen() {
         </div>
 
         {/* Caption Section */}
-        <div className="bg-background p-5">
+        <div className="bg-background p-5 space-y-4">
           {/* Shared Content Indicator */}
           {isSharedContent && (
-            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-lg">
               <Share2 className="w-4 h-4 text-primary" />
               <span className="text-xs font-medium text-primary">
                 Shared from external app
               </span>
             </div>
           )}
+
+          {/* Depth System Info - Show on first visit */}
+          {caption.length === 0 && !sessionStorage.getItem('depth_info_shown') && (
+            <div className="flex gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+              <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <p className="font-semibold text-foreground">✨ Quality matters more than quantity</p>
+                <p className="text-muted-foreground">
+                  Deeper, more authentic sharing earns up to 5x DNA points. We'll show you your depth level as you type!
+                </p>
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem('depth_info_shown', 'true');
+                    navigate('/depth-demo');
+                  }}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Learn more →
+                </button>
+              </div>
+            </div>
+          )}
           
-          <Textarea
-            placeholder="Share something about yourself..."
-            value={caption}
-            onChange={(e) => {
-              if (e.target.value.length <= 500) {
-                setCaption(e.target.value);
-                if (isSharedContent) setIsSharedContent(false); // Remove indicator once user edits
-              }
-            }}
-            className="min-h-[100px] max-h-[200px] resize-none text-base border-0 p-0 focus-visible:ring-0"
-          />
-          <div className="flex justify-end mt-2">
-            <span className={cn(
-              "text-xs",
-              caption.length > 450 ? "text-destructive" : "text-muted-foreground"
-            )}>
-              {caption.length}/500
-            </span>
+          <div>
+            <Textarea
+              placeholder="Share something meaningful about yourself..."
+              value={caption}
+              onChange={(e) => {
+                if (e.target.value.length <= 500) {
+                  setCaption(e.target.value);
+                  if (isSharedContent) setIsSharedContent(false); // Remove indicator once user edits
+                }
+              }}
+              className="min-h-[100px] max-h-[200px] resize-none text-base border-0 p-0 focus-visible:ring-0"
+            />
+            <div className="flex justify-end mt-2">
+              <span className={cn(
+                "text-xs",
+                caption.length > 450 ? "text-destructive" : "text-muted-foreground"
+              )}>
+                {caption.length}/500
+              </span>
+            </div>
           </div>
+
+          {/* Depth Indicator - Show when user has typed something */}
+          {debouncedCaption.length > 10 && (
+            <div className="space-y-3 animate-in fade-in-50 duration-500">
+              <DepthIndicator
+                text={debouncedCaption}
+                depthLevel={depthLevel}
+                multiplier={getMultiplier(depthLevel)}
+              />
+
+              {/* DNA Points Impact */}
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">This post will earn you </span>
+                  <span className="font-bold text-primary">{getMultiplier(depthLevel)}x</span>
+                  <span className="text-muted-foreground"> DNA points</span>
+                </div>
+                {isAnalyzing && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-primary border-t-transparent" />
+                    Analyzing...
+                  </div>
+                )}
+              </div>
+
+              {/* Coaching Prompts Toggle */}
+              {depthLevel < 4 && caption.length > 20 && (
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setShowDepthCoaching(!showDepthCoaching)}
+                    className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {showDepthCoaching ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        Hide coaching prompts
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        Get tips to deepen your share
+                      </>
+                    )}
+                  </button>
+
+                  {showDepthCoaching && (
+                    <DepthCoachingPrompts
+                      currentDepth={depthLevel}
+                      topic={selectedCategories.length > 0 
+                        ? DNA_CATEGORIES.find(c => c.id === selectedCategories[0])?.label || 'this topic'
+                        : 'this topic'
+                      }
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <Separator />
