@@ -156,7 +156,7 @@ export default function DNAScreen() {
               <DNAStatsCard
                 mainStat={{
                   value: 95,
-                  label: 'Your Compatibility Profile'
+                  label: 'MySoulDNA Confidence Score'
                 }}
                 gradient="default"
                 className="min-h-[140px] relative"
@@ -207,7 +207,7 @@ export default function DNAScreen() {
                 variant="highlight"
                 icon={<span className="text-xl">💡</span>}
                 title="How to Improve Your Profile"
-                description="Share your thoughts, photos, and videos! Our MMEngine AI analyzes your content to understand you better."
+                description="mySoulDNA is not a static profile but a living, breathing entity that Evolves through every interaction, Adapts based on real behavioral patterns, Deepens over months of engagement, revealing layers impossible to capture upfront, Self-corrects through contradiction detection and temporal validation"
                 className="border-2 border-primary-gold/30"
               />
 
