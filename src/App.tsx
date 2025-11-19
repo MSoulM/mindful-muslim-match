@@ -82,8 +82,41 @@ import ResponsiveDemo from "./pages/ResponsiveDemo";
 import AccessibilityDemo from "./pages/AccessibilityDemo";
 import PremiumPolishDemo from "./pages/PremiumPolishDemo";
 import NotFound from "./pages/NotFound";
+import { MicroMomentTracker } from "@/services/MicroMomentTracker";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
+
+// Initialize tracking system on app load
+const TrackingInitializer = ({ children }: { children: React.ReactNode }) => {
+  useEffect(() => {
+    // Initialize tracker with config
+    MicroMomentTracker.initialize({
+      batchSize: 50,
+      batchInterval: 30000, // 30 seconds
+      apiEndpoint: '/api/tracking/micro-moments',
+      enableLogging: import.meta.env.DEV, // Only log in development
+    });
+
+    // Store user signup time if not already stored (for tracking metrics)
+    if (!localStorage.getItem('user_signup_time')) {
+      localStorage.setItem('user_signup_time', Date.now().toString());
+    }
+
+    // Store session start time
+    sessionStorage.setItem('session_start_time', Date.now().toString());
+
+    return () => {
+      MicroMomentTracker.destroy();
+    };
+  }, []);
+
+  // Use session tracker hook
+  useSessionTracker();
+
+  return <>{children}</>;
+};
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -524,7 +557,9 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <AnimatedRoutes />
+                <TrackingInitializer>
+                  <AnimatedRoutes />
+                </TrackingInitializer>
               </BrowserRouter>
             </TooltipProvider>
           </DNAProvider>
