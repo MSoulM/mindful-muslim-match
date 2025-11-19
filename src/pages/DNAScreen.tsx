@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Palette, Brain, Home, Target, Upload, Image, Video, FileText, ChevronRight } from 'lucide-react';
+import { Heart, Palette, Brain, Home, Target, Upload, Image, Video, FileText, ChevronRight, TrendingUp } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -188,6 +188,53 @@ export default function DNAScreen() {
                 );
               })}
             </div>
+
+            {/* Journey Dashboard CTA */}
+            <motion.button
+              onClick={() => navigate('/journey-dashboard')}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              whileTap={{ scale: 0.97 }}
+              className={cn(
+                'w-full min-h-[90px] rounded-2xl',
+                'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500',
+                'shadow-lg hover:shadow-xl',
+                'transition-all duration-300',
+                'flex items-center gap-4 px-6',
+                'border-2 border-white/20',
+                'my-6'
+              )}
+            >
+              {/* Icon Circle with Animation */}
+              <motion.div
+                animate={{
+                  rotate: [0, 5, -5, 0],
+                  scale: [1, 1.05, 1],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-sm flex items-center justify-center flex-shrink-0"
+              >
+                <TrendingUp className="w-8 h-8 text-white" />
+              </motion.div>
+
+              {/* Content */}
+              <div className="flex-1 text-left">
+                <p className="text-lg font-bold text-white mb-1">
+                  Track Your Journey
+                </p>
+                <p className="text-sm text-white/90">
+                  View milestones, progress & achievements
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <ChevronRight className="w-6 h-6 text-white/80 flex-shrink-0" />
+            </motion.button>
 
             {/* Build DNA Section */}
             <motion.div
