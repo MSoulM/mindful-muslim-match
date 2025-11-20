@@ -5,6 +5,12 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { useProfileStore } from '@/store/profileStore';
+import { detectTopicsInContent, CategoryType } from '@/config/topicRequirements';
+import { checkAndNotifyMilestones } from '@/utils/milestoneDetection';
+import { notifyCustom } from '@/utils/notifications';
+import { ProfileUpdateToast } from '@/components/notifications/ProfileUpdateToast';
+import { useNavigate } from 'react-router-dom';
 
 interface ContentUploadModalProps {
   isOpen: boolean;
@@ -48,6 +54,9 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
   onClose,
   preSelectedCategory,
 }) => {
+  const navigate = useNavigate();
+  const profileStore = useProfileStore();
+  
   const [activeTab, setActiveTab] = useState<ContentType>('text');
   
   // Text post state
@@ -605,19 +614,84 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       return;
     }
     
+    // Get current profile state
+    const oldOverallCompletion = profileStore.overallCompletion;
+    const oldChaiChatEligible = profileStore.chaiChatEligible;
+    const categoryId = predictedCategory?.primary.name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_') as CategoryType || 'values_beliefs' as CategoryType;
+    const oldCategoryData = profileStore.categories[categoryId];
+    const oldCategoryCompletion = oldCategoryData?.percentage || 0;
+    const oldBalanceScore = profileStore.balanceScore;
+    
     setIsSubmitting(true);
     setValidationError('');
     
-    // Log analytics event (mock)
+    // Get content based on active tab
+    let content = '';
+    switch (activeTab) {
+      case 'text':
+        content = textContent;
+        break;
+      case 'photo':
+        content = photoCaption;
+        break;
+      case 'video':
+        content = videoCaption;
+        break;
+      case 'voice':
+        content = voiceDescription;
+        break;
+    }
+    
+    // Detect topics from content
+    const detectedTopics = detectTopicsInContent(content, categoryId);
+    const previousTopics = oldCategoryData?.topicsCovered || [];
+    const newTopicsCovered = detectedTopics.filter(t => !previousTopics.includes(t));
+    
+    // Log analytics event
     console.log('content_posted', {
       type: activeTab,
-      category: predictedCategory?.primary.name,
-      completion_increase: 4,
+      category: categoryId,
+      detectedTopics,
+      newTopicsCovered,
       timestamp: Date.now(),
     });
     
-    // Mock submission delay
+    // Mock submission delay with progress
     setTimeout(() => {
+      // Calculate new values
+      const newContentCount = (oldCategoryData?.contentCount || 0) + 1;
+      const newWordCount = (oldCategoryData?.wordCount || 0) + content.split(/\s+/).length;
+      const allTopicsCovered = [...new Set([...previousTopics, ...detectedTopics])];
+      
+      // Calculate new percentage (simple formula: content count * 10 + topics * 15, capped at 100)
+      const contentBonus = Math.min(newContentCount * 10, 40);
+      const topicBonus = Math.min((allTopicsCovered.length / (oldCategoryData?.requiredTopics || 4)) * 40, 40);
+      const wordBonus = Math.min((newWordCount / 500) * 20, 20);
+      const newCategoryCompletion = Math.min(contentBonus + topicBonus + wordBonus, 100);
+      
+      // Update profile store
+      profileStore.updateCategory(categoryId, {
+        percentage: Math.round(newCategoryCompletion),
+        contentCount: newContentCount,
+        wordCount: newWordCount,
+        topicsCovered: allTopicsCovered,
+      });
+      
+      // Add newly covered topics to store
+      if (newTopicsCovered.length > 0) {
+        profileStore.addNewlyCoveredTopics(newTopicsCovered);
+      }
+      
+      // Mark this category as recently updated
+      profileStore.setRecentlyUpdatedCategory(categoryId);
+      setTimeout(() => {
+        profileStore.setRecentlyUpdatedCategory(null);
+      }, 3000);
+      
+      // Get new overall completion
+      const newOverallCompletion = profileStore.overallCompletion;
+      const newChaiChatEligible = profileStore.chaiChatEligible;
+      
       setIsSubmitting(false);
       setShowSuccess(true);
       
@@ -630,7 +704,66 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
         spread: 70,
         origin: { y: 0.6 },
       });
+      
+      // Show profile update toast after a brief delay
+      setTimeout(() => {
+        notifyCustom(
+          (t) => (
+            <ProfileUpdateToast
+              categoryName={predictedCategory?.primary.name || 'Category'}
+              oldPercentage={oldCategoryCompletion}
+              newPercentage={Math.round(newCategoryCompletion)}
+              categoryIcon={getCategoryIcon(categoryId)}
+              categoryColor={getCategoryColor(categoryId)}
+            />
+          ),
+          {
+            duration: 5000,
+          }
+        );
+      }, 1500);
+      
+      // Check and notify milestones
+      checkAndNotifyMilestones(
+        {
+          oldOverallCompletion,
+          newOverallCompletion,
+          wasChaiChatEligible: oldChaiChatEligible,
+          isChaiChatEligible: newChaiChatEligible,
+          categoryId,
+          oldCategoryCompletion,
+          newCategoryCompletion: Math.round(newCategoryCompletion),
+          newTopicsCovered,
+          oldBalanceScore,
+          newBalanceScore: profileStore.balanceScore,
+          balanceRating: profileStore.balanceRating,
+        },
+        navigate
+      );
     }, 2500);
+  };
+  
+  // Helper functions for category mapping
+  const getCategoryIcon = (categoryId: string): any => {
+    const iconMap: Record<string, any> = {
+      'values_beliefs': 'Heart',
+      'interests_hobbies': 'Lightbulb',
+      'relationship_goals': 'Target',
+      'lifestyle_personality': 'Home',
+      'family_cultural': 'Users',
+    };
+    return iconMap[categoryId] || 'Heart';
+  };
+  
+  const getCategoryColor = (categoryId: string): string => {
+    const colorMap: Record<string, string> = {
+      'values_beliefs': '#D4A574',
+      'interests_hobbies': '#8B7AB8',
+      'relationship_goals': '#F8B4D9',
+      'lifestyle_personality': '#0066CC',
+      'family_cultural': '#0A3A2E',
+    };
+    return colorMap[categoryId] || '#0A3A2E';
   };
   
   const handleAddMore = () => {

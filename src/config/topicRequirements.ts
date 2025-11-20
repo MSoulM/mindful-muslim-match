@@ -352,3 +352,9 @@ export function calculateTopicCoverage(
   
   return Math.round((coveredRequired.length / requiredTopics.length) * 100);
 }
+
+// Get a specific topic by ID and category
+export function getTopicById(category: CategoryType, topicId: string): TopicRequirement | undefined {
+  const config = getCategoryConfig(category);
+  return config?.topics.find(t => t.id === topicId);
+}
