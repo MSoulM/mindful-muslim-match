@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { ThreadList, ThreadType, Thread } from '@/components/chat/ThreadList';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useChatStore, type Thread as StoreThread, type Message as StoreMessage } from '@/store/chatStore';
 import { useTextChat } from '@/hooks/useTextChat';
 import { useChatGestures } from '@/hooks/useChatGestures';
+import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { toast } from 'sonner';
 
 export default function AgentChatScreen() {
@@ -29,8 +31,18 @@ export default function AgentChatScreen() {
   const getThread = useChatStore((state) => state.getThread);
   const isTyping = useChatStore((state) => state.isTyping);
   const setIsTyping = useChatStore((state) => state.setIsTyping);
+  const connectionStatus = useChatStore((state) => state.connectionStatus);
 
   const { sendMessage, isLoading } = useTextChat();
+  
+  // Initialize WebSocket connection and sync state to store
+  const { connect: connectWebSocket } = useChatWebSocket();
+
+  // Connect WebSocket on mount (optional - for future real-time features)
+  // useEffect(() => {
+  //   const WS_URL = `wss://${window.location.hostname}/ws/chat`;
+  //   connectWebSocket(WS_URL);
+  // }, [connectWebSocket]);
 
   // Convert store thread format to ThreadList format
   const convertToThreadListFormat = (): Thread[] => {
@@ -193,6 +205,28 @@ export default function AgentChatScreen() {
         title={currentThread ? currentThread.topic : "MMAgent Chat"}
         onBackClick={currentThread ? handleBack : () => navigate(-1)}
       />
+      
+      {/* Connection status banner */}
+      {connectionStatus !== 'connected' && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          className={cn(
+            "px-4 py-2 text-xs flex items-center justify-center gap-2",
+            connectionStatus === 'reconnecting' && "bg-amber-50 text-amber-800 border-b border-amber-100",
+            connectionStatus === 'offline' && "bg-red-50 text-red-800 border-b border-red-100"
+          )}
+        >
+          <div className={cn(
+            "h-2 w-2 rounded-full",
+            connectionStatus === 'reconnecting' && "bg-amber-500 animate-pulse",
+            connectionStatus === 'offline' && "bg-red-500"
+          )} />
+          <span>
+            {connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Offline'}
+          </span>
+        </motion.div>
+      )}
       
       <ScreenContainer
         hasTopBar
