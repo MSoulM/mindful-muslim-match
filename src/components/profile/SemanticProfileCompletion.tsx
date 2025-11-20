@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users, Pencil, Type, CheckCircle2 } from 'lucide-react';
+import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users, Pencil, Type, CheckCircle2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -332,13 +332,59 @@ export const SemanticProfileCompletion = ({
                             40%
                           </Badge>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-bold text-foreground">5</span>
                             <span className="text-sm text-muted-foreground">items shared</span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Minimum: 3 • Ideal: 8
+                          
+                          {/* Two-stage Progress Bar */}
+                          <div className="relative">
+                            {/* Background */}
+                            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                              {/* Yellow fill (0-60%) */}
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: '60%' }}
+                                transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+                                className="absolute h-3 bg-yellow-500 rounded-full"
+                              />
+                              {/* Green fill (60-62.5%) */}
+                              <motion.div
+                                initial={{ width: '60%' }}
+                                animate={{ width: '62.5%' }}
+                                transition={{ duration: 0.8, delay: 1, ease: 'easeOut' }}
+                                className="absolute h-3 bg-emerald-500 rounded-full"
+                              />
+                            </div>
+                            
+                            {/* Markers */}
+                            <div className="absolute top-0 left-[60%] transform -translate-x-1/2">
+                              <div className="w-0.5 h-3 bg-foreground/40" />
+                              <span className="text-[10px] text-muted-foreground absolute -top-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                Min
+                              </span>
+                            </div>
+                            <div className="absolute top-0 right-0">
+                              <div className="w-0.5 h-3 bg-foreground/40" />
+                              <span className="text-[10px] text-muted-foreground absolute -top-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                Ideal
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col gap-1 text-sm">
+                            <div className="flex items-center gap-1.5 text-emerald-600">
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Minimum: 3 items</span>
+                            </div>
+                            <div className="text-muted-foreground">
+                              Ideal: 8 items
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 border-t border-border/50">
+                            <span className="text-sm font-semibold text-emerald-600">Factor Score: 62.5%</span>
                           </div>
                         </div>
                       </div>
@@ -354,13 +400,59 @@ export const SemanticProfileCompletion = ({
                             30%
                           </Badge>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-bold text-foreground">280</span>
                             <span className="text-sm text-muted-foreground">words written</span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Minimum: 150 • Ideal: 400
+                          
+                          {/* Two-stage Progress Bar */}
+                          <div className="relative">
+                            {/* Background */}
+                            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                              {/* Yellow fill (0-60%) */}
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: '60%' }}
+                                transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
+                                className="absolute h-3 bg-yellow-500 rounded-full"
+                              />
+                              {/* Green fill (60-70%) */}
+                              <motion.div
+                                initial={{ width: '60%' }}
+                                animate={{ width: '70%' }}
+                                transition={{ duration: 0.8, delay: 1.2, ease: 'easeOut' }}
+                                className="absolute h-3 bg-emerald-500 rounded-full"
+                              />
+                            </div>
+                            
+                            {/* Markers */}
+                            <div className="absolute top-0 left-[60%] transform -translate-x-1/2">
+                              <div className="w-0.5 h-3 bg-foreground/40" />
+                              <span className="text-[10px] text-muted-foreground absolute -top-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                Min
+                              </span>
+                            </div>
+                            <div className="absolute top-0 right-0">
+                              <div className="w-0.5 h-3 bg-foreground/40" />
+                              <span className="text-[10px] text-muted-foreground absolute -top-4 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                Ideal
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col gap-1 text-sm">
+                            <div className="flex items-center gap-1.5 text-emerald-600">
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Minimum: 150 words</span>
+                            </div>
+                            <div className="text-muted-foreground">
+                              Ideal: 400+ words
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 border-t border-border/50">
+                            <span className="text-sm font-semibold text-emerald-600">Factor Score: 70%</span>
                           </div>
                         </div>
                       </div>
@@ -376,13 +468,59 @@ export const SemanticProfileCompletion = ({
                             30%
                           </Badge>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-bold text-foreground">3/4</span>
                             <span className="text-sm text-muted-foreground">topics covered</span>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Cover all 4 topics for maximum score
+                          
+                          {/* Segmented Progress Bar */}
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4].map((segment) => (
+                              <motion.div
+                                key={segment}
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ 
+                                  duration: 0.5, 
+                                  delay: 0.6 + (segment * 0.15), 
+                                  ease: 'easeOut' 
+                                }}
+                                className={cn(
+                                  'flex-1 h-3 rounded-full',
+                                  segment <= 3 ? 'bg-emerald-500' : 'bg-muted'
+                                )}
+                                style={{ originX: 0 }}
+                              />
+                            ))}
+                          </div>
+                          
+                          <div className="text-sm font-semibold text-emerald-600">
+                            75% coverage
+                          </div>
+                          
+                          {/* Topic List */}
+                          <div className="space-y-1.5 pt-2">
+                            <div className="flex items-center gap-2 text-sm text-emerald-600">
+                              <Check className="w-4 h-4" />
+                              <span>Religious Practice</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-emerald-600">
+                              <Check className="w-4 h-4" />
+                              <span>Spiritual Values</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-emerald-600">
+                              <Check className="w-4 h-4" />
+                              <span>Community Involvement</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <X className="w-4 h-4" />
+                              <span>Islamic Knowledge</span>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-2 border-t border-border/50">
+                            <span className="text-sm font-semibold text-emerald-600">Factor Score: 75%</span>
                           </div>
                         </div>
                       </div>
