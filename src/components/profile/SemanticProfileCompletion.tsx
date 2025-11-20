@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users, Pencil, Type, CheckCircle2, Check, X } from 'lucide-react';
+import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users, Pencil, Type, CheckCircle2, Check, X, Lightbulb, Plus, Eye, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 interface SemanticProfileCompletionProps {
   completion?: number;
@@ -386,6 +387,14 @@ export const SemanticProfileCompletion = ({
                           <div className="pt-2 border-t border-border/50">
                             <span className="text-sm font-semibold text-emerald-600">Factor Score: 62.5%</span>
                           </div>
+
+                          {/* Smart Suggestion */}
+                          <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <Lightbulb className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-blue-900">
+                              + Add 3 more posts to reach ideal completion
+                            </p>
+                          </div>
                         </div>
                       </div>
 
@@ -453,6 +462,14 @@ export const SemanticProfileCompletion = ({
                           
                           <div className="pt-2 border-t border-border/50">
                             <span className="text-sm font-semibold text-emerald-600">Factor Score: 70%</span>
+                          </div>
+
+                          {/* Smart Suggestion */}
+                          <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <Lightbulb className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-blue-900">
+                              + Write 120 more words across your posts for ideal depth
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -522,7 +539,29 @@ export const SemanticProfileCompletion = ({
                           <div className="pt-2 border-t border-border/50">
                             <span className="text-sm font-semibold text-emerald-600">Factor Score: 75%</span>
                           </div>
+
+                          {/* Smart Suggestion */}
+                          <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <Lightbulb className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-blue-900">
+                              + Share something about Islamic knowledge/education to complete this category
+                            </p>
+                          </div>
                         </div>
+                      </div>
+
+                      {/* Primary Action Button */}
+                      <div className="mt-6 mb-4">
+                        <Button
+                          onClick={() => toast({
+                            title: "Coming Soon",
+                            description: "Content upload modal coming soon!",
+                          })}
+                          className="w-full min-h-[44px] py-3 px-6 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-semibold transition-all active:scale-98"
+                        >
+                          <Plus className="w-5 h-5 mr-2" />
+                          Add Content to This Category
+                        </Button>
                       </div>
 
                       {/* Final Score Calculation */}
@@ -544,6 +583,32 @@ export const SemanticProfileCompletion = ({
                             </span>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Secondary Action Buttons */}
+                      <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => toast({
+                            title: "Coming Soon",
+                            description: "Content viewer coming soon!",
+                          })}
+                          className="flex-1 min-h-[44px] py-2 px-4 border border-border text-foreground hover:bg-muted transition-all"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View My Content
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => toast({
+                            title: "Coming Soon",
+                            description: "Educational modal coming soon!",
+                          })}
+                          className="flex-1 min-h-[44px] py-2 px-4 border border-border text-foreground hover:bg-muted transition-all"
+                        >
+                          <Info className="w-4 h-4 mr-2" />
+                          Learn More
+                        </Button>
                       </div>
                     </div>
                   </motion.div>
