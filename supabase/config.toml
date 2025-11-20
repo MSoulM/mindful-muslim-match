@@ -53,5 +53,8 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
 
+[functions.agent-chat]
+verify_jwt = false
+
 [functions.realtime-chat]
 verify_jwt = false
