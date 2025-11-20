@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, X, Clock, Lightbulb, ArrowRight, ChevronDown, Heart, Palette, HeartHandshake, Sparkles, Users, Unlock, Trophy, Award, Calendar } from 'lucide-react';
+import { Lock, X, Clock, Lightbulb, ArrowRight, ChevronDown, Heart, Palette, HeartHandshake, Sparkles, Users, Unlock, Trophy, Award, Calendar, CheckCircle, MoreVertical, Info, Settings, EyeOff, TrendingUp, ChevronUp, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
-import { addDays, nextSunday, format } from 'date-fns';
+import { addDays, nextSunday, format, differenceInHours, differenceInMinutes } from 'date-fns';
 
 interface ChaiChatEligibilityTrackerProps {
   currentCompletion?: number;
@@ -30,12 +30,26 @@ export const ChaiChatEligibilityTracker = ({
   const [isDismissed, setIsDismissed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isEligibleBannerDismissed, setIsEligibleBannerDismissed] = useState(false);
+  const [isEligibleBannerCollapsed, setIsEligibleBannerCollapsed] = useState(false);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [countdown, setCountdown] = useState('');
 
   // Load dismissed state and check for celebration trigger
   useEffect(() => {
     const dismissed = localStorage.getItem('chaichat_banner_dismissed');
     if (dismissed === 'true') {
       setIsDismissed(true);
+    }
+
+    const eligibleDismissed = localStorage.getItem('chaichat_eligible_banner_dismissed');
+    if (eligibleDismissed === 'true') {
+      setIsEligibleBannerDismissed(true);
+    }
+
+    const collapsed = sessionStorage.getItem('chaichat_banner_collapsed');
+    if (collapsed === 'true') {
+      setIsEligibleBannerCollapsed(true);
     }
 
     // Check if we should show celebration
@@ -48,6 +62,31 @@ export const ChaiChatEligibilityTracker = ({
       triggerConfetti();
     }
   }, [currentCompletion]);
+
+  // Countdown timer
+  useEffect(() => {
+    const updateCountdown = () => {
+      const nextMatch = getNextChaiChatDate();
+      const now = new Date();
+      const hours = differenceInHours(nextMatch, now);
+      const minutes = differenceInMinutes(nextMatch, now) % 60;
+
+      if (hours < 1 && minutes < 30) {
+        setCountdown('Starting soon!');
+      } else if (hours < 24) {
+        setCountdown(`In ${hours} hour${hours !== 1 ? 's' : ''}`);
+      } else {
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        setCountdown(`In ${days} day${days !== 1 ? 's' : ''}, ${remainingHours} hour${remainingHours !== 1 ? 's' : ''}`);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const triggerConfetti = () => {
     const duration = 3000;
@@ -104,8 +143,206 @@ export const ChaiChatEligibilityTracker = ({
   const nextMatchDate = getNextChaiChatDate();
   const daysUntil = Math.ceil((nextMatchDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
-  // Don't show banner if dismissed or if already at 70%+ (celebration will show instead)
-  if (isDismissed || currentCompletion >= 70) {
+  // Check if user just unlocked (within 24 hours)
+  const unlockedAt = localStorage.getItem('chaichat_unlocked_at');
+  const isRecentlyUnlocked = unlockedAt && 
+    (Date.now() - new Date(unlockedAt).getTime()) < 24 * 60 * 60 * 1000;
+
+  // Determine which banner to show
+  const celebrationShown = localStorage.getItem('chaichat_celebration_shown') === 'true';
+  const isEligible = currentCompletion >= 70;
+
+  // Don't show anything if dismissed
+  if (isDismissed && !isEligible) {
+    return null;
+  }
+
+  // Show eligible banner instead of celebration after first view
+  if (isEligible && celebrationShown && !isEligibleBannerDismissed) {
+    // Render eligible banner (≥70% state)
+    return (
+      <>
+        {showCelebration && (
+          <AnimatePresence>
+            {/* Keep celebration modal here for transition */}
+          </AnimatePresence>
+        )}
+        
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+          className="mb-4 relative"
+        >
+          <div className={cn(
+            "bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-4 shadow-md",
+            isRecentlyUnlocked && "animate-pulse"
+          )}>
+            {/* Collapsible Header */}
+            {isEligibleBannerCollapsed ? (
+              <div className="flex items-center justify-between h-12">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span className="text-sm font-semibold text-gray-900">
+                    ChaiChat Active • Next: Sunday
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsEligibleBannerCollapsed(false);
+                    sessionStorage.setItem('chaichat_banner_collapsed', 'false');
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                >
+                  <ChevronDown className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Expanded Content */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-3">
+                  {/* Left Section */}
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                    <Badge className="bg-white text-green-700 border-green-400 px-3 py-1 text-sm font-bold">
+                      {isRecentlyUnlocked && <span className="mr-1">🎉</span>}
+                      ChaiChat Active
+                    </Badge>
+                  </div>
+
+                  {/* Center Section */}
+                  <div className="flex-1">
+                    <p className="text-base font-semibold text-gray-900">
+                      Next matches: {format(nextMatchDate, 'EEEE')} 2:00 AM
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {countdown}
+                    </p>
+                  </div>
+
+                  {/* Right Section */}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-green-700">
+                        {currentCompletion}% Complete
+                      </p>
+                      <p className="text-xs text-gray-500">Keep improving!</p>
+                    </div>
+                    
+                    {/* Actions Menu */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowActionsMenu(!showActionsMenu)}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+
+                      <AnimatePresence>
+                        {showActionsMenu && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute right-0 top-8 z-50 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-2"
+                          >
+                            <button
+                              onClick={() => {
+                                navigate('/chaichat');
+                                setShowActionsMenu(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                            >
+                              <Info className="w-4 h-4" />
+                              View ChaiChat Features
+                            </button>
+                            <button
+                              onClick={() => {
+                                navigate('/preferences');
+                                setShowActionsMenu(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                            >
+                              <Settings className="w-4 h-4" />
+                              Set Match Preferences
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsEligibleBannerDismissed(true);
+                                localStorage.setItem('chaichat_eligible_banner_dismissed', 'true');
+                                setShowActionsMenu(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                            >
+                              <EyeOff className="w-4 h-4" />
+                              Hide This Banner
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Collapse Button */}
+                    <button
+                      onClick={() => {
+                        setIsEligibleBannerCollapsed(true);
+                        sessionStorage.setItem('chaichat_banner_collapsed', 'true');
+                      }}
+                      className="p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      <ChevronUp className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mini Progress to 90% */}
+                <div className="mt-3 pt-3 border-t border-green-200">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-600">
+                      On your way to 90% (Best Match Quality)
+                    </p>
+                    <Star className="w-4 h-4 text-[#D4A574]" />
+                  </div>
+                  
+                  <div className="relative w-full h-2 bg-white rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(currentCompletion / 90) * 100}%` }}
+                      transition={{ duration: 1, ease: 'easeOut' }}
+                      className="h-full bg-gradient-to-r from-green-400 to-emerald-600 rounded-full"
+                    />
+                  </div>
+
+                  {/* Enhancement Prompt */}
+                  {currentCompletion < 90 && (
+                    <button
+                      onClick={onCompleteProfile}
+                      className="mt-2 flex items-center gap-1 text-xs text-gray-600 hover:text-green-700"
+                    >
+                      <TrendingUp className="w-3 h-3" />
+                      Improve to 90% for best matches
+                      <span className="ml-1">→</span>
+                    </button>
+                  )}
+                  {currentCompletion >= 90 && (
+                    <div className="mt-2 flex items-center gap-1 text-xs text-[#D4A574]">
+                      <Award className="w-3 h-3" />
+                      Diamond Profile! Top-tier matching ✨
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
+      </>
+    );
+  }
+
+  // Don't show below-70% banner if user is eligible
+  if (isEligible || isDismissed) {
     return null;
   }
 
