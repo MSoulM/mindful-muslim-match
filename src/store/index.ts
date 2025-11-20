@@ -16,13 +16,21 @@ export {
 // Chat Store
 export {
   useChatStore,
-  selectConversations,
-  selectConversation,
+  selectThreads,
+  selectActiveThread,
+  selectThread,
   selectMessages,
-  selectTypingStatus,
-  selectActiveConversation,
+  selectIsTyping,
+  selectQuickReplies,
+  selectPersonality,
+  selectToneSettings,
+  selectConnectionStatus,
+  selectDraftMessage,
+  selectTotalUnreadCount,
   selectUnreadCount,
 } from './chatStore';
+
+export type { PersonalityType, ToneSettings, Thread, ThreadType, Message, ConnectionStatus } from './chatStore';
 
 // Notification Store
 export {

@@ -26,57 +26,46 @@ export const useAuth = () => {
 
 // ============= Chat Hooks =============
 
-export const useConversations = () => {
-  const conversations = useChatStore((state) =>
-    Array.from(state.conversations.values())
-  );
-  const addConversation = useChatStore((state) => state.addConversation);
-  const updateConversation = useChatStore((state) => state.updateConversation);
-  const removeConversation = useChatStore((state) => state.removeConversation);
+export const useThreads = () => {
+  const threads = useChatStore((state) => state.threads);
+  const addThread = useChatStore((state) => state.addThread);
+  const updateThread = useChatStore((state) => state.updateThread);
+  const removeThread = useChatStore((state) => state.removeThread);
+  const archiveThread = useChatStore((state) => state.archiveThread);
 
   return {
-    conversations,
-    addConversation,
-    updateConversation,
-    removeConversation,
+    threads,
+    addThread,
+    updateThread,
+    removeThread,
+    archiveThread,
   };
 };
 
-export const useConversation = (conversationId: string) => {
-  const conversation = useChatStore(
-    (state) => state.conversations.get(conversationId)
-  );
-  const messages = useChatStore(
-    (state) => state.messages.get(conversationId) || []
-  );
-  const isTyping = useChatStore(
-    (state) => state.typingStatus.get(conversationId) || false
-  );
+export const useThread = (threadId: string) => {
+  const thread = useChatStore((state) => state.getThread(threadId));
+  const messages = useChatStore((state) => state.getThread(threadId)?.messages || []);
+  const isTyping = useChatStore((state) => state.isTyping);
 
   const addMessage = useChatStore((state) => state.addMessage);
   const updateMessage = useChatStore((state) => state.updateMessage);
-  const setTypingStatus = useChatStore((state) => state.setTypingStatus);
-  const markAsRead = useChatStore((state) => state.markConversationAsRead);
+  const setIsTyping = useChatStore((state) => state.setIsTyping);
+  const markAsRead = useChatStore((state) => state.markThreadAsRead);
 
   return {
-    conversation,
+    thread,
     messages,
     isTyping,
-    addMessage: (message: any) => addMessage(conversationId, message),
+    addMessage: (message: any) => addMessage(threadId, message),
     updateMessage: (messageId: string, updates: any) =>
-      updateMessage(conversationId, messageId, updates),
-    setTyping: (isTyping: boolean) => setTypingStatus(conversationId, isTyping),
-    markAsRead: () => markAsRead(conversationId),
+      updateMessage(threadId, messageId, updates),
+    setTyping: (isTyping: boolean) => setIsTyping(isTyping),
+    markAsRead: () => markAsRead(threadId),
   };
 };
 
 export const useChatUnreadCount = () => {
-  return useChatStore((state) =>
-    Array.from(state.conversations.values()).reduce(
-      (sum, conv) => sum + conv.unreadCount,
-      0
-    )
-  );
+  return useChatStore((state) => state.getTotalUnreadCount());
 };
 
 // ============= Notification Hooks =============
