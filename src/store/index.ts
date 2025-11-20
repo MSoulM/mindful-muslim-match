@@ -52,6 +52,20 @@ export {
   selectFilteredResults,
 } from './searchStore';
 
+// Profile Store
+export {
+  useProfileStore,
+  selectOverallCompletion,
+  selectCategory,
+  selectAllCategories,
+  selectBalanceScore,
+  selectChaiChatEligible,
+  selectRecentlyUpdatedCategory,
+  selectNewlyCoveredTopics,
+} from './profileStore';
+
+export type { ProfileState, CategoryCompletion } from './profileStore';
+
 // Types
 export type * from '@/types/store.types';
 
