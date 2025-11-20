@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { DepthProgress } from '@/components/profile/DepthProgress';
 import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileCompletion';
+import { ChaiChatEligibilityTracker } from '@/components/profile/ChaiChatEligibilityTracker';
 import { 
   Edit2, 
   Sliders, 
@@ -179,6 +180,14 @@ const ProfileScreen = () => {
               </div>
             </BaseCard>
           )}
+        </div>
+
+        {/* ChaiChat Eligibility Tracker (shows when <70%) */}
+        <div className="mx-5">
+          <ChaiChatEligibilityTracker 
+            currentCompletion={67}
+            onCompleteProfile={() => navigate('/edit-profile')}
+          />
         </div>
 
         {/* Profile Completion */}
