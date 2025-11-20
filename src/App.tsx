@@ -86,6 +86,7 @@ import ThreadListTest from "./pages/ThreadListTest";
 import ChatViewTest from "./pages/ChatViewTest";
 import PersonalityQuizTest from "./pages/PersonalityQuizTest";
 import PersonalityCardTest from "./pages/PersonalityCardTest";
+import ToneAdjustmentTest from "./pages/ToneAdjustmentTest";
 import NotFound from "./pages/NotFound";
 import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
@@ -561,6 +562,11 @@ const AnimatedRoutes = () => {
             <Route path="/dev/personality-card-test" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <PersonalityCardTest />
+              </motion.div>
+            } />
+            <Route path="/dev/tone-adjustment-test" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <ToneAdjustmentTest />
               </motion.div>
             } />
           </>
