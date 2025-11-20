@@ -82,6 +82,7 @@ import ResponsiveDemo from "./pages/ResponsiveDemo";
 import AccessibilityDemo from "./pages/AccessibilityDemo";
 import PremiumPolishDemo from "./pages/PremiumPolishDemo";
 import DepthSystemDemo from "./pages/DepthSystemDemo";
+import ThreadListTest from "./pages/ThreadListTest";
 import NotFound from "./pages/NotFound";
 import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
@@ -537,6 +538,11 @@ const AnimatedRoutes = () => {
             <Route path="/dev/premium-polish" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <PremiumPolishDemo />
+              </motion.div>
+            } />
+            <Route path="/dev/thread-list-test" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <ThreadListTest />
               </motion.div>
             } />
           </>
