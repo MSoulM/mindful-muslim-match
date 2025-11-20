@@ -6,7 +6,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useChaiChatNotifications } from '@/hooks/useChaiChatNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
