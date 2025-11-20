@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
@@ -13,6 +13,8 @@ import { useChatStore, type Thread as StoreThread, type Message as StoreMessage 
 import { useTextChat } from '@/hooks/useTextChat';
 import { useChatGestures } from '@/hooks/useChatGestures';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
+import { useChatPerformance } from '@/hooks/useChatPerformance';
+import { useDebouncedTyping } from '@/hooks/useDebouncedTyping';
 import { toast } from 'sonner';
 
 export default function AgentChatScreen() {
@@ -37,6 +39,32 @@ export default function AgentChatScreen() {
   
   // Initialize WebSocket connection and sync state to store
   const { connect: connectWebSocket } = useChatWebSocket();
+
+  // Performance tracking
+  const {
+    trackMessageSend,
+    trackThreadSwitch,
+    trackInitialLoad
+  } = useChatPerformance();
+
+  // Debounced typing indicator (200ms target)
+  const { handleTypingStart, handleTypingStop } = useDebouncedTyping({
+    onStartTyping: () => setIsTyping(true),
+    onStopTyping: () => setIsTyping(false),
+    delay: 1000
+  });
+
+  // Track initial load
+  useEffect(() => {
+    const endLoad = trackInitialLoad();
+    const timer = setTimeout(() => {
+      endLoad({
+        messageCount: threads.reduce((sum, t) => sum + t.messages.length, 0),
+        threadCount: threads.length
+      });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Connect WebSocket on mount (optional - for future real-time features)
   // useEffect(() => {
@@ -81,8 +109,10 @@ export default function AgentChatScreen() {
 
   // Handle selecting a thread
   const handleThreadSelect = useCallback((threadId: string) => {
+    const endTrack = trackThreadSwitch();
     setSearchParams({ threadId });
-  }, [setSearchParams]);
+    requestAnimationFrame(() => endTrack(threadId));
+  }, [setSearchParams, trackThreadSwitch]);
 
   // Handle archiving a thread
   const handleArchiveThread = useCallback((threadId: string) => {
@@ -109,7 +139,10 @@ export default function AgentChatScreen() {
     const thread = getThread(currentThreadId);
     if (!thread) return;
 
-    // Add user message immediately
+    // Track message send performance
+    const endTrack = trackMessageSend();
+
+    // Add user message immediately (optimistic update)
     const userMessage: StoreMessage = {
       id: `msg-${Date.now()}`,
       role: 'user',
@@ -118,6 +151,11 @@ export default function AgentChatScreen() {
       status: 'sending'
     };
     addMessage(currentThreadId, userMessage);
+
+    // Complete visual feedback within 500ms
+    requestAnimationFrame(() => {
+      endTrack({ success: true });
+    });
 
     try {
       setIsTyping(true);
@@ -147,10 +185,11 @@ export default function AgentChatScreen() {
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to send message');
+      endTrack({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setIsTyping(false);
     }
-  }, [currentThreadId, getThread, addMessage, sendMessage, setIsTyping]);
+  }, [currentThreadId, getThread, addMessage, sendMessage, setIsTyping, trackMessageSend]);
 
   // Handle going back from chat view
   const handleBack = useCallback(() => {

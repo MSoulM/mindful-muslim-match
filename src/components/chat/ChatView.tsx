@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, MoreVertical, Star, Smile, Check, CheckCheck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
 import { THREAD_TYPES, ThreadType } from './ThreadList';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
+import { useVirtualList } from '@/hooks/useVirtualList';
 import { cn } from '@/lib/utils';
 
 export interface ChatMessage {
@@ -73,6 +74,32 @@ export const ChatView = ({
   const threadConfig = THREAD_TYPES[threadType];
   const maxChars = 500;
   const charCount = messageText.length;
+
+  // Virtual scrolling for long conversations (>50 messages)
+  const enableVirtualScroll = messages.length > 50;
+  const containerHeight = window.innerHeight - 200; // Approximate chat container height
+  
+  const {
+    containerRef: virtualContainerRef,
+    virtualItems,
+    totalHeight,
+    scrollToIndex
+  } = useVirtualList(messages, {
+    itemHeight: 80, // Average message height
+    containerHeight,
+    overscan: 5,
+    enabled: enableVirtualScroll
+  });
+
+  // Merge refs for scroll container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (enableVirtualScroll && virtualContainerRef.current) {
+      scrollContainerRef.current = virtualContainerRef.current;
+    } else {
+      scrollContainerRef.current = messagesContainerRef.current;
+    }
+  }, [enableVirtualScroll]);
 
   // Auto-scroll to bottom when new messages arrive or keyboard opens
   useEffect(() => {
