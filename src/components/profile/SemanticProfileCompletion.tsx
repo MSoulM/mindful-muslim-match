@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users } from 'lucide-react';
+import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users, Pencil, Type, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -303,9 +303,110 @@ export const SemanticProfileCompletion = ({
                     className="overflow-hidden"
                   >
                     <div className="mt-4 pt-4 border-t border-border">
-                      <p className="text-sm text-muted-foreground italic">
-                        Detailed breakdown coming soon...
-                      </p>
+                      {/* Quick Stats Row */}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                        <div className="flex items-center gap-1">
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span>5 posts</span>
+                        </div>
+                        <span>•</span>
+                        <div className="flex items-center gap-1">
+                          <Type className="w-3.5 h-3.5" />
+                          <span>280 words</span>
+                        </div>
+                        <span>•</span>
+                        <div className="flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>3/4 topics</span>
+                        </div>
+                      </div>
+
+                      {/* Factor 1: Content Item Count (40%) */}
+                      <div 
+                        className="bg-muted/50 rounded-lg p-4 mb-4"
+                        style={{ borderLeft: `4px solid ${category.color}` }}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-sm text-foreground">Content Items</h4>
+                          <Badge className="bg-muted-foreground text-white text-xs px-2 py-0.5 rounded-full">
+                            40%
+                          </Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-foreground">5</span>
+                            <span className="text-sm text-muted-foreground">items shared</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Minimum: 3 • Ideal: 8
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Factor 2: Content Depth (30%) */}
+                      <div 
+                        className="bg-muted/50 rounded-lg p-4 mb-4"
+                        style={{ borderLeft: `4px solid ${category.color}` }}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-sm text-foreground">Content Depth</h4>
+                          <Badge className="bg-muted-foreground text-white text-xs px-2 py-0.5 rounded-full">
+                            30%
+                          </Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-foreground">280</span>
+                            <span className="text-sm text-muted-foreground">words written</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Minimum: 150 • Ideal: 400
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Factor 3: Topic Coverage (30%) */}
+                      <div 
+                        className="bg-muted/50 rounded-lg p-4 mb-4"
+                        style={{ borderLeft: `4px solid ${category.color}` }}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-sm text-foreground">Topic Coverage</h4>
+                          <Badge className="bg-muted-foreground text-white text-xs px-2 py-0.5 rounded-full">
+                            30%
+                          </Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-bold text-foreground">3/4</span>
+                            <span className="text-sm text-muted-foreground">topics covered</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Cover all 4 topics for maximum score
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Final Score Calculation */}
+                      <div className="pt-4 border-t border-border">
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground font-mono">
+                            (Factor1 × 0.4) + (Factor2 × 0.3) + (Factor3 × 0.3)
+                          </p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            25% + 21% + 22.5% = 68.5%
+                          </p>
+                          <div className="flex items-baseline gap-2 mt-3">
+                            <span className="text-sm font-semibold text-muted-foreground">Category Score:</span>
+                            <span 
+                              className="text-2xl font-bold"
+                              style={{ color: category.color }}
+                            >
+                              68.5%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 )}
