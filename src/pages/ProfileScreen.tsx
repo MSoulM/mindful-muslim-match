@@ -11,6 +11,7 @@ import { DepthProgress } from '@/components/profile/DepthProgress';
 import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileCompletion';
 import { ChaiChatEligibilityTracker } from '@/components/profile/ChaiChatEligibilityTracker';
 import { CategoryBalancePentagon } from '@/components/profile/CategoryBalancePentagon';
+import { ContentTypeDistribution } from '@/components/profile/ContentTypeDistribution';
 import { 
   Edit2, 
   Sliders, 
@@ -47,6 +48,14 @@ const ProfileScreen = () => {
     goals: 85,
     lifestyle: 60,
     family: 40,
+  };
+
+  // Mock content type data (TODO: Replace with actual data from user content)
+  const contentTypeData = {
+    text: 12,
+    photo: 4,
+    voice: 3,
+    video: 1,
   };
 
   const handleTabChange = (tabId: string) => {
@@ -215,6 +224,16 @@ const ProfileScreen = () => {
             goalsCompletion={categoryProgress.goals}
             lifestyleCompletion={categoryProgress.lifestyle}
             familyCompletion={categoryProgress.family}
+          />
+        </div>
+
+        {/* Content Type Distribution */}
+        <div className="mx-5 mb-5">
+          <ContentTypeDistribution
+            textCount={contentTypeData.text}
+            photoCount={contentTypeData.photo}
+            voiceCount={contentTypeData.voice}
+            videoCount={contentTypeData.video}
           />
         </div>
 
