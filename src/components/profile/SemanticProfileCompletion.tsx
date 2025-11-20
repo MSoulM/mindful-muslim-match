@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion';
-import { Medal, Sparkles, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,46 @@ export const SemanticProfileCompletion = ({
   completion = 67, // Mock data for now
   onCompleteProfile
 }: SemanticProfileCompletionProps) => {
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+
+  // Mock category data
+  const categories = [
+    {
+      id: 'values',
+      name: 'Values & Beliefs',
+      icon: Heart,
+      color: '#D4A574',
+      percentage: 74,
+    },
+    {
+      id: 'interests',
+      name: 'Interests & Hobbies',
+      icon: Palette,
+      color: '#8B5CF6',
+      percentage: 50,
+    },
+    {
+      id: 'relationship',
+      name: 'Relationship Goals',
+      icon: HeartHandshake,
+      color: '#EC4899',
+      percentage: 85,
+    },
+    {
+      id: 'lifestyle',
+      name: 'Lifestyle & Personality',
+      icon: Sparkles,
+      color: '#10B981',
+      percentage: 60,
+    },
+    {
+      id: 'family',
+      name: 'Family & Cultural',
+      icon: Users,
+      color: '#F59E0B',
+      percentage: 40,
+    },
+  ];
   
   // Calculate level badge based on completion
   const getLevel = () => {
@@ -159,6 +200,119 @@ export const SemanticProfileCompletion = ({
             </Button>
           </motion.div>
         )}
+      </div>
+
+      {/* Category Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+        {categories.map((category, index) => {
+          const CategoryIcon = category.icon;
+          const isExpanded = expandedCard === category.id;
+          const isComplete = category.percentage >= 70;
+          const isInProgress = category.percentage >= 40 && category.percentage < 70;
+          
+          // Status badge config
+          const getStatusBadge = () => {
+            if (isComplete) return { text: 'Complete ✓', bg: 'bg-emerald-100 text-emerald-700' };
+            if (isInProgress) return { text: 'In Progress ⏳', bg: 'bg-yellow-100 text-yellow-700' };
+            return { text: 'Not Started 📝', bg: 'bg-red-100 text-red-700' };
+          };
+
+          const statusBadge = getStatusBadge();
+
+          return (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              className={cn(
+                'bg-white dark:bg-card rounded-xl shadow-lg p-6 border-2 transition-colors',
+                isComplete ? 'border-emerald-500' : 'border-border'
+              )}
+            >
+              {/* Card Header - Clickable */}
+              <button
+                onClick={() => setExpandedCard(isExpanded ? null : category.id)}
+                className="w-full flex items-center gap-4 text-left"
+              >
+                {/* Category Icon */}
+                <div
+                  className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: `${category.color}20` }}
+                >
+                  <CategoryIcon
+                    className="w-6 h-6"
+                    style={{ color: category.color }}
+                  />
+                </div>
+
+                {/* Category Name & Percentage */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base text-foreground truncate">
+                    {category.name}
+                  </h3>
+                </div>
+
+                {/* Completion Percentage */}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-2xl font-bold"
+                    style={{ color: category.color }}
+                  >
+                    {category.percentage}%
+                  </span>
+                  
+                  {/* Expand/Collapse Chevron */}
+                  <motion.div
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                  </motion.div>
+                </div>
+              </button>
+
+              {/* Progress Bar */}
+              <div className="mt-4 w-full bg-muted rounded-full h-2 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${category.percentage}%` }}
+                  transition={{ duration: 1, delay: index * 0.1 + 0.3, ease: 'easeOut' }}
+                  className="h-full rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, ${category.color}CC, ${category.color})`
+                  }}
+                />
+              </div>
+
+              {/* Status Badge */}
+              <div className="mt-3 flex items-center justify-between">
+                <Badge className={cn('px-2.5 py-1 text-xs font-medium', statusBadge.bg)}>
+                  {statusBadge.text}
+                </Badge>
+              </div>
+
+              {/* Expanded Content */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <p className="text-sm text-muted-foreground italic">
+                        Detailed breakdown coming soon...
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
