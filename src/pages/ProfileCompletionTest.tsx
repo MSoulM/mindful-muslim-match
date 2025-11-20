@@ -4,6 +4,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileCompletion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Toaster } from '@/components/ui/toaster';
 
 const ProfileCompletionTest = () => {
   const [completion, setCompletion] = useState(67);
@@ -109,6 +110,7 @@ const ProfileCompletionTest = () => {
           </p>
         </div>
       </ScreenContainer>
+      <Toaster />
     </div>
   );
 };
