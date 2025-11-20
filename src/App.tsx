@@ -84,6 +84,7 @@ import PremiumPolishDemo from "./pages/PremiumPolishDemo";
 import DepthSystemDemo from "./pages/DepthSystemDemo";
 import ThreadListTest from "./pages/ThreadListTest";
 import ChatViewTest from "./pages/ChatViewTest";
+import PersonalityQuizTest from "./pages/PersonalityQuizTest";
 import NotFound from "./pages/NotFound";
 import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
@@ -549,6 +550,11 @@ const AnimatedRoutes = () => {
             <Route path="/dev/chat-view-test" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <ChatViewTest />
+              </motion.div>
+            } />
+            <Route path="/dev/personality-quiz-test" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <PersonalityQuizTest />
               </motion.div>
             } />
           </>
