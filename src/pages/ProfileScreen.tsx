@@ -10,6 +10,7 @@ import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { DepthProgress } from '@/components/profile/DepthProgress';
 import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileCompletion';
 import { ChaiChatEligibilityTracker } from '@/components/profile/ChaiChatEligibilityTracker';
+import { CategoryBalancePentagon } from '@/components/profile/CategoryBalancePentagon';
 import { 
   Edit2, 
   Sliders, 
@@ -38,6 +39,15 @@ const ProfileScreen = () => {
   
   // Check if user is premium
   const isPremium = premiumState.isSubscribed;
+
+  // Mock category completion data (TODO: Replace with actual data from profile completion system)
+  const categoryProgress = {
+    values: 74,
+    interests: 50,
+    goals: 85,
+    lifestyle: 60,
+    family: 40,
+  };
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -194,6 +204,17 @@ const ProfileScreen = () => {
         <div className="mx-5 mb-5">
           <SemanticProfileCompletion 
             onCompleteProfile={() => navigate('/edit-profile')}
+          />
+        </div>
+
+        {/* Pentagon Visualization */}
+        <div className="mx-5 mb-5">
+          <CategoryBalancePentagon
+            valuesCompletion={categoryProgress.values}
+            interestsCompletion={categoryProgress.interests}
+            goalsCompletion={categoryProgress.goals}
+            lifestyleCompletion={categoryProgress.lifestyle}
+            familyCompletion={categoryProgress.family}
           />
         </div>
 
