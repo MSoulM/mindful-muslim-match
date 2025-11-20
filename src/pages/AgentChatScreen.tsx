@@ -1,23 +1,30 @@
 import { useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { ThreadList, ThreadType, Thread } from '@/components/chat/ThreadList';
 import { ChatView, ChatMessage } from '@/components/chat/ChatView';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
+import { Button } from '@/components/ui/button';
 import { useChatThreads } from '@/hooks/useChatThreads';
 import { useTextChat } from '@/hooks/useTextChat';
+import { useChatGestures } from '@/hooks/useChatGestures';
 import { toast } from 'sonner';
 
 export default function AgentChatScreen() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentThreadId = searchParams.get('threadId');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const {
     threads,
     activeThreads,
     createThread,
     addMessageToThread,
+    updateMessageInThread,
     archiveThread,
     deleteThread,
     getThread
@@ -127,11 +134,49 @@ export default function AgentChatScreen() {
     setSearchParams({});
   }, [setSearchParams]);
 
+  // Handle pull to refresh
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    // Simulate refresh delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsRefreshing(false);
+    toast.success('Chat refreshed');
+  }, []);
+
   // Get current thread for chat view
   const currentThread = currentThreadId ? getThread(currentThreadId) : null;
 
+  // Chat gesture handlers
+  const { swipeHandlers, messageGestures } = useChatGestures({
+    onSwipeRight: currentThread ? handleBack : undefined,
+    onSwipeLeft: currentThread ? () => handleArchiveThread(currentThread.id) : undefined,
+    onLongPress: (messageId) => {
+      toast.info('Message options', {
+        description: 'Long press detected on message',
+        action: {
+          label: 'Close',
+          onClick: () => {}
+        }
+      });
+    },
+    onDoubleTap: (messageId) => {
+      if (currentThread) {
+        // Toggle important flag
+        const message = currentThread.messages.find(m => m.id === messageId);
+        if (message) {
+          updateMessageInThread(
+            currentThread.id, 
+            messageId, 
+            { isImportant: !message.isImportant }
+          );
+          toast.success(message.isImportant ? 'Unmarked as important' : 'Marked as important');
+        }
+      }
+    }
+  });
+
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="relative min-h-screen bg-background" {...swipeHandlers}>
       <TopBar 
         variant="back" 
         title={currentThread ? currentThread.topic : "MMAgent Chat"}
@@ -140,38 +185,71 @@ export default function AgentChatScreen() {
       
       <ScreenContainer
         hasTopBar
-        hasBottomNav={false}
+        hasBottomNav={!currentThread} // Hide bottom nav in chat view
         padding={false}
         scrollable={false}
         className="h-[calc(100vh-56px)]"
       >
-        {currentThread ? (
-          <ChatView
-            threadId={currentThread.id}
-            threadType="custom"
-            threadTitle={currentThread.topic}
-            messages={currentThread.messages}
-            onSendMessage={handleSendMessage}
-            onArchive={() => handleArchiveThread(currentThread.id)}
-            onDelete={() => handleDeleteThread(currentThread.id)}
-            isTyping={isLoading}
-            quickReplies={currentThread.messages.length === 0 ? [
-              'Tell me about my matches',
-              'How can I improve my profile?',
-              'What makes a good match?'
-            ] : []}
-          />
-        ) : (
-          <ThreadList
-            threads={convertToThreadListFormat()}
-            onThreadSelect={handleThreadSelect}
-            onNewThread={handleNewThread}
-            onArchiveThread={handleArchiveThread}
-            onDeleteThread={handleDeleteThread}
-            isLoading={false}
-          />
-        )}
+        <PullToRefresh onRefresh={handleRefresh}>
+          {currentThread ? (
+            <ChatView
+              threadId={currentThread.id}
+              threadType="custom"
+              threadTitle={currentThread.topic}
+              messages={currentThread.messages}
+              onSendMessage={handleSendMessage}
+              onArchive={() => handleArchiveThread(currentThread.id)}
+              onDelete={() => handleDeleteThread(currentThread.id)}
+              onToggleImportant={(messageId) => {
+                const message = currentThread.messages.find(m => m.id === messageId);
+                if (message) {
+                  updateMessageInThread(
+                    currentThread.id,
+                    messageId,
+                    { isImportant: !message.isImportant }
+                  );
+                }
+              }}
+              messageGestures={messageGestures}
+              isTyping={isLoading}
+              quickReplies={currentThread.messages.length === 0 ? [
+                'Tell me about my matches',
+                'How can I improve my profile?',
+                'What makes a good match?'
+              ] : []}
+            />
+          ) : (
+            <ThreadList
+              threads={convertToThreadListFormat()}
+              onThreadSelect={handleThreadSelect}
+              onNewThread={handleNewThread}
+              onArchiveThread={handleArchiveThread}
+              onDeleteThread={handleDeleteThread}
+              isLoading={false}
+            />
+          )}
+        </PullToRefresh>
       </ScreenContainer>
+
+      {/* Floating Action Button for New Thread (only on thread list) */}
+      <AnimatePresence>
+        {!currentThread && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="fixed bottom-20 right-4 z-50"
+          >
+            <Button
+              size="lg"
+              onClick={() => handleNewThread('custom')}
+              className="h-14 w-14 rounded-full shadow-lg"
+            >
+              <Plus className="w-6 h-6" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
