@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, X, Clock, Lightbulb, ArrowRight, ChevronDown, Heart, Palette, HeartHandshake, Sparkles, Users } from 'lucide-react';
+import { Lock, X, Clock, Lightbulb, ArrowRight, ChevronDown, Heart, Palette, HeartHandshake, Sparkles, Users, Unlock, Trophy, Award, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import confetti from 'canvas-confetti';
+import { addDays, nextSunday, format } from 'date-fns';
 
 interface ChaiChatEligibilityTrackerProps {
   currentCompletion?: number;
@@ -23,23 +26,85 @@ export const ChaiChatEligibilityTracker = ({
   currentCompletion = 65,
   onCompleteProfile
 }: ChaiChatEligibilityTrackerProps) => {
+  const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
-  // Load dismissed state from localStorage
+  // Load dismissed state and check for celebration trigger
   useEffect(() => {
     const dismissed = localStorage.getItem('chaichat_banner_dismissed');
     if (dismissed === 'true') {
       setIsDismissed(true);
     }
-  }, []);
+
+    // Check if we should show celebration
+    const celebrationShown = localStorage.getItem('chaichat_celebration_shown');
+    const isEligible = currentCompletion >= 70;
+    
+    if (isEligible && celebrationShown !== 'true') {
+      setShowCelebration(true);
+      // Trigger confetti
+      triggerConfetti();
+    }
+  }, [currentCompletion]);
+
+  const triggerConfetti = () => {
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 };
+
+    const randomInRange = (min: number, max: number) => {
+      return Math.random() * (max - min) + min;
+    };
+
+    const interval: any = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#10B981', '#D4A574', '#F59E0B']
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#10B981', '#D4A574', '#F59E0B']
+      });
+    }, 250);
+  };
+
+  const handleCloseCelebration = () => {
+    setShowCelebration(false);
+    localStorage.setItem('chaichat_celebration_shown', 'true');
+    localStorage.setItem('chaichat_unlocked_at', new Date().toISOString());
+  };
 
   const handleDismiss = () => {
     setIsDismissed(true);
     localStorage.setItem('chaichat_banner_dismissed', 'true');
   };
 
-  // Don't show if dismissed or if already at 70%+
+  // Calculate next Sunday at 2 AM
+  const getNextChaiChatDate = () => {
+    const now = new Date();
+    const nextSun = nextSunday(now);
+    nextSun.setHours(2, 0, 0, 0);
+    return nextSun;
+  };
+
+  const nextMatchDate = getNextChaiChatDate();
+  const daysUntil = Math.ceil((nextMatchDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+  // Don't show banner if dismissed or if already at 70%+ (celebration will show instead)
   if (isDismissed || currentCompletion >= 70) {
     return null;
   }
@@ -125,14 +190,202 @@ export const ChaiChatEligibilityTracker = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.4 }}
-      className="sticky top-0 z-40 mb-6"
-    >
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-orange-200 rounded-xl p-6 shadow-lg">
+    <>
+      {/* Celebration Modal */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={handleCloseCelebration}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="relative max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={handleCloseCelebration}
+                className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close celebration"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Success Icon */}
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.3, type: 'spring', bounce: 0.5 }}
+                className="flex justify-center mb-6"
+              >
+                <div className="w-32 h-32 rounded-full bg-green-100 flex items-center justify-center">
+                  <Unlock className="w-24 h-24 text-green-600" />
+                </div>
+              </motion.div>
+
+              {/* Celebration Content */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.5 }}
+              >
+                <h1 className="text-4xl font-bold text-gray-900 text-center mb-3">
+                  🎉 Congratulations!
+                </h1>
+                
+                <h2 className="text-2xl font-semibold text-green-700 text-center mb-6">
+                  ChaiChat Unlocked!
+                </h2>
+
+                {/* Achievement Badge */}
+                <div className="flex justify-center mb-6">
+                  <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold">
+                    <Award className="w-5 h-5" />
+                    <span>Profile Completion Master</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* What is ChaiChat Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+                className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6"
+              >
+                <h3 className="text-lg font-bold text-green-900 mb-3">
+                  What is ChaiChat?
+                </h3>
+                
+                <div className="space-y-2">
+                  <p className="text-base text-gray-700 leading-relaxed flex items-start gap-2">
+                    <span>🤖</span>
+                    <span>Your AI companion talks to potential matches' AI companions</span>
+                  </p>
+                  <p className="text-base text-gray-700 leading-relaxed flex items-start gap-2">
+                    <span>💬</span>
+                    <span>They discuss compatibility before you ever message</span>
+                  </p>
+                  <p className="text-base text-gray-700 leading-relaxed flex items-start gap-2">
+                    <span>📊</span>
+                    <span>You receive 3 highly compatible matches every Sunday</span>
+                  </p>
+                  <p className="text-base text-gray-700 leading-relaxed flex items-start gap-2">
+                    <span>✨</span>
+                    <span>First ChaiChat conversation happens this Sunday at 2 AM</span>
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Next Match Info */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.7 }}
+                className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 mb-6"
+              >
+                <div className="flex items-start gap-3">
+                  <Calendar className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-base font-semibold text-gray-900 mb-1">
+                      Your first ChaiChat matches:
+                    </p>
+                    <p className="text-base text-gray-700">
+                      {format(nextMatchDate, 'EEEE, MMMM d, yyyy')} at 2:00 AM
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      In {daysUntil} day{daysUntil !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Pro Tip */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.8 }}
+                className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6"
+              >
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      💡 Pro Tip: Optimize your profile to 90% for highest quality matches!
+                    </p>
+                    <button
+                      onClick={() => {
+                        handleCloseCelebration();
+                        onCompleteProfile?.();
+                      }}
+                      className="text-sm text-green-700 hover:underline mt-1 font-medium"
+                    >
+                      Keep Improving →
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.9 }}
+                className="flex flex-col sm:flex-row gap-3"
+              >
+                <Button
+                  onClick={() => {
+                    handleCloseCelebration();
+                    navigate('/chaichat');
+                  }}
+                  className="flex-1 py-3 px-6 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-base font-semibold"
+                >
+                  View ChaiChat Features
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                
+                <Button
+                  onClick={() => {
+                    handleCloseCelebration();
+                    navigate('/discover');
+                  }}
+                  variant="outline"
+                  className="flex-1 py-3 px-6 border-2 border-green-600 text-green-700 hover:bg-green-50 rounded-lg text-base font-semibold"
+                >
+                  Explore Matches
+                </Button>
+              </motion.div>
+
+              <div className="text-center mt-4">
+                <button
+                  onClick={handleCloseCelebration}
+                  className="text-gray-600 hover:underline text-base"
+                >
+                  Continue Building Profile
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Below-70% Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
+        className="sticky top-0 z-40 mb-6"
+      >
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-orange-200 rounded-xl p-6 shadow-lg">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -315,5 +568,6 @@ export const ChaiChatEligibilityTracker = ({
         </motion.div>
       </div>
     </motion.div>
+    </>
   );
 };
