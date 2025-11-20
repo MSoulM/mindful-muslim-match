@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Type, Image, Video, Mic, AlertCircle, CheckCircle, Sparkles, Upload, XCircle, RefreshCw, Square, Info } from 'lucide-react';
+import { X, Type, Image, Video, Mic, AlertCircle, CheckCircle, Sparkles, Upload, XCircle, RefreshCw, Square, Info, Loader, TrendingUp, Lightbulb, Heart, BookOpen, Target, Home, Users } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,6 +81,23 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
   const [audioUrl, setAudioUrl] = useState<string>('');
   const [voiceDescription, setVoiceDescription] = useState('');
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Category prediction state
+  const [isAnalyzingCategory, setIsAnalyzingCategory] = useState(false);
+  const [predictedCategory, setPredictedCategory] = useState<{
+    primary: { name: string; confidence: number; icon: string };
+    secondary?: { name: string; confidence: number };
+  } | null>(null);
+  const [showCategoryOverride, setShowCategoryOverride] = useState(false);
+  
+  // Define category configuration
+  const categoryConfig = {
+    'Values & Beliefs': { icon: Heart, color: 'teal', colorCode: '#0D7377' },
+    'Interests & Hobbies': { icon: BookOpen, color: 'red', colorCode: '#FF6B6B' },
+    'Relationship Goals': { icon: Target, color: 'gold', colorCode: '#FDB813' },
+    'Lifestyle & Personality': { icon: Home, color: 'blue', colorCode: '#0066CC' },
+    'Family & Cultural': { icon: Users, color: 'purple', colorCode: '#8B7AB8' },
+  };
   
   // Calculate metrics
   const charCount = textContent.length;
@@ -386,6 +403,88 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     handleReRecord();
   };
   
+  // Category prediction logic
+  const predictCategory = (content: string, type: 'text' | 'photo' | 'video' | 'voice') => {
+    setIsAnalyzingCategory(true);
+    setPredictedCategory(null);
+    
+    setTimeout(() => {
+      let prediction: { primary: { name: string; confidence: number; icon: string }; secondary?: { name: string; confidence: number } };
+      
+      if (type === 'text') {
+        const lowerContent = content.toLowerCase();
+        
+        if (lowerContent.match(/pray|prayer|salah|faith|allah|islam|quran|mosque/)) {
+          prediction = {
+            primary: { name: 'Values & Beliefs', confidence: 85, icon: 'Heart' },
+          };
+        } else if (lowerContent.match(/family|parents|siblings|relatives|mother|father/)) {
+          prediction = {
+            primary: { name: 'Family & Cultural', confidence: 80, icon: 'Users' },
+          };
+        } else if (lowerContent.match(/cooking|sports|reading|hobby|music|travel|photography/)) {
+          prediction = {
+            primary: { name: 'Interests & Hobbies', confidence: 80, icon: 'BookOpen' },
+            secondary: { name: 'Lifestyle & Personality', confidence: 45 },
+          };
+        } else if (lowerContent.match(/marriage|children|future|partner|spouse|relationship/)) {
+          prediction = {
+            primary: { name: 'Relationship Goals', confidence: 85, icon: 'Target' },
+          };
+        } else if (lowerContent.match(/work|routine|lifestyle|daily|habits|exercise/)) {
+          prediction = {
+            primary: { name: 'Lifestyle & Personality', confidence: 75, icon: 'Home' },
+          };
+        } else {
+          prediction = {
+            primary: { name: 'Lifestyle & Personality', confidence: 60, icon: 'Home' },
+          };
+        }
+      } else if (type === 'photo') {
+        prediction = {
+          primary: { name: 'Interests & Hobbies', confidence: 75, icon: 'BookOpen' },
+          secondary: { name: 'Lifestyle & Personality', confidence: 50 },
+        };
+      } else if (type === 'video') {
+        prediction = {
+          primary: { name: 'Interests & Hobbies', confidence: 80, icon: 'BookOpen' },
+        };
+      } else {
+        prediction = {
+          primary: { name: 'Values & Beliefs', confidence: 70, icon: 'Heart' },
+        };
+      }
+      
+      setPredictedCategory(prediction);
+      setIsAnalyzingCategory(false);
+    }, 2000);
+  };
+  
+  // Trigger category prediction based on content type
+  useEffect(() => {
+    if (activeTab === 'text' && textContent.length >= 50) {
+      predictCategory(textContent, 'text');
+    }
+  }, [textContent, activeTab]);
+  
+  useEffect(() => {
+    if (activeTab === 'photo' && photoFile) {
+      predictCategory('', 'photo');
+    }
+  }, [photoFile, activeTab]);
+  
+  useEffect(() => {
+    if (activeTab === 'video' && videoFile) {
+      predictCategory('', 'video');
+    }
+  }, [videoFile, activeTab]);
+  
+  useEffect(() => {
+    if (activeTab === 'voice' && hasRecorded) {
+      predictCategory('', 'voice');
+    }
+  }, [hasRecorded, activeTab]);
+  
   const handleClose = () => {
     // Cleanup photo preview URL
     if (photoPreview) {
@@ -430,6 +529,157 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     if (e.key === 'Escape') {
       handleClose();
     }
+  };
+  
+  // Render category prediction section (shared across all tabs)
+  const renderCategoryPrediction = () => {
+    const shouldShow = 
+      (activeTab === 'text' && textContent.length >= 50) ||
+      (activeTab === 'photo' && photoFile) ||
+      (activeTab === 'video' && videoFile) ||
+      (activeTab === 'voice' && hasRecorded);
+    
+    if (!shouldShow) return null;
+    
+    return (
+      <div className="mt-6 pt-6 border-t-2 border-border bg-gradient-to-b from-background to-muted/30 -mx-6 px-6 pb-6">
+        {isAnalyzingCategory ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader className="h-8 w-8 text-primary animate-spin mb-3" />
+            <p className="text-base font-semibold text-foreground">
+              Analyzing your content...
+            </p>
+          </div>
+        ) : predictedCategory ? (
+          <div className="space-y-4">
+            {/* Category Assignment */}
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-3">
+                This content will be added to:
+              </p>
+              
+              {/* Primary Category */}
+              <div className="flex items-center gap-3 p-4 bg-opacity-20 border-2 rounded-lg"
+                style={{
+                  backgroundColor: `${categoryConfig[predictedCategory.primary.name as keyof typeof categoryConfig].colorCode}33`,
+                  borderColor: categoryConfig[predictedCategory.primary.name as keyof typeof categoryConfig].colorCode,
+                }}
+              >
+                {React.createElement(
+                  categoryConfig[predictedCategory.primary.name as keyof typeof categoryConfig].icon,
+                  { className: 'h-6 w-6 flex-shrink-0', style: { color: categoryConfig[predictedCategory.primary.name as keyof typeof categoryConfig].colorCode } }
+                )}
+                <span className="flex-1 text-base font-semibold text-foreground">
+                  {predictedCategory.primary.name}
+                </span>
+                <span className="text-sm font-medium text-muted-foreground">
+                  {predictedCategory.primary.confidence}% confidence
+                </span>
+              </div>
+              
+              {/* Secondary Category */}
+              {predictedCategory.secondary && (
+                <div className="mt-2 flex items-center gap-2 p-3 bg-opacity-10 border rounded-md"
+                  style={{
+                    backgroundColor: `${categoryConfig[predictedCategory.secondary.name as keyof typeof categoryConfig].colorCode}1A`,
+                    borderColor: `${categoryConfig[predictedCategory.secondary.name as keyof typeof categoryConfig].colorCode}4D`,
+                  }}
+                >
+                  <span className="text-sm text-foreground">
+                    Also contributes to: <span className="font-medium">{predictedCategory.secondary.name}</span> ({predictedCategory.secondary.confidence}%)
+                  </span>
+                </div>
+              )}
+              
+              {/* Category Override Button */}
+              <button
+                onClick={() => setShowCategoryOverride(!showCategoryOverride)}
+                className="mt-2 text-xs text-muted-foreground hover:text-foreground hover:underline"
+              >
+                Wrong category?
+              </button>
+            </div>
+            
+            {/* Impact Preview Card */}
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-semibold text-foreground">
+                  Impact on Your Profile
+                </span>
+              </div>
+              
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span>Content items: 5 → 6 (+1)</span>
+                </div>
+                {activeTab === 'text' && (
+                  <div className="flex items-center gap-2 text-sm text-foreground">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span>Total words: 280 → {280 + wordCount} (+{wordCount})</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <span className="ml-6">Topic coverage: 3/4 → 4/4 ✓</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span>Category completion: 68% → 72% (+4%) ⬆️</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Smart Suggestion */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-start gap-2">
+                <Lightbulb className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-foreground">
+                  💡 Tip: Mention Islamic knowledge to cover your 4th topic and boost completion by 8%
+                </p>
+              </div>
+            </div>
+            
+            {/* Category Override Dropdown */}
+            <AnimatePresence>
+              {showCategoryOverride && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="p-4 bg-background border border-border rounded-lg shadow-lg z-50"
+                >
+                  <p className="text-sm font-semibold text-foreground mb-3">
+                    Select the correct category:
+                  </p>
+                  <div className="space-y-2">
+                    {Object.entries(categoryConfig).map(([name, config]) => {
+                      const IconComponent = config.icon;
+                      return (
+                        <button
+                          key={name}
+                          onClick={() => {
+                            setPredictedCategory({
+                              primary: { name, confidence: 100, icon: config.icon.name },
+                            });
+                            setShowCategoryOverride(false);
+                            toast.success(`Category changed to ${name}`);
+                          }}
+                          className="w-full flex items-center gap-3 p-3 bg-muted hover:bg-accent rounded-md transition-colors text-left"
+                        >
+                          <IconComponent className="h-5 w-5" style={{ color: config.colorCode }} />
+                          <span className="text-sm font-medium text-foreground">{name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : null}
+      </div>
+    );
   };
 
   return (
@@ -583,6 +833,9 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                   </div>
                 </div>
               )}
+              
+              {/* Category Prediction Section */}
+              {renderCategoryPrediction()}
             </div>
           )}
 
@@ -736,6 +989,9 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                   </div>
                 </div>
               )}
+              
+              {/* Category Prediction Section */}
+              {renderCategoryPrediction()}
             </div>
           )}
 
@@ -864,6 +1120,9 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                   </div>
                 </div>
               )}
+              
+              {/* Category Prediction Section */}
+              {renderCategoryPrediction()}
             </div>
           )}
 
@@ -1026,6 +1285,9 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                   </div>
                 </>
               )}
+              
+              {/* Category Prediction Section */}
+              {renderCategoryPrediction()}
             </div>
           )}
         </div>
