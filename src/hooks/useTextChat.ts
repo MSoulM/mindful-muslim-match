@@ -3,7 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Check if environment variables are available
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Supabase environment variables are not configured. Lovable Cloud must be enabled for MMAgent chat to work.');
+}
+
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 interface Message {
   id: string;
@@ -32,6 +38,11 @@ export const useTextChat = () => {
     setError(null);
 
     try {
+      // Check if Supabase is configured
+      if (!supabase) {
+        throw new Error('Lovable Cloud is not enabled. Please enable Cloud to use MMAgent chat.');
+      }
+
       // Call edge function
       const { data, error: functionError } = await supabase.functions.invoke('agent-chat', {
         body: { 
