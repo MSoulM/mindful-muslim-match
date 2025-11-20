@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, memo, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Medal, Sparkles, ChevronRight, ChevronDown, Heart, Palette, HeartHandshake, Users, Pencil, Type, CheckCircle2, Check, X, Lightbulb, Plus, Eye, Info, XCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,11 +21,12 @@ interface SemanticProfileCompletionProps {
   onCompleteProfile?: () => void;
 }
 
-export const SemanticProfileCompletion = ({
+export const SemanticProfileCompletion = memo(({
   completion = 67, // Mock data for now
   onCompleteProfile
 }: SemanticProfileCompletionProps) => {
   const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [showEducationModal, setShowEducationModal] = useState(false);
@@ -86,8 +88,8 @@ export const SemanticProfileCompletion = ({
     }
   };
 
-  // Helper to map category id to CategoryType
-  const getCategoryType = (categoryId: string): CategoryType => {
+  // Helper to map category id to CategoryType (memoized)
+  const getCategoryType = useCallback((categoryId: string): CategoryType => {
     const mapping: Record<string, CategoryType> = {
       values: 'values_beliefs',
       interests: 'interests_hobbies',
@@ -96,10 +98,10 @@ export const SemanticProfileCompletion = ({
       family: 'family_cultural'
     };
     return mapping[categoryId] || 'values_beliefs';
-  };
+  }, []);
 
-  // Toggle expanded topic examples
-  const toggleTopicExpanded = (topicId: string) => {
+  // Toggle expanded topic examples (memoized)
+  const toggleTopicExpanded = useCallback((topicId: string) => {
     setExpandedTopics(prev => {
       const newSet = new Set(prev);
       if (newSet.has(topicId)) {
@@ -109,10 +111,10 @@ export const SemanticProfileCompletion = ({
       }
       return newSet;
     });
-  };
+  }, []);
 
-  // Mock category data
-  const categories = [
+  // Mock category data (memoized to prevent re-renders)
+  const categories = useMemo(() => [
     {
       id: 'values',
       name: 'Values & Beliefs',
@@ -148,35 +150,41 @@ export const SemanticProfileCompletion = ({
       color: '#F59E0B',
       percentage: 40,
     },
-  ];
+  ], []);
   
-  // Calculate level badge based on completion
-  const getLevel = () => {
+  // Calculate level badge based on completion (memoized)
+  const level = useMemo(() => {
     if (completion >= 90) return { name: 'Diamond', color: 'from-cyan-400 to-blue-500', icon: Sparkles };
     if (completion >= 70) return { name: 'Gold', color: 'from-yellow-400 to-amber-500', icon: Medal };
     if (completion >= 41) return { name: 'Silver', color: 'from-gray-300 to-gray-400', icon: Medal };
     return { name: 'Bronze', color: 'from-orange-400 to-amber-600', icon: Medal };
-  };
+  }, [completion]);
 
-  // Get color based on completion percentage
-  const getProgressColor = () => {
+  // Get color based on completion percentage (memoized)
+  const progressColor = useMemo(() => {
     if (completion >= 70) return '#10B981'; // Green
     if (completion >= 31) return '#F59E0B'; // Yellow
     return '#EF4444'; // Red
-  };
+  }, [completion]);
 
-  // Calculate ChaiChat eligibility
-  const isChaiChatEligible = completion >= 70;
-  const percentageAway = isChaiChatEligible ? 0 : 70 - completion;
+  // Calculate ChaiChat eligibility (memoized)
+  const { isChaiChatEligible, percentageAway } = useMemo(() => ({
+    isChaiChatEligible: completion >= 70,
+    percentageAway: completion >= 70 ? 0 : 70 - completion
+  }), [completion]);
 
-  const level = getLevel();
   const LevelIcon = level.icon;
-  const progressColor = getProgressColor();
 
-  // Circle dimensions
-  const radius = 55; // For 120px diameter (55 * 2 + stroke)
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (completion / 100) * circumference;
+  // Circle dimensions (memoized)
+  const { radius, circumference, strokeDashoffset } = useMemo(() => {
+    const r = 55;
+    const c = 2 * Math.PI * r;
+    return {
+      radius: r,
+      circumference: c,
+      strokeDashoffset: c - (completion / 100) * c
+    };
+  }, [completion]);
 
   return (
     <>
@@ -243,7 +251,7 @@ export const SemanticProfileCompletion = ({
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
               animate={{ strokeDashoffset }}
-              transition={{
+              transition={shouldReduceMotion ? { duration: 0 } : {
                 duration: 1.5,
                 ease: "easeOut",
                 delay: 0.2
@@ -893,7 +901,9 @@ export const SemanticProfileCompletion = ({
           );
         })}
       </div>
-    </div>
+      </div>
     </>
   );
-};
+});
+
+SemanticProfileCompletion.displayName = 'SemanticProfileCompletion';
