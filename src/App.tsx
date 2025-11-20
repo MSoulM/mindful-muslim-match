@@ -92,6 +92,7 @@ import PersonalityCardTest from "./pages/PersonalityCardTest";
 import ToneAdjustmentTest from "./pages/ToneAdjustmentTest";
 import UserStateIndicatorTest from "./pages/UserStateIndicatorTest";
 import SupportModeTest from "./pages/SupportModeTest";
+import ChaiChatShowcaseScreen from "./pages/ChaiChatShowcaseScreen";
 import NotFound from "./pages/NotFound";
 import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
@@ -599,6 +600,11 @@ const AnimatedRoutes = () => {
             <Route path="/dev/tier-selector" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <TierSelectorDemo />
+              </motion.div>
+            } />
+            <Route path="/dev/chaichat-showcase" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <ChaiChatShowcaseScreen />
               </motion.div>
             } />
           </>
