@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { TrendingDown, Zap, Database, Route } from 'lucide-react';
+import { TrendingDown, Zap, Database, Route, Share2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface MetricsDashboardProps {
@@ -63,6 +64,22 @@ export const MetricsDashboard = ({
     },
   ];
 
+  // Share functionality for mobile
+  const handleShare = async () => {
+    const text = `I'm saving $${monthlySaved.toFixed(2)}/month with MySoulDNA's optimized ChaiChat system!`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch (err) {
+        console.log('Share canceled');
+      }
+    } else {
+      navigator.clipboard.writeText(text);
+      alert('Copied to clipboard!');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Hero Metrics Grid */}
@@ -105,12 +122,22 @@ export const MetricsDashboard = ({
             <CardTitle className="text-lg">Live Savings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">Platform saved today</p>
-              <div className="text-4xl font-bold text-success">
-                ${dailySaved.toFixed(2)}
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">Platform saved today</p>
+                <div className="text-4xl font-bold text-success">
+                  ${dailySaved.toFixed(2)}
+                </div>
+                {/* Mobile: Share Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleShare}
+                  className="gap-2 text-xs h-10 w-full sm:w-auto touch-manipulation mt-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Share Savings</span>
+                </Button>
               </div>
-            </div>
             <div className="pt-4 border-t border-border">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Your account this month</span>
