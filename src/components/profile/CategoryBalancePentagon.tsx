@@ -10,7 +10,8 @@ import {
   Tooltip,
   Dot,
 } from "recharts";
-import { Heart, Palette, Sparkles, Users, LucideIcon, CheckCircle, AlertTriangle, XCircle, ExternalLink } from "lucide-react";
+import { Heart, Palette, Sparkles, Users, LucideIcon, CheckCircle, AlertTriangle, XCircle, ExternalLink, TrendingUp, TrendingDown, Lightbulb, Target, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CategoryData {
   category: string;
@@ -124,6 +125,55 @@ export const CategoryBalancePentagon = ({
       setHoveredCategory(category);
     }
   }, [hoveredCategory]);
+
+  // Balance Score Calculation
+  const calculateBalanceScore = useCallback((categories: CategoryData[]): number => {
+    const values = categories.map(c => c.value);
+    const mean = values.reduce((a, b) => a + b) / values.length;
+    const variance = values.reduce((sum, val) => 
+      sum + Math.pow(val - mean, 2), 0
+    ) / values.length;
+    const standardDev = Math.sqrt(variance);
+    
+    // Convert to 0-100 score (lower variance = higher score)
+    const balanceScore = Math.max(0, 100 - (standardDev * 2));
+    return Math.round(balanceScore);
+  }, []);
+
+  const balanceScore = useMemo(() => calculateBalanceScore(data), [data, calculateBalanceScore]);
+
+  const getBalanceColor = useCallback((score: number): string => {
+    if (score >= 80) return '#10B981'; // Green
+    if (score >= 60) return '#F59E0B'; // Yellow
+    return '#F97316'; // Orange
+  }, []);
+
+  const getBalanceRating = useCallback((score: number): string => {
+    if (score >= 85) return 'Excellent Balance! ⭐';
+    if (score >= 70) return 'Good Balance ✓';
+    if (score >= 50) return 'Fair Balance';
+    return 'Needs Balance ⚠️';
+  }, []);
+
+  const strongestCategory = useMemo(() => 
+    data.reduce((max, cat) => cat.value > max.value ? cat : max)
+  , [data]);
+
+  const weakestCategory = useMemo(() => 
+    data.reduce((min, cat) => cat.value < min.value ? cat : min)
+  , [data]);
+
+  const variance = useMemo(() => 
+    strongestCategory.value - weakestCategory.value
+  , [strongestCategory, weakestCategory]);
+
+  const balanceColor = getBalanceColor(balanceScore);
+  const balanceRating = getBalanceRating(balanceScore);
+
+  // Circle dimensions for balance score
+  const balanceRadius = 50;
+  const balanceCircumference = 2 * Math.PI * balanceRadius;
+  const balanceStrokeDashoffset = balanceCircumference - (balanceScore / 100) * balanceCircumference;
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -354,6 +404,181 @@ export const CategoryBalancePentagon = ({
           </motion.div>
         </div>
       </div>
+
+      {/* Balance Score Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 1.2 }}
+        className="mt-6 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-6 shadow-md"
+      >
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Profile Balance Score</h3>
+          <p className="text-sm text-gray-600">How evenly distributed is your content?</p>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Circular Balance Score */}
+          <div className="flex-shrink-0 flex flex-col items-center mx-auto lg:mx-0">
+            <div className="relative w-[120px] h-[120px]">
+              {/* Background Circle */}
+              <svg className="w-full h-full -rotate-90">
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={balanceRadius}
+                  stroke="#E5E7EB"
+                  strokeWidth="10"
+                  fill="none"
+                />
+                {/* Progress Circle */}
+                <motion.circle
+                  cx="60"
+                  cy="60"
+                  r={balanceRadius}
+                  stroke={balanceColor}
+                  strokeWidth="10"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={balanceCircumference}
+                  initial={{ strokeDashoffset: balanceCircumference }}
+                  animate={{ strokeDashoffset: balanceStrokeDashoffset }}
+                  transition={{ duration: 1, delay: 1.4, ease: "easeOut" }}
+                />
+              </svg>
+              {/* Score Text */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <motion.span
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 1.6 }}
+                  className="text-3xl font-bold"
+                  style={{ color: balanceColor }}
+                >
+                  {balanceScore}
+                </motion.span>
+                <span className="text-sm text-gray-600">Balance</span>
+              </div>
+            </div>
+            <p className="text-base font-semibold mt-3" style={{ color: balanceColor }}>
+              {balanceRating}
+            </p>
+          </div>
+
+          {/* Analysis and Explanation */}
+          <div className="flex-1">
+            {/* What is Balance? */}
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-900 mb-2">What is Balance?</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Balance measures how evenly distributed your content is across all 5 categories. A balanced profile helps us understand you better and find more compatible matches.
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Ideal: All categories within 20% of each other
+              </p>
+            </div>
+
+            {/* Category Analysis */}
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Category Analysis</h4>
+              
+              <div className="space-y-2">
+                {/* Strongest */}
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-green-700">
+                    <strong>Strongest:</strong> {strongestCategory.category === "Values" ? "Values & Beliefs" :
+                     strongestCategory.category === "Interests" ? "Interests & Hobbies" :
+                     strongestCategory.category === "Goals" ? "Relationship Goals" :
+                     strongestCategory.category === "Lifestyle" ? "Lifestyle & Personality" :
+                     "Family & Cultural"} ({strongestCategory.value}%)
+                  </span>
+                </div>
+
+                {/* Weakest */}
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm text-orange-700">
+                    <strong>Needs attention:</strong> {weakestCategory.category === "Values" ? "Values & Beliefs" :
+                     weakestCategory.category === "Interests" ? "Interests & Hobbies" :
+                     weakestCategory.category === "Goals" ? "Relationship Goals" :
+                     weakestCategory.category === "Lifestyle" ? "Lifestyle & Personality" :
+                     "Family & Cultural"} ({weakestCategory.value}%)
+                  </span>
+                </div>
+
+                {/* Variance */}
+                <div className="text-xs text-gray-600 ml-6 mt-2">
+                  Difference: {variance}% ({strongestCategory.value}% - {weakestCategory.value}%)
+                  <br />
+                  Target: &lt;30% for excellent balance
+                </div>
+              </div>
+            </div>
+
+            {/* Improvement Suggestions (if score < 70) */}
+            {balanceScore < 70 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 1.8 }}
+                className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <Lightbulb className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-base font-bold text-blue-900 mb-3">How to Improve Balance</h4>
+                    <ol className="space-y-3 list-decimal list-inside">
+                      <li className="text-sm text-gray-700">
+                        <strong>Boost {weakestCategory.category === "Values" ? "Values & Beliefs" :
+                         weakestCategory.category === "Interests" ? "Interests & Hobbies" :
+                         weakestCategory.category === "Goals" ? "Relationship Goals" :
+                         weakestCategory.category === "Lifestyle" ? "Lifestyle & Personality" :
+                         "Family & Cultural"}</strong> from {weakestCategory.value}% to {Math.min(weakestCategory.value + 20, 80)}%
+                        <div className="text-xs text-gray-600 ml-6 mt-1">
+                          Add 3-5 posts about this topic. Impact: +{Math.min(15, 70 - balanceScore)} balance points
+                        </div>
+                      </li>
+                      <li className="text-sm text-gray-700">
+                        <strong>Maintain {strongestCategory.category}</strong>
+                        <div className="text-xs text-gray-600 ml-6 mt-1">
+                          You're doing great here! Keep this while building other categories
+                        </div>
+                      </li>
+                      <li className="text-sm text-gray-700">
+                        <strong>Aim for 60-80% in all categories</strong>
+                        <div className="text-xs text-gray-600 ml-6 mt-1">
+                          Long-term goal for excellent balance and better matches
+                        </div>
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t border-gray-200">
+          <Button
+            onClick={() => handleCategoryClick(weakestCategory.category)}
+            className="flex-1 bg-primary hover:bg-primary/90"
+          >
+            <Target className="w-4 h-4 mr-2" />
+            Rebalance My Profile
+          </Button>
+          <Button
+            onClick={() => handleCategoryClick(weakestCategory.category)}
+            variant="outline"
+            className="flex-1"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            View Weakest Category
+          </Button>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
