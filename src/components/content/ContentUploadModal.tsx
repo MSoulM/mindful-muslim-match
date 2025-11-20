@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Type, Image, Video, Mic, AlertCircle, CheckCircle, Sparkles, Upload, XCircle, RefreshCw } from 'lucide-react';
+import { X, Type, Image, Video, Mic, AlertCircle, CheckCircle, Sparkles, Upload, XCircle, RefreshCw, Square, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,6 +62,25 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Video upload state
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string>('');
+  const [videoCaption, setVideoCaption] = useState('');
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [videoResolution, setVideoResolution] = useState<{ width: number; height: number } | null>(null);
+  const [isDraggingVideo, setIsDraggingVideo] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasRecorded, setHasRecorded] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [voiceDescription, setVoiceDescription] = useState('');
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Calculate metrics
   const charCount = textContent.length;
@@ -220,24 +239,192 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
   
+  // Video upload handlers
+  const validateVideoFile = (file: File): boolean => {
+    const validTypes = ['video/mp4', 'video/quicktime', 'video/webm'];
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload an MP4, MOV, or WEBM video');
+      return false;
+    }
+    
+    if (file.size > maxSize) {
+      toast.error('Video is too large. Please choose a file under 50MB');
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const handleVideoSelect = (file: File) => {
+    if (!validateVideoFile(file)) return;
+    
+    const url = URL.createObjectURL(file);
+    setVideoPreview(url);
+    setVideoFile(file);
+  };
+  
+  const handleVideoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleVideoSelect(file);
+  };
+  
+  const handleVideoDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingVideo(true);
+  };
+  
+  const handleVideoDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingVideo(false);
+  };
+  
+  const handleVideoDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingVideo(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleVideoSelect(file);
+  };
+  
+  const handleRemoveVideo = () => {
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    setVideoFile(null);
+    setVideoPreview('');
+    setVideoCaption('');
+    setVideoDuration(0);
+    setVideoResolution(null);
+    if (videoInputRef.current) {
+      videoInputRef.current.value = '';
+    }
+  };
+  
+  const handleReplaceVideo = () => {
+    handleRemoveVideo();
+    videoInputRef.current?.click();
+  };
+  
+  const handleVideoLoadedMetadata = () => {
+    if (videoRef.current) {
+      const duration = videoRef.current.duration;
+      const width = videoRef.current.videoWidth;
+      const height = videoRef.current.videoHeight;
+      
+      setVideoDuration(duration);
+      setVideoResolution({ width, height });
+    }
+  };
+  
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Voice recording handlers (MOCK for MVP)
+  // TODO: Implement actual MediaRecorder API
+  // TODO: Handle browser permissions for microphone
+  // TODO: Encode audio to MP3/WAV for upload
+  
+  const startRecording = () => {
+    setIsRecording(true);
+    setRecordingTime(0);
+    
+    recordingIntervalRef.current = setInterval(() => {
+      setRecordingTime((prev) => {
+        if (prev >= 120) {
+          stopRecording();
+          return 120;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+  };
+  
+  const stopRecording = () => {
+    setIsRecording(false);
+    setHasRecorded(true);
+    
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    
+    // Mock audio blob creation
+    const mockBlob = new Blob(['mock audio data'], { type: 'audio/webm' });
+    setAudioBlob(mockBlob);
+    setAudioUrl(URL.createObjectURL(mockBlob));
+  };
+  
+  const handleRecordButtonClick = () => {
+    if (isRecording) {
+      if (recordingTime < 30) {
+        toast.warning('Please record at least 30 seconds');
+        return;
+      }
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+  
+  const handleReRecord = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setAudioBlob(null);
+    setAudioUrl('');
+    setHasRecorded(false);
+    setRecordingTime(0);
+    setVoiceDescription('');
+  };
+  
+  const handleDeleteVoice = () => {
+    handleReRecord();
+  };
+  
   const handleClose = () => {
     // Cleanup photo preview URL
     if (photoPreview) {
       URL.revokeObjectURL(photoPreview);
+    }
+    // Cleanup video preview URL
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    // Cleanup audio URL
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    // Clear recording interval
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
     }
     onClose();
     // Reset to text tab on close
     setTimeout(() => setActiveTab('text'), 300);
   };
   
-  // Cleanup photo preview on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (photoPreview) {
         URL.revokeObjectURL(photoPreview);
       }
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
     };
-  }, [photoPreview]);
+  }, [photoPreview, videoPreview, audioUrl]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -559,23 +746,124 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
               aria-labelledby="video-tab"
               className="space-y-4"
             >
-              <div className="border-2 border-dashed border-border rounded-lg p-12 text-center bg-background hover:border-primary/50 transition-colors cursor-pointer">
-                <Video className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  Upload a video that represents you
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Click to browse or drag and drop
-                </p>
-                <p className="text-xs text-amber-600 mt-2 font-medium">
-                  Maximum duration: 60 seconds
-                </p>
-              </div>
-              <textarea
-                placeholder="Add a caption to your video..."
-                className="w-full min-h-[100px] p-4 rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                aria-label="Video caption"
+              {/* Hidden Video Input */}
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept=".mp4,.mov,.webm"
+                onChange={handleVideoInputChange}
+                className="hidden"
               />
+              
+              {/* Upload Area or Preview */}
+              {!videoPreview ? (
+                <div
+                  onDragOver={handleVideoDragOver}
+                  onDragLeave={handleVideoDragLeave}
+                  onDrop={handleVideoDrop}
+                  onClick={() => videoInputRef.current?.click()}
+                  className={cn(
+                    'h-75 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer',
+                    'flex flex-col items-center justify-center',
+                    isDraggingVideo
+                      ? 'border-primary bg-green-50'
+                      : 'border-border bg-muted hover:border-primary/50 hover:bg-green-50/50'
+                  )}
+                >
+                  <Video className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg text-foreground font-medium">
+                    Drop your video here
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    or click to browse
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    MP4, MOV, WEBM up to 50MB • Max 60 seconds
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative rounded-lg overflow-hidden bg-black">
+                    <video
+                      ref={videoRef}
+                      src={videoPreview}
+                      controls
+                      onLoadedMetadata={handleVideoLoadedMetadata}
+                      className="w-full max-h-75 object-contain"
+                    />
+                  </div>
+                  
+                  {/* Video Info */}
+                  {videoFile && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      {videoDuration > 0 && (
+                        <span>Duration: {formatDuration(videoDuration)}</span>
+                      )}
+                      <span>Size: {formatFileSize(videoFile.size)}</span>
+                      <span>Format: {videoFile.type.split('/')[1].toUpperCase()}</span>
+                      {videoResolution && (
+                        <span>Resolution: {videoResolution.width}x{videoResolution.height}</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Duration Validation */}
+                  {videoDuration > 0 && (
+                    <div>
+                      {videoDuration > 60 ? (
+                        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-md text-sm text-orange-800">
+                          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                          <span>Video is too long. Please upload a video under 60 seconds</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-800">
+                          <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                          <span>Duration: Perfect! ✓</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleReplaceVideo}
+                      className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                    >
+                      Replace Video
+                    </button>
+                    <button
+                      onClick={handleRemoveVideo}
+                      className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                    >
+                      Remove Video
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Caption Input */}
+              {videoPreview && (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">
+                    Describe your video
+                  </label>
+                  <textarea
+                    value={videoCaption}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 500) {
+                        setVideoCaption(e.target.value);
+                      }
+                    }}
+                    placeholder="What's happening in this video? What does it say about you?"
+                    className="w-full h-25 max-h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                    aria-label="Video caption"
+                  />
+                  <div className="flex justify-end text-xs text-muted-foreground">
+                    {videoCaption.length} / 500 characters
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -586,25 +874,158 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
               aria-labelledby="voice-tab"
               className="space-y-6"
             >
-              <div className="flex flex-col items-center justify-center py-12 bg-background rounded-lg border border-border">
-                <button
-                  className="h-24 w-24 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  aria-label="Record voice note"
-                >
-                  <Mic className="h-10 w-10" />
-                </button>
-                <p className="text-muted-foreground mt-6">
-                  Tap to start recording
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Duration: 30-120 seconds
-                </p>
-              </div>
-              <textarea
-                placeholder="Add a brief description of what you'll share in your voice note..."
-                className="w-full min-h-[100px] p-4 rounded-lg border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                aria-label="Voice note description"
-              />
+              {!hasRecorded ? (
+                <>
+                  {/* Recording Interface */}
+                  <div className="flex flex-col items-center justify-center py-12 bg-background rounded-lg border border-border">
+                    <button
+                      onClick={handleRecordButtonClick}
+                      className={cn(
+                        'h-24 w-24 rounded-full flex items-center justify-center shadow-xl transition-all',
+                        'focus:outline-none focus:ring-2 focus:ring-offset-2',
+                        isRecording
+                          ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
+                          : 'bg-primary hover:bg-primary/90 focus:ring-primary hover:scale-105 active:scale-95'
+                      )}
+                      aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                    >
+                      {isRecording ? (
+                        <Square className="h-10 w-10 text-white" />
+                      ) : (
+                        <Mic className="h-10 w-10 text-primary-foreground" />
+                      )}
+                    </button>
+                    
+                    <p className="text-sm text-muted-foreground mt-6">
+                      {isRecording ? `Recording... ${formatDuration(recordingTime)}` : 'Tap to start recording'}
+                    </p>
+                    
+                    {!isRecording && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Duration: 30-120 seconds
+                      </p>
+                    )}
+                    
+                    {isRecording && (
+                      <p className={cn(
+                        'text-xs mt-1',
+                        recordingTime < 30 ? 'text-orange-600' : recordingTime > 110 ? 'text-red-600' : 'text-muted-foreground'
+                      )}>
+                        {recordingTime < 30 && 'Minimum 30 seconds'}
+                        {recordingTime >= 30 && recordingTime <= 110 && `${formatDuration(recordingTime)} / 2:00`}
+                        {recordingTime > 110 && 'Reaching maximum duration!'}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Mock Waveform Visualization */}
+                  {isRecording && (
+                    <div className="flex items-end justify-center gap-0.5 h-25 bg-muted rounded-lg p-4">
+                      {Array.from({ length: 20 }).map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="w-1 bg-primary rounded-full"
+                          animate={{
+                            height: [
+                              `${Math.random() * 40 + 20}px`,
+                              `${Math.random() * 60 + 20}px`,
+                              `${Math.random() * 40 + 20}px`,
+                            ],
+                          }}
+                          transition={{
+                            duration: 0.5,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                            delay: i * 0.05,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Playback Interface */}
+                  <div className="space-y-4">
+                    {/* Audio Player (Mock) */}
+                    <div className="p-6 bg-background rounded-lg border border-border">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="flex-1 flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
+                            <Mic className="h-6 w-6 text-primary-foreground" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              Voice Note
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Duration: {formatDuration(recordingTime)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Static Waveform */}
+                      <div className="flex items-end justify-center gap-0.5 h-16 bg-muted rounded p-2 mb-4">
+                        {Array.from({ length: 40 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-1 bg-primary/60 rounded-full"
+                            style={{ height: `${Math.random() * 80 + 20}%` }}
+                          />
+                        ))}
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground">
+                        ~2.1 MB
+                      </div>
+                    </div>
+                    
+                    {/* Audio Quality Indicator */}
+                    <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+                      <Info className="h-5 w-5 flex-shrink-0" />
+                      <span>Clear audio ✓</span>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleReRecord}
+                        className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                      >
+                        Re-record
+                      </button>
+                      <button
+                        onClick={handleDeleteVoice}
+                        className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    
+                    {/* Text Description Field */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">
+                        What did you talk about? (optional)
+                      </label>
+                      <textarea
+                        value={voiceDescription}
+                        onChange={(e) => {
+                          if (e.target.value.length <= 300) {
+                            setVoiceDescription(e.target.value);
+                          }
+                        }}
+                        placeholder="Briefly describe what you shared in this voice note..."
+                        className="w-full h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                        aria-label="Voice note description"
+                      />
+                      <div className="flex justify-end text-xs text-muted-foreground">
+                        {voiceDescription.length} / 300 characters
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
