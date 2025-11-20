@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, TrendingUp, DollarSign } from 'lucide-react';
+import { Shield, Users, TrendingUp, DollarSign, FileDown, FileSpreadsheet, FileText } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { MetricsDashboard } from '@/components/chaichat/MetricsDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { LoadingSpinner } from '@/components/utils/LoadingSpinner';
+import { exportAsCSV, exportAsExcel, exportAsPDF } from '@/utils/adminExport';
+import { toast } from '@/hooks/use-toast';
 
 // Extended platform-wide metrics for admin view
 interface PlatformMetrics {
@@ -56,6 +59,49 @@ export const AdminAnalyticsScreen = () => {
   // Platform-wide cache hit rate (example: 45%)
   const platformCacheHitRate = 45;
 
+  // Prepare export data
+  const exportMetrics = {
+    totalUsers: mockPlatformMetrics.totalUsers,
+    activeUsers: mockPlatformMetrics.activeUsers24h,
+    totalAnalyses: mockPlatformMetrics.totalAnalyses,
+    totalRevenue: mockPlatformMetrics.totalRevenue,
+    avgRevenuePerUser: mockPlatformMetrics.totalRevenue / mockPlatformMetrics.totalUsers,
+    conversionRate: mockPlatformMetrics.conversionRate,
+    cacheSavings: Math.floor(totalSaved * 0.45),
+    batchSavings: Math.floor(totalSaved * 0.30),
+    routingSavings: Math.floor(totalSaved * 0.25),
+    avgEngagementRate: (mockPlatformMetrics.activeUsers7d / mockPlatformMetrics.totalUsers) * 100,
+    avgSessionDuration: 24,
+    dailyActiveUsers: mockPlatformMetrics.activeUsers24h,
+  };
+
+  const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
+    try {
+      switch (format) {
+        case 'csv':
+          exportAsCSV(exportMetrics, 'platform-analytics');
+          break;
+        case 'excel':
+          exportAsExcel(exportMetrics, 'platform-analytics');
+          break;
+        case 'pdf':
+          exportAsPDF(exportMetrics, 'platform-analytics');
+          break;
+      }
+      toast({
+        title: "Export successful",
+        description: `Analytics exported as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export analytics. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <ScreenContainer>
@@ -63,6 +109,47 @@ export const AdminAnalyticsScreen = () => {
         <div className="flex items-center justify-center h-screen">
           <LoadingSpinner size="lg" />
         </div>
+
+        {/* Export Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileDown className="w-5 h-5" />
+              Export Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Button
+                onClick={() => handleExport('csv')}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Export CSV
+              </Button>
+              <Button
+                onClick={() => handleExport('excel')}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export Excel
+              </Button>
+              <Button
+                onClick={() => handleExport('pdf')}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                Export PDF
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Export platform-wide metrics in your preferred format for reporting and analysis
+            </p>
+          </CardContent>
+        </Card>
       </ScreenContainer>
     );
   }
