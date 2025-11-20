@@ -185,7 +185,7 @@ const ProfileScreen = () => {
         {/* ChaiChat Eligibility Tracker (shows when <70%) */}
         <div className="mx-5">
           <ChaiChatEligibilityTracker 
-            currentCompletion={67}
+            currentCompletion={70}
             onCompleteProfile={() => navigate('/edit-profile')}
           />
         </div>
