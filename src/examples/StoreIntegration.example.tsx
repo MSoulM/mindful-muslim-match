@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useAuth,
-  useConversations,
-  useConversation,
+  useThreads,
+  useThread,
   useNotifications,
   useSearch,
   useSavedSearches,
@@ -65,53 +65,60 @@ const AuthDemo = () => {
 
 // Chat Demo
 const ChatDemo = () => {
-  const { conversations, addConversation } = useConversations();
+  const { threads, addThread } = useThreads();
   const unreadCounts = useUnreadCounts();
 
-  const createConversation = () => {
-    const id = `conv-${Date.now()}`;
-    addConversation({
+  const createThread = () => {
+    const id = `thread-${Date.now()}`;
+    addThread({
       id,
-      participantIds: ['user-1', 'user-2'],
-      unreadCount: Math.floor(Math.random() * 5),
+      type: 'custom' as const,
+      topic: 'New Chat',
+      messages: [],
+      createdAt: new Date(),
       updatedAt: new Date(),
+      isArchived: false,
+      unreadCount: Math.floor(Math.random() * 5),
     });
   };
+
+  const totalUnread = Object.values(unreadCounts.chat || {}).reduce(
+    (sum: number, count) => sum + (count as number),
+    0
+  );
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
-          Chat Store
-          {unreadCounts.chat > 0 && (
-            <Badge variant="destructive" className="ml-auto">
-              {unreadCounts.chat}
-            </Badge>
+          Chat System
+          {totalUnread > 0 && (
+            <Badge variant="destructive">{totalUnread}</Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Button onClick={createConversation} className="w-full">
-          Create Conversation
+      <CardContent>
+        <Button onClick={createThread} className="mb-4">
+          Create Thread
         </Button>
 
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {conversations.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No conversations
-            </p>
-          ) : (
-            conversations.map((conv) => (
-              <div key={conv.id} className="p-3 bg-muted rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-mono">{conv.id}</span>
-                  {conv.unreadCount > 0 && (
-                    <Badge variant="secondary">{conv.unreadCount}</Badge>
-                  )}
-                </div>
+        <div className="space-y-2">
+          {threads.map((thread) => (
+            <div key={thread.id} className="p-3 border rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{thread.topic}</span>
+                {thread.unreadCount > 0 && (
+                  <Badge variant="destructive">{thread.unreadCount}</Badge>
+                )}
               </div>
-            ))
+              <p className="text-sm text-muted-foreground mt-1">
+                {thread.messages.length} messages
+              </p>
+            </div>
+          ))}
+          {threads.length === 0 && (
+            <p className="text-sm text-muted-foreground">No threads yet</p>
           )}
         </div>
       </CardContent>
