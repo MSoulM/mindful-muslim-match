@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import {
   TOPIC_REQUIREMENTS,
   getTopicsForCategory,
@@ -12,6 +13,7 @@ import {
   type TopicRequirement,
   type CategoryType
 } from '@/config/topicRequirements';
+import { TopicEducationModal, TopicEducationTrigger } from './TopicEducationModal';
 
 interface SemanticProfileCompletionProps {
   completion?: number;
@@ -22,8 +24,10 @@ export const SemanticProfileCompletion = ({
   completion = 67, // Mock data for now
   onCompleteProfile
 }: SemanticProfileCompletionProps) => {
+  const navigate = useNavigate();
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
+  const [showEducationModal, setShowEducationModal] = useState(false);
 
   // Mock topic coverage data
   const mockTopicCoverage: Record<string, {
@@ -175,7 +179,16 @@ export const SemanticProfileCompletion = ({
   const strokeDashoffset = circumference - (completion / 100) * circumference;
 
   return (
-    <div className="w-full bg-background rounded-2xl p-6 sm:p-8 shadow-sm border border-border">
+    <>
+      {/* Topic Education Modal */}
+      <TopicEducationModal
+        isOpen={showEducationModal}
+        onClose={() => setShowEducationModal(false)}
+        onAddContent={() => navigate('/create-post')}
+        onViewProfile={() => navigate('/profile')}
+      />
+
+      <div className="w-full bg-background rounded-2xl p-6 sm:p-8 shadow-sm border border-border">
       {/* Header with Level Badge */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -581,12 +594,18 @@ export const SemanticProfileCompletion = ({
                             <div 
                               className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4"
                             >
-                              <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
                                 <h4 className="font-semibold text-sm text-foreground">Topic Coverage</h4>
-                                <Badge className="bg-muted-foreground text-white text-xs px-2 py-0.5 rounded-full">
-                                  30%
-                                </Badge>
+                                <TopicEducationTrigger
+                                  onClick={() => setShowEducationModal(true)}
+                                  className="text-xs"
+                                />
                               </div>
+                              <Badge className="bg-muted-foreground text-white text-xs px-2 py-0.5 rounded-full">
+                                30%
+                              </Badge>
+                            </div>
                               <div className="flex items-start gap-3">
                                 <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                                 <div className="space-y-2">
@@ -875,5 +894,6 @@ export const SemanticProfileCompletion = ({
         })}
       </div>
     </div>
+    </>
   );
 };
