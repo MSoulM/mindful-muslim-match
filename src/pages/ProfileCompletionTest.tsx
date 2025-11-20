@@ -5,9 +5,12 @@ import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileC
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Toaster } from '@/components/ui/toaster';
+import { ContentUploadModal } from '@/components/content/ContentUploadModal';
+import { Plus } from 'lucide-react';
 
 const ProfileCompletionTest = () => {
   const [completion, setCompletion] = useState(67);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const testCases = [
     { value: 30, label: '30% (Red)', description: 'Should show red circle, Bronze badge' },
@@ -110,6 +113,22 @@ const ProfileCompletionTest = () => {
           </p>
         </div>
       </ScreenContainer>
+
+      {/* Floating Action Button */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="fixed bottom-6 right-6 h-16 w-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 z-40"
+        aria-label="Share content"
+      >
+        <Plus className="h-8 w-8" />
+      </button>
+
+      {/* Content Upload Modal */}
+      <ContentUploadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
       <Toaster />
     </div>
   );
