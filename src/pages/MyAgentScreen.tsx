@@ -8,7 +8,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 import { FeatureCard } from '@/components/ui/Cards/FeatureCard';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { cn } from '@/lib/utils';
@@ -191,15 +191,15 @@ const MyAgentScreen = () => {
           <div className="flex gap-2 max-w-md mx-auto pointer-events-auto">
             <Button
               variant="secondary"
-              size="md"
+              size="default"
               onClick={() => navigate('/agent-chat')}
               className="flex-1"
             >
               Ask Question
             </Button>
             <Button
-              variant="primary"
-              size="md"
+              variant="default"
+              size="default"
               onClick={() => navigate('/insights')}
               className="flex-1"
             >
