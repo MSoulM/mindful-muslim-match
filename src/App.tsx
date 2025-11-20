@@ -11,6 +11,7 @@ import { MatchesProvider } from "@/context/MatchesContext";
 import { DNAProvider } from "@/context/DNAContext";
 import TestingChecklist from "@/components/dev/TestingChecklist";
 import DevicePreview from "@/components/dev/DevicePreview";
+import { AdminModeToggle } from "@/components/dev";
 import Index from "./pages/Index";
 import LayoutDemo from "./pages/LayoutDemo";
 import ComponentsDemo from "./pages/ComponentsDemo";
@@ -634,6 +635,7 @@ const App = () => (
                 <TrackingInitializer>
                   <AnimatedRoutes />
                 </TrackingInitializer>
+                <AdminModeToggle />
               </BrowserRouter>
             </TooltipProvider>
           </DNAProvider>
