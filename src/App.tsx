@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,96 +10,110 @@ import { AppProvider } from "@/context/AppContext";
 import { UserProvider } from "@/context/UserContext";
 import { MatchesProvider } from "@/context/MatchesContext";
 import { DNAProvider } from "@/context/DNAContext";
-import TestingChecklist from "@/components/dev/TestingChecklist";
-import DevicePreview from "@/components/dev/DevicePreview";
-import { AdminModeToggle } from "@/components/dev";
-import Index from "./pages/Index";
-import LayoutDemo from "./pages/LayoutDemo";
-import ComponentsDemo from "./pages/ComponentsDemo";
-import DiscoverScreen from "./pages/DiscoverScreen";
-import DNAScreen from "./pages/DNAScreen";
-import MyAgentScreen from "./pages/MyAgentScreen";
-import InsightsScreen from "./pages/InsightsScreen";
-import ConfirmedInsightsScreen from "./pages/ConfirmedInsightsScreen";
-import AgentChatScreen from "./pages/AgentChatScreen";
-import StatsScreen from "./pages/StatsScreen";
-import ChaiChatListScreen from "./pages/ChaiChatListScreen";
-import ChaiChatDetailScreen from "./pages/ChaiChatDetailScreen";
-import ChaiChatHubScreen from "./pages/ChaiChatHubScreen";
-import MessagesScreen from "./pages/MessagesScreen";
-import ProfileScreen from "./pages/ProfileScreen";
-import EditProfileScreen from "./pages/EditProfileScreen";
-import { PreferencesScreen } from "./pages/onboarding/PreferencesScreen";
-import { WelcomeScreen } from "./pages/onboarding/WelcomeScreen";
-import { BasicInfoScreen } from "./pages/onboarding/BasicInfoScreen";
-import { ReligiousPreferencesScreen } from "./pages/onboarding/ReligiousPreferencesScreen";
-import { PhotoUploadScreen } from "./pages/onboarding/PhotoUploadScreen";
-import { DNAQuestionnaireScreen } from "./pages/onboarding/DNAQuestionnaireScreen";
-import NotificationsScreen from "./pages/onboarding/NotificationsScreen";
-import CommunicationPrefsScreen from "./pages/onboarding/CommunicationPrefsScreen";
-import ProfileCompleteScreen from "./pages/onboarding/ProfileCompleteScreen";
-import { LoginScreen } from "./pages/auth/LoginScreen";
-import { OTPScreen } from "./pages/auth/OTPScreen";
-import { ResetPasswordScreen } from "./pages/auth/ResetPasswordScreen";
-import ValuesDetailScreen from "./pages/dna/ValuesDetailScreen";
-import InterestsDetailScreen from "./pages/dna/InterestsDetailScreen";
-import PersonalityDetailScreen from "./pages/dna/PersonalityDetailScreen";
-import LifestyleDetailScreen from "./pages/dna/LifestyleDetailScreen";
-import GoalsDetailScreen from "./pages/dna/GoalsDetailScreen";
-import { NotificationCenterScreen } from "./pages/notifications/NotificationCenterScreen";
-import { NotificationPreferencesScreen } from "./pages/settings/NotificationPreferencesScreen";
-import { ChatDetailScreen } from "./pages/chat/ChatDetailScreen";
-import { ReportUserScreen } from "./pages/safety/ReportUserScreen";
-import { SafetyCenterScreen } from "./pages/safety/SafetyCenterScreen";
-import { MeetingPlannerScreen } from "./pages/safety/MeetingPlannerScreen";
-import PremiumScreen from "./pages/PremiumScreen";
-import SubscriptionSuccessScreen from "./pages/SubscriptionSuccessScreen";
-import ManageSubscriptionScreen from "./pages/ManageSubscriptionScreen";
-import SettingsScreen from "./pages/SettingsScreen";
-import PrivacyScreen from "./pages/settings/PrivacyScreen";
-import DeleteAccountScreen from "./pages/settings/DeleteAccountScreen";
-import AboutScreen from "./pages/settings/AboutScreen";
-import PrivacyPolicyScreen from "./pages/settings/PrivacyPolicyScreen";
-import TermsOfServiceScreen from "./pages/settings/TermsOfServiceScreen";
-import FeedbackScreen from "./pages/settings/FeedbackScreen";
-import HelpCenterScreen from "./pages/HelpCenterScreen";
-import FAQScreen from "./pages/FAQScreen";
-import ContactSupportScreen from "./pages/ContactSupportScreen";
-import TutorialScreen from "./pages/TutorialScreen";
-import HowMySoulDNAWorksScreen from "./pages/HowMySoulDNAWorksScreen";
-import JourneyDashboardScreen from "./pages/JourneyDashboardScreen";
-import CreatePostScreen from "./pages/CreatePostScreen";
-import EditPostScreen from "./pages/EditPostScreen";
-import PostSuccessScreen from "./pages/PostSuccessScreen";
-import ShareReceiverScreen from "./pages/ShareReceiverScreen";
-import { AnalyticsScreen } from "./pages/AnalyticsScreen";
-import { DNAAnalyticsScreen } from "./pages/DNAAnalyticsScreen";
-import { EngagementAnalyticsScreen } from "./pages/EngagementAnalyticsScreen";
-import { ExportAnalyticsScreen } from "./pages/ExportAnalyticsScreen";
-import AdminAnalyticsScreen from "./pages/admin/AdminAnalyticsScreen";
-import AnimationShowcase from "./pages/AnimationShowcase";
-import AnimationDemoScreen from "./pages/AnimationDemoScreen";
-import EmptyStateShowcase from "./pages/EmptyStateShowcase";
-import FormOptimizationDemo from "./pages/FormOptimizationDemo";
-import FormNavigationDemo from "./pages/FormNavigationDemo";
-import ResponsiveDemo from "./pages/ResponsiveDemo";
-import AccessibilityDemo from "./pages/AccessibilityDemo";
-import PremiumPolishDemo from "./pages/PremiumPolishDemo";
-import DepthSystemDemo from "./pages/DepthSystemDemo";
-import ThreadListTest from "./pages/ThreadListTest";
-import ChatViewTest from "./pages/ChatViewTest";
-import PersonalityQuizTest from "./pages/PersonalityQuizTest";
-import TierSelectorDemo from "./pages/TierSelectorDemo";
-import PersonalityCardTest from "./pages/PersonalityCardTest";
-import ToneAdjustmentTest from "./pages/ToneAdjustmentTest";
-import UserStateIndicatorTest from "./pages/UserStateIndicatorTest";
-import SupportModeTest from "./pages/SupportModeTest";
-import ProfileCompletionTest from "./pages/ProfileCompletionTest";
-import ChaiChatShowcaseScreen from "./pages/ChaiChatShowcaseScreen";
-import NotFound from "./pages/NotFound";
+import { LoadingSpinner } from "@/components/utils/LoadingSpinner";
 import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
-import { useEffect } from "react";
+
+// Eager load critical pages
+import DNAScreen from "./pages/DNAScreen";
+import NotFound from "./pages/NotFound";
+
+// Lazy load non-critical pages for code splitting
+const Index = lazy(() => import("./pages/Index"));
+const LayoutDemo = lazy(() => import("./pages/LayoutDemo"));
+const ComponentsDemo = lazy(() => import("./pages/ComponentsDemo"));
+const DiscoverScreen = lazy(() => import("./pages/DiscoverScreen"));
+const MyAgentScreen = lazy(() => import("./pages/MyAgentScreen"));
+const InsightsScreen = lazy(() => import("./pages/InsightsScreen"));
+const ConfirmedInsightsScreen = lazy(() => import("./pages/ConfirmedInsightsScreen"));
+const AgentChatScreen = lazy(() => import("./pages/AgentChatScreen"));
+const StatsScreen = lazy(() => import("./pages/StatsScreen"));
+const ChaiChatListScreen = lazy(() => import("./pages/ChaiChatListScreen"));
+const ChaiChatDetailScreen = lazy(() => import("./pages/ChaiChatDetailScreen"));
+const ChaiChatHubScreen = lazy(() => import("./pages/ChaiChatHubScreen"));
+const MessagesScreen = lazy(() => import("./pages/MessagesScreen"));
+const ProfileScreen = lazy(() => import("./pages/ProfileScreen"));
+const EditProfileScreen = lazy(() => import("./pages/EditProfileScreen"));
+const CreatePostScreen = lazy(() => import("./pages/CreatePostScreen"));
+
+// Lazy load onboarding screens
+const PreferencesScreen = lazy(() => import("./pages/onboarding/PreferencesScreen").then(m => ({ default: m.PreferencesScreen })));
+const WelcomeScreen = lazy(() => import("./pages/onboarding/WelcomeScreen").then(m => ({ default: m.WelcomeScreen })));
+const BasicInfoScreen = lazy(() => import("./pages/onboarding/BasicInfoScreen").then(m => ({ default: m.BasicInfoScreen })));
+const ReligiousPreferencesScreen = lazy(() => import("./pages/onboarding/ReligiousPreferencesScreen").then(m => ({ default: m.ReligiousPreferencesScreen })));
+const PhotoUploadScreen = lazy(() => import("./pages/onboarding/PhotoUploadScreen").then(m => ({ default: m.PhotoUploadScreen })));
+const DNAQuestionnaireScreen = lazy(() => import("./pages/onboarding/DNAQuestionnaireScreen").then(m => ({ default: m.DNAQuestionnaireScreen })));
+const NotificationsScreen = lazy(() => import("./pages/onboarding/NotificationsScreen"));
+const CommunicationPrefsScreen = lazy(() => import("./pages/onboarding/CommunicationPrefsScreen"));
+const ProfileCompleteScreen = lazy(() => import("./pages/onboarding/ProfileCompleteScreen"));
+
+// Lazy load auth screens
+const LoginScreen = lazy(() => import("./pages/auth/LoginScreen").then(m => ({ default: m.LoginScreen })));
+const OTPScreen = lazy(() => import("./pages/auth/OTPScreen").then(m => ({ default: m.OTPScreen })));
+const ResetPasswordScreen = lazy(() => import("./pages/auth/ResetPasswordScreen").then(m => ({ default: m.ResetPasswordScreen })));
+
+// Lazy load DNA detail screens
+const ValuesDetailScreen = lazy(() => import("./pages/dna/ValuesDetailScreen"));
+const InterestsDetailScreen = lazy(() => import("./pages/dna/InterestsDetailScreen"));
+const PersonalityDetailScreen = lazy(() => import("./pages/dna/PersonalityDetailScreen"));
+const LifestyleDetailScreen = lazy(() => import("./pages/dna/LifestyleDetailScreen"));
+const GoalsDetailScreen = lazy(() => import("./pages/dna/GoalsDetailScreen"));
+
+// Lazy load remaining pages
+const NotificationCenterScreen = lazy(() => import("./pages/notifications/NotificationCenterScreen").then(m => ({ default: m.NotificationCenterScreen })));
+const NotificationPreferencesScreen = lazy(() => import("./pages/settings/NotificationPreferencesScreen").then(m => ({ default: m.NotificationPreferencesScreen })));
+const ChatDetailScreen = lazy(() => import("./pages/chat/ChatDetailScreen").then(m => ({ default: m.ChatDetailScreen })));
+const ReportUserScreen = lazy(() => import("./pages/safety/ReportUserScreen").then(m => ({ default: m.ReportUserScreen })));
+const SafetyCenterScreen = lazy(() => import("./pages/safety/SafetyCenterScreen").then(m => ({ default: m.SafetyCenterScreen })));
+const MeetingPlannerScreen = lazy(() => import("./pages/safety/MeetingPlannerScreen").then(m => ({ default: m.MeetingPlannerScreen })));
+const PremiumScreen = lazy(() => import("./pages/PremiumScreen"));
+const SubscriptionSuccessScreen = lazy(() => import("./pages/SubscriptionSuccessScreen"));
+const ManageSubscriptionScreen = lazy(() => import("./pages/ManageSubscriptionScreen"));
+const SettingsScreen = lazy(() => import("./pages/SettingsScreen"));
+const PrivacyScreen = lazy(() => import("./pages/settings/PrivacyScreen"));
+const DeleteAccountScreen = lazy(() => import("./pages/settings/DeleteAccountScreen"));
+const AboutScreen = lazy(() => import("./pages/settings/AboutScreen"));
+const PrivacyPolicyScreen = lazy(() => import("./pages/settings/PrivacyPolicyScreen"));
+const TermsOfServiceScreen = lazy(() => import("./pages/settings/TermsOfServiceScreen"));
+const FeedbackScreen = lazy(() => import("./pages/settings/FeedbackScreen"));
+const HelpCenterScreen = lazy(() => import("./pages/HelpCenterScreen"));
+const FAQScreen = lazy(() => import("./pages/FAQScreen"));
+const ContactSupportScreen = lazy(() => import("./pages/ContactSupportScreen"));
+const TutorialScreen = lazy(() => import("./pages/TutorialScreen"));
+const HowMySoulDNAWorksScreen = lazy(() => import("./pages/HowMySoulDNAWorksScreen"));
+const JourneyDashboardScreen = lazy(() => import("./pages/JourneyDashboardScreen"));
+const EditPostScreen = lazy(() => import("./pages/EditPostScreen"));
+const PostSuccessScreen = lazy(() => import("./pages/PostSuccessScreen"));
+const ShareReceiverScreen = lazy(() => import("./pages/ShareReceiverScreen"));
+const AnalyticsScreen = lazy(() => import("./pages/AnalyticsScreen").then(m => ({ default: m.AnalyticsScreen })));
+const DNAAnalyticsScreen = lazy(() => import("./pages/DNAAnalyticsScreen").then(m => ({ default: m.DNAAnalyticsScreen })));
+const EngagementAnalyticsScreen = lazy(() => import("./pages/EngagementAnalyticsScreen").then(m => ({ default: m.EngagementAnalyticsScreen })));
+const ExportAnalyticsScreen = lazy(() => import("./pages/ExportAnalyticsScreen").then(m => ({ default: m.ExportAnalyticsScreen })));
+const AdminAnalyticsScreen = lazy(() => import("./pages/admin/AdminAnalyticsScreen"));
+
+// Lazy load dev/demo screens
+const TestingChecklist = lazy(() => import("@/components/dev/TestingChecklist"));
+const DevicePreview = lazy(() => import("@/components/dev/DevicePreview"));
+const AdminModeToggle = lazy(() => import("@/components/dev").then(m => ({ default: m.AdminModeToggle })));
+const AnimationShowcase = lazy(() => import("./pages/AnimationShowcase"));
+const AnimationDemoScreen = lazy(() => import("./pages/AnimationDemoScreen"));
+const EmptyStateShowcase = lazy(() => import("./pages/EmptyStateShowcase"));
+const FormOptimizationDemo = lazy(() => import("./pages/FormOptimizationDemo"));
+const FormNavigationDemo = lazy(() => import("./pages/FormNavigationDemo"));
+const ResponsiveDemo = lazy(() => import("./pages/ResponsiveDemo"));
+const AccessibilityDemo = lazy(() => import("./pages/AccessibilityDemo"));
+const PremiumPolishDemo = lazy(() => import("./pages/PremiumPolishDemo"));
+const DepthSystemDemo = lazy(() => import("./pages/DepthSystemDemo"));
+const ThreadListTest = lazy(() => import("./pages/ThreadListTest"));
+const ChatViewTest = lazy(() => import("./pages/ChatViewTest"));
+const PersonalityQuizTest = lazy(() => import("./pages/PersonalityQuizTest"));
+const TierSelectorDemo = lazy(() => import("./pages/TierSelectorDemo"));
+const PersonalityCardTest = lazy(() => import("./pages/PersonalityCardTest"));
+const ToneAdjustmentTest = lazy(() => import("./pages/ToneAdjustmentTest"));
+const UserStateIndicatorTest = lazy(() => import("./pages/UserStateIndicatorTest"));
+const SupportModeTest = lazy(() => import("./pages/SupportModeTest"));
+const ProfileCompletionTest = lazy(() => import("./pages/ProfileCompletionTest"));
+const ChaiChatShowcaseScreen = lazy(() => import("./pages/ChaiChatShowcaseScreen"));
 
 const queryClient = new QueryClient();
 
@@ -132,18 +147,26 @@ const TrackingInitializer = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Suspense Loading Component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-muted">
+    <LoadingSpinner size="lg" />
+  </div>
+);
+
 const AnimatedRoutes = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={
-          <motion.div {...pageTransition} transition={pageTransitionConfig}>
-            <DNAScreen />
-          </motion.div>
-        } />
+      <Suspense fallback={<PageLoader />}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={
+            <motion.div {...pageTransition} transition={pageTransitionConfig}>
+              <DNAScreen />
+            </motion.div>
+          } />
         <Route path="/home" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <Index />
@@ -618,12 +641,13 @@ const AnimatedRoutes = () => {
         )}
         
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={
-          <motion.div {...pageTransition} transition={pageTransitionConfig}>
-            <NotFound />
-          </motion.div>
-        } />
-      </Routes>
+          <Route path="*" element={
+            <motion.div {...pageTransition} transition={pageTransitionConfig}>
+              <NotFound />
+            </motion.div>
+          } />
+        </Routes>
+      </Suspense>
     </AnimatePresence>
   );
 };
