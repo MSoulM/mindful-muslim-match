@@ -14,3 +14,7 @@ export { DepthAchievements } from './DepthAchievements';
 export { PersonalityCard } from './PersonalityCard';
 export { TopicEducationModal, TopicEducationTrigger } from './TopicEducationModal';
 export { TopicSuggestionsPanel, CompactTopicSuggestion } from './TopicSuggestionsPanel';
+export { BatchProcessingNotification, BatchStatusBadge } from './BatchProcessingNotification';
+export { ContentAnalysisFeedback } from './ContentAnalysisFeedback';
+export { ReligiousPracticesSelector, CareerSelector } from './EmbeddingPoolSelector';
+export { EnhancedProfileSeed } from './EnhancedProfileSeed';
