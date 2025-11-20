@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/popover';
 import { THREAD_TYPES, ThreadType } from './ThreadList';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { cn } from '@/lib/utils';
 
 export interface ChatMessage {
@@ -38,6 +39,11 @@ interface ChatViewProps {
   onArchive?: () => void;
   onDelete?: () => void;
   onToggleImportant?: (messageId: string) => void;
+  messageGestures?: {
+    onTouchStart: (messageId: string) => void;
+    onTouchEnd: (messageId: string) => void;
+    onTouchCancel: () => void;
+  };
   isTyping?: boolean;
   quickReplies?: string[];
 }
@@ -51,23 +57,42 @@ export const ChatView = ({
   onArchive,
   onDelete,
   onToggleImportant,
+  messageGestures,
   isTyping = false,
   quickReplies = []
 }: ChatViewProps) => {
   const [messageText, setMessageText] = useState('');
   const [showTyping, setShowTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  const { keyboardHeight, isKeyboardOpen } = useKeyboardHeight();
 
   const threadConfig = THREAD_TYPES[threadType];
   const maxChars = 500;
   const charCount = messageText.length;
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or keyboard opens
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, showTyping]);
+  }, [messages, showTyping, keyboardHeight]);
+
+  // Dismiss keyboard on scroll
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (isKeyboardOpen && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isKeyboardOpen]);
 
   // Show typing indicator with delay
   useEffect(() => {
@@ -183,7 +208,7 @@ export const ChatView = ({
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4" ref={messagesContainerRef}>
         <div className="space-y-6">
           {Object.entries(groupedMessages).map(([dateKey, dateMessages]) => (
             <div key={dateKey}>
@@ -201,6 +226,7 @@ export const ChatView = ({
                     key={message.id}
                     message={message}
                     onToggleImportant={onToggleImportant}
+                    gestures={messageGestures}
                   />
                 ))}
               </div>
@@ -241,8 +267,35 @@ export const ChatView = ({
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="p-4 border-t border-border bg-background">
+      {/* Input Area - with keyboard offset */}
+      <div 
+        className="p-4 border-t border-border bg-background transition-all duration-200"
+        style={{ 
+          paddingBottom: isKeyboardOpen ? `${keyboardHeight + 16}px` : '16px' 
+        }}
+      >
+        {/* Quick replies above input when keyboard is open */}
+        {isKeyboardOpen && quickReplies.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="flex gap-2 overflow-x-auto pb-2 mb-2"
+          >
+            {quickReplies.map((reply, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickReply(reply)}
+                className="whitespace-nowrap"
+              >
+                {reply}
+              </Button>
+            ))}
+          </motion.div>
+        )}
+
         <div className="flex gap-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -293,9 +346,14 @@ export const ChatView = ({
 interface MessageBubbleProps {
   message: ChatMessage;
   onToggleImportant?: (messageId: string) => void;
+  gestures?: {
+    onTouchStart: (messageId: string) => void;
+    onTouchEnd: (messageId: string) => void;
+    onTouchCancel: () => void;
+  };
 }
 
-const MessageBubble = ({ message, onToggleImportant }: MessageBubbleProps) => {
+const MessageBubble = ({ message, onToggleImportant, gestures }: MessageBubbleProps) => {
   const [showTimestamp, setShowTimestamp] = useState(false);
   const isUser = message.role === 'user';
 
@@ -348,6 +406,9 @@ const MessageBubble = ({ message, onToggleImportant }: MessageBubbleProps) => {
           onClick={() => setShowTimestamp(!showTimestamp)}
           onMouseEnter={() => setShowTimestamp(true)}
           onMouseLeave={() => setShowTimestamp(false)}
+          onTouchStart={() => gestures?.onTouchStart(message.id)}
+          onTouchEnd={() => gestures?.onTouchEnd(message.id)}
+          onTouchCancel={() => gestures?.onTouchCancel()}
         >
           {message.isImportant && (
             <Star
