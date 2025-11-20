@@ -243,6 +243,47 @@ export const AdminAnalyticsScreen = () => {
           </Card>
         </div>
 
+        {/* Export Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FileDown className="w-5 h-5" />
+              Export Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Button
+                onClick={() => handleExport('csv')}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Export CSV
+              </Button>
+              <Button
+                onClick={() => handleExport('excel')}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export Excel
+              </Button>
+              <Button
+                onClick={() => handleExport('pdf')}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                Export PDF
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Export platform-wide metrics in your preferred format for reporting and analysis
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Enhanced Performance Metrics */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
