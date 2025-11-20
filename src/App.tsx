@@ -163,6 +163,13 @@ const AnimatedRoutes = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  // Wrap navigation in startTransition to fix Suspense warning
+  const handleNavigation = (path: string) => {
+    startTransition(() => {
+      navigate(path);
+    });
+  };
+  
   return (
     <AnimatePresence mode="wait">
       <Suspense fallback={<PageLoader />}>
