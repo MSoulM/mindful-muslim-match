@@ -123,7 +123,12 @@ class MicroMomentTrackerService {
     try {
       // Use requestIdleCallback for non-critical tracking
       if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => this.sendBatchRequest(batch), { timeout: 2000 });
+        requestIdleCallback(() => {
+          this.sendBatchRequest(batch).catch((error) => {
+            console.error('[MicroMomentTracker] Error sending batch (idle):', error);
+            this.storeUnsentEvents(batch);
+          });
+        }, { timeout: 2000 });
       } else {
         await this.sendBatchRequest(batch);
       }
@@ -148,7 +153,11 @@ class MicroMomentTrackerService {
       });
 
       if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
+        // 404 is expected when backend endpoint is not implemented yet
+        if (this.config.enableLogging) {
+          console.warn('[MicroMomentTracker] Tracking endpoint returned', response.status);
+        }
+        return;
       }
 
       if (this.config.enableLogging) {
@@ -156,7 +165,7 @@ class MicroMomentTrackerService {
       }
     } catch (error) {
       console.error('[MicroMomentTracker] API request failed:', error);
-      throw error;
+      // Swallow errors to avoid unhandled promise rejections; caller handles persistence
     }
   }
 
