@@ -5,7 +5,8 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  status?: 'sending' | 'sent' | 'failed';
+  status?: 'sending' | 'sent' | 'delivered' | 'read';
+  isImportant?: boolean;
 }
 
 export interface ChatThread {
