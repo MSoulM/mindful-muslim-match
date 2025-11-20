@@ -74,6 +74,7 @@ import { AnalyticsScreen } from "./pages/AnalyticsScreen";
 import { DNAAnalyticsScreen } from "./pages/DNAAnalyticsScreen";
 import { EngagementAnalyticsScreen } from "./pages/EngagementAnalyticsScreen";
 import { ExportAnalyticsScreen } from "./pages/ExportAnalyticsScreen";
+import AdminAnalyticsScreen from "./pages/admin/AdminAnalyticsScreen";
 import AnimationShowcase from "./pages/AnimationShowcase";
 import AnimationDemoScreen from "./pages/AnimationDemoScreen";
 import EmptyStateShowcase from "./pages/EmptyStateShowcase";
@@ -315,6 +316,13 @@ const AnimatedRoutes = () => {
         <Route path="/analytics/export" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <ExportAnalyticsScreen />
+          </motion.div>
+        } />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/analytics" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <AdminAnalyticsScreen />
           </motion.div>
         } />
         

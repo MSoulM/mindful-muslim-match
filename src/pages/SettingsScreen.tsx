@@ -7,15 +7,17 @@ import { Switch } from '@/components/ui/switch';
 import { 
   Mail, Phone, CheckCircle, Globe, Bell, Palette, 
   Eye, UserX, Lock, HelpCircle, MessageSquare, 
-  FileText, PauseCircle, Trash2, Info, Send
+  FileText, PauseCircle, Trash2, Info, Send, Shield
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
+  const { isAdmin } = useAdminCheck();
 
   const handleNotificationToggle = (checked: boolean) => {
     setNotificationsEnabled(checked);
@@ -130,6 +132,21 @@ export default function SettingsScreen() {
         <div className="px-5 py-4">
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">Support</h2>
           <div className="space-y-2">
+            {/* Admin-only Analytics Link */}
+            {isAdmin && (
+              <FeatureCard
+                icon={<Shield className="w-6 h-6 text-primary" />}
+                title="Admin Analytics"
+                description="Platform-wide metrics"
+                onClick={() => navigate('/admin/analytics')}
+                rightElement={
+                  <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
+                    Admin
+                  </Badge>
+                }
+              />
+            )}
+            
             <FeatureCard
               icon={<HelpCircle className="w-6 h-6" />}
               title="Help Center"
