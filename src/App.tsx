@@ -86,6 +86,7 @@ import DepthSystemDemo from "./pages/DepthSystemDemo";
 import ThreadListTest from "./pages/ThreadListTest";
 import ChatViewTest from "./pages/ChatViewTest";
 import PersonalityQuizTest from "./pages/PersonalityQuizTest";
+import TierSelectorDemo from "./pages/TierSelectorDemo";
 import PersonalityCardTest from "./pages/PersonalityCardTest";
 import ToneAdjustmentTest from "./pages/ToneAdjustmentTest";
 import UserStateIndicatorTest from "./pages/UserStateIndicatorTest";
@@ -585,6 +586,11 @@ const AnimatedRoutes = () => {
             <Route path="/dev/support-mode-test" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <SupportModeTest />
+              </motion.div>
+            } />
+            <Route path="/dev/tier-selector" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <TierSelectorDemo />
               </motion.div>
             } />
           </>
