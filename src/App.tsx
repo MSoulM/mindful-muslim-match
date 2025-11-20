@@ -23,6 +23,7 @@ import AgentChatScreen from "./pages/AgentChatScreen";
 import StatsScreen from "./pages/StatsScreen";
 import ChaiChatListScreen from "./pages/ChaiChatListScreen";
 import ChaiChatDetailScreen from "./pages/ChaiChatDetailScreen";
+import ChaiChatHubScreen from "./pages/ChaiChatHubScreen";
 import MessagesScreen from "./pages/MessagesScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import EditProfileScreen from "./pages/EditProfileScreen";
@@ -191,6 +192,11 @@ const AnimatedRoutes = () => {
         <Route path="/chaichat" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <ChaiChatListScreen />
+          </motion.div>
+        } />
+        <Route path="/chaichat/hub" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <ChaiChatHubScreen />
           </motion.div>
         } />
         <Route path="/chaichat/:id" element={
