@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { Heart, Palette, Sparkles, Users, LucideIcon, CheckCircle, AlertTriangle, XCircle, ExternalLink, TrendingUp, TrendingDown, Lightbulb, Target, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/utils/ErrorBoundary";
 
 interface CategoryData {
   category: string;
@@ -39,6 +40,7 @@ export const CategoryBalancePentagon = ({
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [animationComplete, setAnimationComplete] = useState(false);
+  const [renderError, setRenderError] = useState(false);
 
   const data: CategoryData[] = useMemo(() => [
     {
@@ -175,6 +177,43 @@ export const CategoryBalancePentagon = ({
   const balanceCircumference = 2 * Math.PI * balanceRadius;
   const balanceStrokeDashoffset = balanceCircumference - (balanceScore / 100) * balanceCircumference;
 
+  // Graceful degradation fallback
+  if (renderError) {
+    return (
+      <div className="bg-muted border-2 border-border rounded-xl p-8 mb-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">Your Profile Balance</h2>
+        <p className="text-muted-foreground mb-6">
+          Unable to display chart visualization. Here's your data:
+        </p>
+        <div className="space-y-3">
+          {data.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.category} className="flex justify-between items-center p-3 bg-background rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Icon size={20} style={{ color: item.color }} />
+                  <span className="font-medium text-foreground">{item.category}:</span>
+                </div>
+                <span className="font-bold text-lg" style={{ color: item.color }}>
+                  {item.value}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-6 p-4 bg-background rounded-lg">
+          <div className="flex justify-between items-center">
+            <span className="font-semibold text-foreground">Balance Score:</span>
+            <span className="font-bold text-2xl" style={{ color: balanceColor }}>
+              {balanceScore}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">{balanceRating}</p>
+        </div>
+      </div>
+    );
+  }
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -259,18 +298,29 @@ export const CategoryBalancePentagon = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      onAnimationComplete={() => setAnimationComplete(true)}
-      className="bg-white rounded-xl shadow-lg p-6 mb-6"
+    <ErrorBoundary 
+      fallback={
+        <div className="bg-muted border-2 border-border rounded-xl p-8 mb-6">
+          <AlertTriangle className="w-8 h-8 text-orange-600 mx-auto mb-4" />
+          <p className="text-center text-muted-foreground">
+            Unable to load balance chart. Please refresh the page.
+          </p>
+        </div>
+      }
+      onError={() => setRenderError(true)}
     >
-      {/* Header */}
-      <div className="mb-4">
-        <h2 className="text-xl font-bold text-gray-900">Your Profile Balance</h2>
-        <p className="text-sm text-gray-600">Distribution across 5 key categories</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        onAnimationComplete={() => setAnimationComplete(true)}
+        className="bg-white rounded-xl shadow-lg p-6 mb-6"
+      >
+        {/* Header */}
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Your Profile Balance</h2>
+          <p className="text-sm text-gray-600">Distribution across 5 key categories</p>
+        </div>
 
       {/* Chart Container */}
       <div className="w-full flex justify-center">
@@ -578,7 +628,8 @@ export const CategoryBalancePentagon = ({
             View Weakest Category
           </Button>
         </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </ErrorBoundary>
   );
 };

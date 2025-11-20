@@ -12,6 +12,8 @@ import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileC
 import { ChaiChatEligibilityTracker } from '@/components/profile/ChaiChatEligibilityTracker';
 import { CategoryBalancePentagon } from '@/components/profile/CategoryBalancePentagon';
 import { ContentTypeDistribution } from '@/components/profile/ContentTypeDistribution';
+import { ErrorBoundary } from '@/components/utils/ErrorBoundary';
+import { ProfileErrorFallback } from '@/components/errors/ProfileErrorFallback';
 import { 
   Edit2, 
   Sliders, 
@@ -202,19 +204,23 @@ const ProfileScreen = () => {
         </div>
 
         {/* ChaiChat Eligibility Tracker (shows when <70%) */}
-        <div className="mx-5">
-          <ChaiChatEligibilityTracker 
-            currentCompletion={67}
-            onCompleteProfile={() => navigate('/edit-profile')}
-          />
-        </div>
+        <ErrorBoundary>
+          <div className="mx-5">
+            <ChaiChatEligibilityTracker 
+              currentCompletion={67}
+              onCompleteProfile={() => navigate('/edit-profile')}
+            />
+          </div>
+        </ErrorBoundary>
 
         {/* Profile Completion */}
-        <div className="mx-5 mb-5">
-          <SemanticProfileCompletion 
-            onCompleteProfile={() => navigate('/edit-profile')}
-          />
-        </div>
+        <ErrorBoundary fallback={<ProfileErrorFallback />}>
+          <div className="mx-5 mb-5">
+            <SemanticProfileCompletion 
+              onCompleteProfile={() => navigate('/edit-profile')}
+            />
+          </div>
+        </ErrorBoundary>
 
         {/* Pentagon Visualization */}
         <div className="mx-5 mb-5">
@@ -228,19 +234,23 @@ const ProfileScreen = () => {
         </div>
 
         {/* Content Type Distribution */}
-        <div className="mx-5 mb-5">
-          <ContentTypeDistribution
-            textCount={contentTypeData.text}
-            photoCount={contentTypeData.photo}
-            voiceCount={contentTypeData.voice}
-            videoCount={contentTypeData.video}
-          />
-        </div>
+        <ErrorBoundary>
+          <div className="mx-5 mb-5">
+            <ContentTypeDistribution
+              textCount={contentTypeData.text}
+              photoCount={contentTypeData.photo}
+              voiceCount={contentTypeData.voice}
+              videoCount={contentTypeData.video}
+            />
+          </div>
+        </ErrorBoundary>
 
         {/* Depth Progress */}
-        <div className="mx-5 mb-5">
-          <DepthProgress />
-        </div>
+        <ErrorBoundary>
+          <div className="mx-5 mb-5">
+            <DepthProgress />
+          </div>
+        </ErrorBoundary>
 
         {/* Profile Sections */}
         <div className="flex flex-col gap-0.5 mb-8">
