@@ -10,3 +10,5 @@ export { MediaViewer } from './MediaViewer';
 export { ChatThreadList } from './ChatThreadList';
 export { NewChatScreen } from './NewChatScreen';
 export { AgentMessage } from './AgentMessage';
+export { ThreadList } from './ThreadList';
+export { ChatView } from './ChatView';
