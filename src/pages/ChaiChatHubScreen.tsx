@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Filter } from 'lucide-react';
+import { ChevronRight, Filter, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { Badge } from '@/components/ui/badge';
 import { UnifiedAnalysis } from '@/components/chaichat/UnifiedAnalysis';
+import { MetricsDashboard } from '@/components/chaichat/MetricsDashboard';
 import { cn } from '@/lib/utils';
 import { SkeletonChaiChatCard } from '@/components/ui/skeletons/SkeletonChaiChatCard';
 
@@ -196,6 +197,7 @@ export const ChaiChatHubScreen = () => {
   const [selectedAnalysis, setSelectedAnalysis] = useState<string | null>(null);
   const [isLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('chaichat');
+  const [showMetrics, setShowMetrics] = useState(false);
 
   // Filter analyses based on status
   const filteredAnalyses = mockAnalyses.filter((analysis) => {
@@ -205,6 +207,16 @@ export const ChaiChatHubScreen = () => {
 
   const pendingCount = mockAnalyses.filter((a) => a.status === 'pending').length;
   const completedCount = mockAnalyses.filter((a) => a.status === 'completed').length;
+
+  // Calculate real metrics from mock data
+  const totalAnalyses = completedCount;
+  const oldSystemCost = totalAnalyses * 0.14;
+  const newSystemCost = totalAnalyses * 0.017;
+  const dailySaved = oldSystemCost - newSystemCost;
+  const monthlySaved = dailySaved * 30;
+  const cachedCount = mockAnalyses.filter((a) => a.analysis?.processingInfo.cached).length;
+  const cacheHitRate = totalAnalyses > 0 ? Math.round((cachedCount / totalAnalyses) * 100) : 40;
+  const userMonthlySaved = dailySaved;
 
   // Handle tab change
   const handleTabChange = (tabId: string) => {
@@ -260,6 +272,47 @@ export const ChaiChatHubScreen = () => {
               Single AI call • 93% cost reduction • ${(0.017).toFixed(3)} per match
             </p>
           </div>
+
+          {/* Performance Metrics Toggle */}
+          <button
+            onClick={() => setShowMetrics(!showMetrics)}
+            className={cn(
+              'w-full flex items-center justify-between p-3 rounded-lg',
+              'bg-gradient-to-r from-success/10 to-primary/10',
+              'border border-success/20 hover:border-success/30',
+              'transition-all duration-200 active:scale-[0.98]'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-success" />
+              <span className="text-sm font-medium text-foreground">
+                Performance Metrics & Savings
+              </span>
+            </div>
+            {showMetrics ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            )}
+          </button>
+
+          {/* Metrics Dashboard - Collapsible */}
+          {showMetrics && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <MetricsDashboard
+                dailySaved={dailySaved}
+                monthlySaved={monthlySaved}
+                cacheHitRate={cacheHitRate}
+                userMonthlySaved={userMonthlySaved}
+              />
+            </motion.div>
+          )}
 
           {/* Filter Chips */}
           <div className="flex items-center gap-2">
