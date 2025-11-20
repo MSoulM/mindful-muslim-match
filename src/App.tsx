@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, startTransition } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,8 +11,10 @@ import { UserProvider } from "@/context/UserContext";
 import { MatchesProvider } from "@/context/MatchesContext";
 import { DNAProvider } from "@/context/DNAContext";
 import { LoadingSpinner } from "@/components/utils/LoadingSpinner";
+import { ErrorBoundary } from "@/components/utils/ErrorBoundary";
 import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 // Eager load critical pages
 import DNAScreen from "./pages/DNAScreen";
@@ -119,6 +121,9 @@ const queryClient = new QueryClient();
 
 // Initialize tracking system on app load
 const TrackingInitializer = ({ children }: { children: React.ReactNode }) => {
+  // Monitor network status
+  useNetworkStatus();
+  
   useEffect(() => {
     // Initialize tracker with config
     MicroMomentTracker.initialize({
@@ -653,26 +658,30 @@ const AnimatedRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AppProvider>
-      <UserProvider>
-        <MatchesProvider>
-          <DNAProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <TrackingInitializer>
-                  <AnimatedRoutes />
-                </TrackingInitializer>
-                <AdminModeToggle />
-              </BrowserRouter>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        <AppProvider>
+          <UserProvider>
+            <MatchesProvider>
+              <DNAProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <TrackingInitializer>
+                      <AnimatedRoutes />
+                    </TrackingInitializer>
+                 <AdminModeToggle />
+               </BrowserRouter>
             </TooltipProvider>
           </DNAProvider>
         </MatchesProvider>
       </UserProvider>
     </AppProvider>
-  </QueryClientProvider>
+      </ErrorBoundary>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
