@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Send, Loader2, Settings, AlertCircle } from 'lucide-react';
+import { Send, Loader2, Settings, AlertCircle } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 import { UserStateIndicator } from '@/components/chat/UserStateIndicator';
-import { useRealtimeChat } from '@/hooks/useRealtimeChat';
+import { useTextChat } from '@/hooks/useTextChat';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -19,22 +19,11 @@ export default function AgentChatScreen() {
 
   const {
     messages,
-    isConnected,
-    isRecording,
-    isSpeaking,
+    isLoading,
     error,
-    connect,
-    disconnect,
-    startRecording,
-    stopRecording,
-    sendTextMessage
-  } = useRealtimeChat();
-
-  useEffect(() => {
-    // Auto-connect on mount
-    connect();
-    return () => disconnect();
-  }, []);
+    sendMessage,
+    clearMessages
+  } = useTextChat();
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
@@ -42,17 +31,9 @@ export default function AgentChatScreen() {
   }, [messages]);
 
   const handleSendText = () => {
-    if (textInput.trim() && isConnected) {
-      sendTextMessage(textInput);
+    if (textInput.trim()) {
+      sendMessage(textInput);
       setTextInput('');
-    }
-  };
-
-  const handleMicToggle = async () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      await startRecording();
     }
   };
 
@@ -78,20 +59,8 @@ export default function AgentChatScreen() {
 
       <ScreenContainer hasBottomNav={false} className="pt-24 pb-32">
         <div className="max-w-3xl mx-auto space-y-4 px-4">
-          {/* Connection Status */}
+          {/* Error Display */}
           <AnimatePresence>
-            {!isConnected && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800"
-              >
-                <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
-                <span className="text-sm text-amber-700 dark:text-amber-300">Connecting to MMAgent...</span>
-              </motion.div>
-            )}
-
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -106,7 +75,7 @@ export default function AgentChatScreen() {
           </AnimatePresence>
 
           {/* Welcome Message */}
-          {messages.length === 0 && isConnected && (
+          {messages.length === 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -115,7 +84,7 @@ export default function AgentChatScreen() {
               <AgentMessage
                 avatar="🤖"
                 title="MMAgent"
-                message="Hi! I'm your personal AI assistant. I can help you with matching advice, profile guidance, and understanding your compatibility DNA. You can type or speak to me - just tap the microphone button to start talking!"
+                message="Hi! I'm your personal AI assistant. I can help you with matching advice, profile guidance, and understanding your compatibility DNA. Type your message below to get started!"
                 variant="welcome"
               />
             </motion.div>
@@ -145,19 +114,13 @@ export default function AgentChatScreen() {
                 ) : (
                   <div className="max-w-[85%] px-4 py-3 rounded-2xl bg-primary text-primary-foreground shadow-sm">
                     <p className="text-sm">{message.content}</p>
-                    {message.audio && (
-                      <div className="flex items-center gap-1 mt-1 text-xs opacity-70">
-                        <Mic className="w-3 h-3" />
-                        <span>Voice message</span>
-                      </div>
-                    )}
                   </div>
                 )}
               </motion.div>
             ))}
 
-            {/* Speaking Indicator */}
-            {isSpeaking && (
+            {/* Loading Indicator */}
+            {isLoading && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -169,7 +132,7 @@ export default function AgentChatScreen() {
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
                 </div>
-                <span className="text-sm text-muted-foreground">MMAgent is speaking...</span>
+                <span className="text-sm text-muted-foreground">MMAgent is thinking...</span>
               </motion.div>
             )}
 
@@ -191,56 +154,26 @@ export default function AgentChatScreen() {
             <Settings className="w-5 h-5" />
           </Button>
 
-          {/* Voice Button */}
-          <Button
-            variant={isRecording ? "default" : "outline"}
-            size="icon"
-            onClick={handleMicToggle}
-            disabled={!isConnected}
-            className={cn(
-              "flex-shrink-0 transition-all",
-              isRecording && "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-            )}
-          >
-            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </Button>
-
           {/* Text Input */}
           <Input
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendText()}
-            placeholder={isRecording ? "Listening..." : "Type a message..."}
-            disabled={!isConnected || isRecording}
+            onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSendText()}
+            placeholder="Type a message..."
+            disabled={isLoading}
             className="flex-1"
           />
 
           {/* Send Button */}
           <Button
             onClick={handleSendText}
-            disabled={!textInput.trim() || !isConnected || isRecording}
+            disabled={!textInput.trim() || isLoading}
             size="icon"
             className="flex-shrink-0"
           >
-            <Send className="w-5 h-5" />
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </Button>
         </div>
-
-        {/* Recording Indicator */}
-        {isRecording && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center gap-2 mt-2 text-sm text-muted-foreground"
-          >
-            <div className="flex gap-1">
-              <div className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-              <div className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '100ms' }} />
-              <div className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
-            </div>
-            <span>Recording... Tap mic to stop</span>
-          </motion.div>
-        )}
       </div>
 
       {/* Settings Panel */}
@@ -278,11 +211,11 @@ export default function AgentChatScreen() {
                 variant="outline"
                 className="w-full justify-start text-red-600 hover:text-red-700"
                 onClick={() => {
-                  disconnect();
+                  clearMessages();
                   setShowSettings(false);
                 }}
               >
-                Disconnect
+                Clear Chat
               </Button>
             </div>
           </motion.div>
