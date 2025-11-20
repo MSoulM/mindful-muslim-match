@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Type, Image, Video, Mic, AlertCircle, CheckCircle, Sparkles, Upload, XCircle, RefreshCw, Square, Info, Loader, TrendingUp, Lightbulb, Heart, BookOpen, Target, Home, Users } from 'lucide-react';
+import { X, Type, Image, Video, Mic, AlertCircle, CheckCircle, Sparkles, Upload, XCircle, RefreshCw, Square, Info, Loader, TrendingUp, Lightbulb, Heart, BookOpen, Target, Home, Users, Send, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface ContentUploadModalProps {
   isOpen: boolean;
@@ -89,6 +90,12 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     secondary?: { name: string; confidence: number };
   } | null>(null);
   const [showCategoryOverride, setShowCategoryOverride] = useState(false);
+  
+  // Submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [validationError, setValidationError] = useState<string>('');
   
   // Define category configuration
   const categoryConfig = {
@@ -485,6 +492,174 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     }
   }, [hasRecorded, activeTab]);
   
+  // Validation functions
+  const validateContent = (): { isValid: boolean; error: string } => {
+    setValidationError('');
+    
+    switch (activeTab) {
+      case 'text':
+        if (textContent.length < MIN_CHARACTERS_SUBMIT) {
+          return { isValid: false, error: `Text is too short (minimum ${MIN_CHARACTERS_SUBMIT} characters)` };
+        }
+        if (!predictedCategory) {
+          return { isValid: false, error: 'Please wait for category analysis to complete' };
+        }
+        return { isValid: true, error: '' };
+        
+      case 'photo':
+        if (!photoFile) {
+          return { isValid: false, error: 'Please upload a photo' };
+        }
+        if (photoCaption.length < 10) {
+          return { isValid: false, error: 'Please add a caption to your photo (minimum 10 characters)' };
+        }
+        return { isValid: true, error: '' };
+        
+      case 'video':
+        if (!videoFile) {
+          return { isValid: false, error: 'Please upload a video' };
+        }
+        if (videoDuration > 60) {
+          return { isValid: false, error: 'Video is too long (maximum 60 seconds)' };
+        }
+        if (videoCaption.length < 10) {
+          return { isValid: false, error: 'Please add a caption to your video (minimum 10 characters)' };
+        }
+        return { isValid: true, error: '' };
+        
+      case 'voice':
+        if (!hasRecorded) {
+          return { isValid: false, error: 'Please record a voice note' };
+        }
+        if (recordingTime < 30) {
+          return { isValid: false, error: 'Voice note is too short (minimum 30 seconds)' };
+        }
+        return { isValid: true, error: '' };
+        
+      default:
+        return { isValid: false, error: 'Invalid content type' };
+    }
+  };
+  
+  const canSubmit = (): boolean => {
+    return validateContent().isValid;
+  };
+  
+  // Draft management
+  const saveDraft = () => {
+    const draft = {
+      type: activeTab,
+      content: activeTab === 'text' ? textContent : '',
+      caption: activeTab === 'photo' ? photoCaption : activeTab === 'video' ? videoCaption : '',
+      description: activeTab === 'voice' ? voiceDescription : '',
+      category: predictedCategory?.primary.name || '',
+      timestamp: Date.now(),
+    };
+    
+    localStorage.setItem('matchme_content_draft', JSON.stringify(draft));
+    toast.success('Draft saved!');
+    onClose();
+  };
+  
+  // Restore draft on modal open
+  useEffect(() => {
+    if (isOpen) {
+      const draftStr = localStorage.getItem('matchme_content_draft');
+      if (draftStr) {
+        try {
+          const draft = JSON.parse(draftStr);
+          const hoursSinceDraft = (Date.now() - draft.timestamp) / (1000 * 60 * 60);
+          
+          if (hoursSinceDraft < 24) {
+            // Draft is less than 24 hours old, show restoration option
+            toast.info('Draft found!', {
+              description: 'Would you like to restore it?',
+              action: {
+                label: 'Restore',
+                onClick: () => {
+                  setActiveTab(draft.type);
+                  if (draft.type === 'text') setTextContent(draft.content);
+                  if (draft.type === 'photo') setPhotoCaption(draft.caption);
+                  if (draft.type === 'video') setVideoCaption(draft.caption);
+                  if (draft.type === 'voice') setVoiceDescription(draft.description);
+                  toast.success('Draft restored');
+                },
+              },
+            });
+          } else {
+            // Draft is too old, remove it
+            localStorage.removeItem('matchme_content_draft');
+          }
+        } catch (e) {
+          console.error('Failed to parse draft:', e);
+        }
+      }
+    }
+  }, [isOpen]);
+  
+  // Submit handlers
+  const handleSubmit = async () => {
+    const validation = validateContent();
+    if (!validation.isValid) {
+      setValidationError(validation.error);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setValidationError('');
+    
+    // Log analytics event (mock)
+    console.log('content_posted', {
+      type: activeTab,
+      category: predictedCategory?.primary.name,
+      completion_increase: 4,
+      timestamp: Date.now(),
+    });
+    
+    // Mock submission delay
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setShowSuccess(true);
+      
+      // Clear draft on successful submission
+      localStorage.removeItem('matchme_content_draft');
+      
+      // Trigger confetti
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+    }, 2500);
+  };
+  
+  const handleAddMore = () => {
+    setShowSuccess(false);
+    setShowError(false);
+    // Reset form state
+    setTextContent('');
+    setPhotoFile(null);
+    setPhotoPreview('');
+    setPhotoCaption('');
+    setVideoFile(null);
+    setVideoPreview('');
+    setVideoCaption('');
+    setHasRecorded(false);
+    setRecordingTime(0);
+    setVoiceDescription('');
+    setPredictedCategory(null);
+  };
+  
+  const handleViewProfile = () => {
+    onClose();
+    // Navigate to profile completion (would use router in real app)
+    window.location.href = '/dev/profile-completion-test';
+  };
+  
+  const handleDone = () => {
+    onClose();
+  };
+  
   const handleClose = () => {
     // Cleanup photo preview URL
     if (photoPreview) {
@@ -681,65 +856,343 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       </div>
     );
   };
+  
+  // Render submit button area
+  const renderSubmitButtons = () => {
+    if (showSuccess || showError) return null;
+    
+    return (
+      <div className="sticky bottom-0 bg-background border-t-2 border-border p-6 shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.1)] z-10">
+        {/* Validation Error */}
+        {validationError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-800">{validationError}</p>
+          </div>
+        )}
+        
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={saveDraft}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-8 py-3 bg-background border-2 border-border text-foreground rounded-lg font-semibold text-base hover:bg-muted transition-colors"
+          >
+            <Save className="h-5 w-5" />
+            Save as Draft
+          </button>
+          
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit() || isSubmitting}
+            className={cn(
+              'flex-1 flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-semibold text-base transition-all',
+              canSubmit() && !isSubmitting
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
+            )}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader className="h-5 w-5 animate-spin" />
+                Posting...
+              </>
+            ) : (
+              <>
+                <Send className="h-5 w-5" />
+                Post Now
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render success screen
+  const renderSuccessScreen = () => {
+    if (!showSuccess) return null;
+    
+    const oldCompletion = 68;
+    const newCompletion = 72;
+    const completionIncrease = newCompletion - oldCompletion;
+    const categoryName = predictedCategory?.primary.name || 'Unknown Category';
+    const chaiChatUnlocked = newCompletion >= 70 && oldCompletion < 70;
+    
+    return (
+      <div className="flex flex-col items-center justify-center p-8 min-h-[60vh]">
+        {/* Success Icon */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', duration: 0.6 }}
+        >
+          <CheckCircle className="h-24 w-24 text-green-600 mb-6" />
+        </motion.div>
+        
+        {/* Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-2xl font-bold text-foreground mb-2"
+        >
+          Content Added Successfully!
+        </motion.h2>
+        
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-sm text-muted-foreground mb-8"
+        >
+          Added to {categoryName}
+        </motion.p>
+        
+        {/* Success Details Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="w-full max-w-lg bg-background border border-border rounded-xl shadow-lg p-6 mb-8"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+            <h3 className="text-xl font-bold text-green-700">
+              ✓ Added to {categoryName}
+            </h3>
+          </div>
+          
+          {/* Impact Summary */}
+          <div className="space-y-2 mb-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-base text-foreground"
+            >
+              <span className="text-muted-foreground">Category Completion: </span>
+              <span className="font-semibold">
+                {oldCompletion}% → {newCompletion}% 
+              </span>
+              <span className="text-green-600 font-semibold ml-2">
+                (+{completionIncrease}%) ⬆️
+              </span>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="text-base text-foreground"
+            >
+              <span className="text-muted-foreground">Overall Profile: </span>
+              <span className="font-semibold">67% → 69%</span>
+              <span className="text-green-600 font-semibold ml-2">(+2%)</span>
+            </motion.div>
+          </div>
+          
+          {/* Next Suggestion */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className={cn(
+              'p-3 rounded-lg text-sm',
+              chaiChatUnlocked
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-muted text-muted-foreground'
+            )}
+          >
+            {chaiChatUnlocked ? (
+              <>
+                <p className="font-semibold mb-1">🎉 Congratulations! You just unlocked ChaiChat!</p>
+                <p className="text-xs">You'll receive your first 3 matches this Sunday at 2 AM</p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold mb-1">You're 1% away from ChaiChat eligibility!</p>
+                <p className="text-xs">Add 1 more post to unlock weekly matches</p>
+              </>
+            )}
+          </motion.div>
+        </motion.div>
+        
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
+          className="flex flex-col sm:flex-row gap-3 w-full max-w-lg"
+        >
+          <button
+            onClick={handleViewProfile}
+            className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+          >
+            View Profile
+          </button>
+          <button
+            onClick={handleAddMore}
+            className="flex-1 px-6 py-3 bg-background border-2 border-border text-foreground rounded-lg font-semibold hover:bg-muted transition-colors"
+          >
+            Add More Content
+          </button>
+          <button
+            onClick={handleDone}
+            className="flex-1 px-6 py-3 bg-background border-2 border-border text-foreground rounded-lg font-semibold hover:bg-muted transition-colors"
+          >
+            Done
+          </button>
+        </motion.div>
+      </div>
+    );
+  };
+  
+  // Render error screen
+  const renderErrorScreen = () => {
+    if (!showError) return null;
+    
+    return (
+      <div className="flex flex-col items-center justify-center p-8 min-h-[60vh]">
+        {/* Error Icon */}
+        <XCircle className="h-24 w-24 text-red-600 mb-6" />
+        
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          Something went wrong
+        </h2>
+        
+        {/* Message */}
+        <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
+          Your content couldn't be posted. Please try again.
+        </p>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => {
+              setShowError(false);
+              handleSubmit();
+            }}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Try Again
+          </button>
+          <button
+            onClick={saveDraft}
+            className="px-6 py-3 bg-background border-2 border-border text-foreground rounded-lg font-semibold hover:bg-muted transition-colors"
+          >
+            Save as Draft
+          </button>
+          <button
+            onClick={handleClose}
+            className="px-6 py-3 bg-background border-2 border-border text-foreground rounded-lg font-semibold hover:bg-muted transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render loading overlay
+  const renderLoadingOverlay = () => {
+    if (!isSubmitting) return null;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-50"
+      >
+        <Loader className="h-12 w-12 text-primary animate-spin mb-4" />
+        <p className="text-lg font-semibold text-foreground">Uploading your content...</p>
+        <div className="w-64 h-2 bg-muted rounded-full mt-4 overflow-hidden">
+          <motion.div
+            initial={{ width: '0%' }}
+            animate={{ width: '100%' }}
+            transition={{ duration: 2, ease: 'easeInOut' }}
+            className="h-full bg-primary"
+          />
+        </div>
+      </motion.div>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent
-        className="max-w-2xl w-full h-full md:h-auto md:max-h-[90vh] p-0 gap-0"
+        className="max-w-2xl w-full h-full md:h-auto md:max-h-[90vh] p-0 gap-0 overflow-hidden"
         onKeyDown={handleKeyDown}
       >
-        {/* Modal Header */}
-        <DialogHeader className="px-6 py-6 border-b border-border">
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-semibold text-foreground">
-                Share Your Story
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Help us understand you better
-              </p>
+        {/* Loading Overlay */}
+        {renderLoadingOverlay()}
+        
+        {/* Success Screen */}
+        {showSuccess && renderSuccessScreen()}
+        
+        {/* Error Screen */}
+        {showError && renderErrorScreen()}
+        
+        {/* Normal Content */}
+        {!showSuccess && !showError && (
+          <>
+            {/* Modal Header */}
+            <DialogHeader className="px-6 py-6 border-b border-border">
+              <div className="flex items-start justify-between">
+                <div>
+                  <DialogTitle className="text-2xl font-semibold text-foreground">
+                    Share Your Story
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Help us understand you better
+                  </p>
+                </div>
+                <button
+                  onClick={handleClose}
+                  className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+                  aria-label="Close modal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </DialogHeader>
+
+            {/* Content Type Tabs */}
+            <div className="flex border-b border-border">
+              {tabs.map((tab) => {
+                const IconComponent = tab.icon;
+                const isActive = activeTab === tab.type;
+
+                return (
+                  <button
+                    key={tab.type}
+                    onClick={() => setActiveTab(tab.type)}
+                    className={cn(
+                      'flex-1 flex flex-col items-center justify-center gap-2 py-4 px-2 transition-all duration-200',
+                      'border-b-2 hover:bg-accent/50',
+                      isActive
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground'
+                    )}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`${tab.type}-panel`}
+                    tabIndex={isActive ? 0 : -1}
+                  >
+                    <IconComponent className="h-6 w-6" />
+                    <span className="text-sm font-medium">{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
-            <button
-              onClick={handleClose}
-              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-              aria-label="Close modal"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </DialogHeader>
-
-        {/* Content Type Tabs */}
-        <div className="flex border-b border-border">
-          {tabs.map((tab) => {
-            const IconComponent = tab.icon;
-            const isActive = activeTab === tab.type;
-
-            return (
-              <button
-                key={tab.type}
-                onClick={() => setActiveTab(tab.type)}
-                className={cn(
-                  'flex-1 flex flex-col items-center justify-center gap-2 py-4 px-2 transition-all duration-200',
-                  'border-b-2 hover:bg-accent/50',
-                  isActive
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground'
-                )}
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={`${tab.type}-panel`}
-                tabIndex={isActive ? 0 : -1}
-              >
-                <IconComponent className="h-6 w-6" />
-                <span className="text-sm font-medium">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+          </>
+        )}
 
         {/* Tab Content Area */}
-        <div className="p-6 bg-muted/30 min-h-[400px] overflow-y-auto">
+        {!showSuccess && !showError && (
+        <div className="p-6 bg-muted/30 min-h-[400px] max-h-[50vh] overflow-y-auto">
           {activeTab === 'text' && (
             <div
               id="text-panel"
@@ -1291,6 +1744,10 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
             </div>
           )}
         </div>
+        )}
+          
+        {/* Submit Button Area */}
+        {!showSuccess && !showError && renderSubmitButtons()}
       </DialogContent>
     </Dialog>
   );
