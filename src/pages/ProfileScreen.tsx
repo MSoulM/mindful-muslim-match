@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/badge';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { DepthProgress } from '@/components/profile/DepthProgress';
+import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileCompletion';
 import { 
   Edit2, 
   Sliders, 
@@ -178,6 +179,13 @@ const ProfileScreen = () => {
               </div>
             </BaseCard>
           )}
+        </div>
+
+        {/* Profile Completion */}
+        <div className="mx-5 mb-5">
+          <SemanticProfileCompletion 
+            onCompleteProfile={() => navigate('/edit-profile')}
+          />
         </div>
 
         {/* Depth Progress */}
