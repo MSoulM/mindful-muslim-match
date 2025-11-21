@@ -6,6 +6,7 @@ import { Mic, Keyboard, SkipForward, TrendingUp, MessageCircle } from 'lucide-re
 import { cn } from '@/lib/utils';
 import { VoiceRegistration } from './VoiceRegistration';
 import { toast } from 'sonner';
+import { PersonalityTieBreaker } from './PersonalityTieBreaker';
 
 export type UserPersonalityType = 'wise_aunty' | 'modern_scholar' | 'spiritual_guide' | 'cultural_bridge';
 
@@ -199,6 +200,8 @@ export const PersonalityAssessment = ({
   });
   const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<UserPersonalityType | null>(null);
+  const [showTieBreaker, setShowTieBreaker] = useState(false);
+  const [topPersonalities, setTopPersonalities] = useState<Array<{ type: UserPersonalityType; score: number }>>([]);
 
   const currentQuestion = ASSESSMENT_QUESTIONS[step];
   const progress = ((step + 1) / ASSESSMENT_QUESTIONS.length) * 100;
@@ -247,16 +250,41 @@ export const PersonalityAssessment = ({
         finalScores[personality as UserPersonalityType] += score;
       });
 
-      const resultPersonality = (Object.entries(finalScores) as [UserPersonalityType, number][])
-        .reduce((a, b) => a[1] > b[1] ? a : b)[0];
-
-      setResult(resultPersonality);
-      setShowResult(true);
+      // Sort personalities by score
+      const sortedPersonalities = (Object.entries(finalScores) as [UserPersonalityType, number][])
+        .sort((a, b) => b[1] - a[1])
+        .map(([type, score]) => ({ type, score }));
       
-      toast.success('Assessment complete!', {
-        description: 'We\'ve identified your personality type'
-      });
+      // Check for tie (within 2 points)
+      const topScore = sortedPersonalities[0].score;
+      const tiedPersonalities = sortedPersonalities.filter(p => topScore - p.score <= 2);
+      
+      if (tiedPersonalities.length > 1) {
+        // Show tie-breaker UI
+        setTopPersonalities(tiedPersonalities);
+        setShowTieBreaker(true);
+      } else {
+        // Clear winner
+        const resultPersonality = sortedPersonalities[0].type;
+        setResult(resultPersonality);
+        setShowResult(true);
+        
+        toast.success('Assessment complete!', {
+          description: 'We\'ve identified your personality type'
+        });
+      }
     }
+  };
+
+  const handleTieBreakerSelect = (personality: UserPersonalityType, reason: string) => {
+    console.log('Tie-breaker selection:', { personality, reason });
+    setResult(personality);
+    setShowResult(true);
+    setShowTieBreaker(false);
+    
+    toast.success('Personality selected!', {
+      description: `You've chosen ${USER_PERSONALITIES[personality].name}`
+    });
   };
 
   const handleVoiceComplete = (transcript: string) => {
@@ -338,6 +366,16 @@ export const PersonalityAssessment = ({
       onComplete(result, scores);
     }
   };
+
+  // Show tie-breaker if needed
+  if (showTieBreaker) {
+    return (
+      <PersonalityTieBreaker
+        topPersonalities={topPersonalities}
+        onSelect={handleTieBreakerSelect}
+      />
+    );
+  }
 
   // Result screen
   if (showResult && result) {
