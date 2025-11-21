@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { 
   Mail, Phone, CheckCircle, Globe, Bell, Palette, 
   Eye, UserX, Lock, HelpCircle, MessageSquare, 
-  FileText, PauseCircle, Trash2, Info, Send, Shield
+  FileText, PauseCircle, Trash2, Info, Send, Shield, Brain
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
@@ -120,6 +120,13 @@ export default function SettingsScreen() {
         <div className="px-5 py-4">
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">Privacy</h2>
           <div className="space-y-2">
+            <FeatureCard
+              icon={<Brain className="w-6 h-6" />}
+              title="MMAgent Memory"
+              description="Manage conversation memories"
+              onClick={() => navigate('/memory')}
+            />
+            
             <FeatureCard
               icon={<Eye className="w-6 h-6" />}
               title="Profile Visibility"
