@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { CulturalBadge } from './CulturalBadge';
 import { CulturalVariant, applyCulturalVariant } from '@/utils/culturalAdaptation';
+import { useAgentName } from '@/hooks/useAgentName';
 
 interface AgentMessageProps {
   avatar?: string;
@@ -34,6 +35,12 @@ export const AgentMessage = ({
   const isWelcome = variant === 'welcome';
   const avatarSize = 'w-8 h-8';
   const titleSize = isWelcome ? 'text-md font-bold' : 'text-sm font-semibold';
+  
+  // Get custom agent name from localStorage
+  const customAgentName = useAgentName();
+  
+  // Use custom name as title if no title is provided and custom name exists
+  const displayTitle = title || (customAgentName ? customAgentName : undefined);
 
   // Apply cultural adaptation if variant is provided
   const adaptedMessage = culturalVariant 
@@ -79,10 +86,10 @@ export const AgentMessage = ({
           )}
         >
           {/* Title */}
-          {title && (
+          {displayTitle && (
             <div className="flex items-center justify-between gap-2 mb-1">
               <h3 className={cn('text-neutral-700', titleSize)}>
-                {title}
+                {displayTitle}
               </h3>
               {culturalVariant && showCulturalBadge && (
                 <CulturalBadge variant={culturalVariant} size="sm" />

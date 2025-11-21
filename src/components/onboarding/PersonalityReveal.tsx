@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Heart, Sparkles, BookOpen, Globe } from 'lucide-react';
 import { AgentMessage } from '@/components/chat/AgentMessage';
+import { updateAgentName } from '@/hooks/useAgentName';
 
 interface PersonalityRevealProps {
   personality: UserPersonalityType;
@@ -182,7 +183,12 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
         className="space-y-3"
       >
         <Button
-          onClick={onContinue}
+          onClick={() => {
+            if (customName.trim()) {
+              updateAgentName(customName.trim());
+            }
+            onContinue();
+          }}
           className="w-full h-12 text-base"
           size="lg"
         >
