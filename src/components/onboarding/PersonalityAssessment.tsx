@@ -181,12 +181,21 @@ interface PersonalityAssessmentProps {
   onComplete: (personality: UserPersonalityType, scores: Record<UserPersonalityType, number>) => void;
   onSkip?: () => void;
   allowVoice?: boolean;
+  onProgressSave?: (progress: AssessmentProgress) => void;
+}
+
+interface AssessmentProgress {
+  currentStep: number;
+  answers: number[];
+  scores: Record<UserPersonalityType, number>;
+  timestamp: number;
 }
 
 export const PersonalityAssessment = ({ 
   onComplete, 
   onSkip,
-  allowVoice = true 
+  allowVoice = true,
+  onProgressSave 
 }: PersonalityAssessmentProps) => {
   const [step, setStep] = useState(0);
   const [inputMode, setInputMode] = useState<'options' | 'voice'>('options');
@@ -202,6 +211,51 @@ export const PersonalityAssessment = ({
   const [result, setResult] = useState<UserPersonalityType | null>(null);
   const [showTieBreaker, setShowTieBreaker] = useState(false);
   const [topPersonalities, setTopPersonalities] = useState<Array<{ type: UserPersonalityType; score: number }>>([]);
+  const [voiceError, setVoiceError] = useState(false);
+  const [showAmbiguousPrompt, setShowAmbiguousPrompt] = useState(false);
+
+  const PROGRESS_STORAGE_KEY = 'personality_assessment_progress';
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const savedProgress = localStorage.getItem(PROGRESS_STORAGE_KEY);
+    if (savedProgress) {
+      try {
+        const progress: AssessmentProgress = JSON.parse(savedProgress);
+        
+        // Only restore if less than 7 days old
+        const daysSinceProgress = (Date.now() - progress.timestamp) / (1000 * 60 * 60 * 24);
+        if (daysSinceProgress < 7) {
+          setStep(progress.currentStep);
+          setAnswers(progress.answers);
+          setScores(progress.scores);
+          
+          toast.info('Resuming from where you left off', {
+            description: `Question ${progress.currentStep + 1} of ${ASSESSMENT_QUESTIONS.length}`
+          });
+        } else {
+          // Clear old progress
+          localStorage.removeItem(PROGRESS_STORAGE_KEY);
+        }
+      } catch (error) {
+        console.error('Failed to restore progress:', error);
+      }
+    }
+  }, []);
+
+  // Save progress whenever step or answers change
+  useEffect(() => {
+    if (answers.length > 0 && !showResult) {
+      const progress: AssessmentProgress = {
+        currentStep: step,
+        answers,
+        scores,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
+      onProgressSave?.(progress);
+    }
+  }, [step, answers, scores, showResult, onProgressSave]);
 
   const currentQuestion = ASSESSMENT_QUESTIONS[step];
   const progress = ((step + 1) / ASSESSMENT_QUESTIONS.length) * 100;
@@ -288,21 +342,35 @@ export const PersonalityAssessment = ({
   };
 
   const handleVoiceComplete = (transcript: string) => {
+    // Check for empty or very short responses
+    if (!transcript || transcript.trim().length < 5) {
+      setShowAmbiguousPrompt(true);
+      setVoiceError(true);
+      toast.error('Could not understand that', {
+        description: 'Please try again or select from options'
+      });
+      return;
+    }
+
     // For voice input, we'll use simple keyword matching to score
     // In production, this would use NLP/AI to analyze the response
     const keywordScores: Record<string, UserPersonalityType> = {
       'family': 'wise_aunty',
       'tradition': 'wise_aunty',
       'elder': 'wise_aunty',
+      'parent': 'wise_aunty',
       'research': 'modern_scholar',
       'analysis': 'modern_scholar',
       'study': 'modern_scholar',
+      'data': 'modern_scholar',
       'pray': 'spiritual_guide',
       'faith': 'spiritual_guide',
       'allah': 'spiritual_guide',
+      'spiritual': 'spiritual_guide',
       'balance': 'cultural_bridge',
       'both': 'cultural_bridge',
-      'adapt': 'cultural_bridge'
+      'adapt': 'cultural_bridge',
+      'culture': 'cultural_bridge'
     };
 
     // Simple scoring based on keywords
@@ -314,11 +382,24 @@ export const PersonalityAssessment = ({
     };
 
     const lowerTranscript = transcript.toLowerCase();
+    let matchCount = 0;
+    
     Object.entries(keywordScores).forEach(([keyword, personality]) => {
       if (lowerTranscript.includes(keyword)) {
         tempScores[personality] += 1;
+        matchCount++;
       }
     });
+
+    // Check if response is too ambiguous (no matches or very few)
+    if (matchCount === 0) {
+      setShowAmbiguousPrompt(true);
+      toast.info('I did not quite catch that', {
+        description: 'Could you choose from these options?'
+      });
+      setInputMode('options');
+      return;
+    }
 
     // Find best match or default to balanced
     const maxScore = Math.max(...Object.values(tempScores));
@@ -333,6 +414,8 @@ export const PersonalityAssessment = ({
 
     setSelectedOption(matchingOptionIndex >= 0 ? matchingOptionIndex : 0);
     setInputMode('options');
+    setShowAmbiguousPrompt(false);
+    setVoiceError(false);
     
     toast.success('Voice response recorded', {
       description: 'Review and confirm your answer'
@@ -340,9 +423,9 @@ export const PersonalityAssessment = ({
   };
 
   const handleSkipQuestion = () => {
-    // Default scoring for skipped questions (balanced approach)
+    // Use Modern Scholar as default for skipped questions (balanced, analytical default)
     const defaultAnswer = currentQuestion.options.findIndex(opt => 
-      opt.scores.cultural_bridge === 3
+      opt.scores.modern_scholar === 3
     );
     
     const newAnswers = [...answers, defaultAnswer >= 0 ? defaultAnswer : 0];
@@ -351,18 +434,45 @@ export const PersonalityAssessment = ({
     if (step < ASSESSMENT_QUESTIONS.length - 1) {
       setStep(step + 1);
       setSelectedOption(null);
+      setShowAmbiguousPrompt(false);
+      setVoiceError(false);
     } else {
       // Move to results
       handleNext();
     }
 
     toast.info('Question skipped', {
-      description: 'Using balanced default response'
+      description: 'Using default balanced response'
+    });
+  };
+
+  const handleAbandonAssessment = () => {
+    // User abandons - assign Modern Scholar as temporary default
+    const defaultPersonality: UserPersonalityType = 'modern_scholar';
+    
+    toast.info('Assessment saved', {
+      description: 'You can complete it later. Using Modern Scholar temporarily.'
+    });
+
+    // Clear progress and complete with default
+    localStorage.removeItem(PROGRESS_STORAGE_KEY);
+    onComplete(defaultPersonality, scores);
+  };
+
+  const handleVoiceFallback = () => {
+    setInputMode('options');
+    setVoiceError(true);
+    setShowAmbiguousPrompt(true);
+    
+    toast.info('Having trouble with voice?', {
+      description: 'Try selecting from these options instead'
     });
   };
 
   const handleSaveAndContinue = () => {
     if (result) {
+      // Clear saved progress on completion
+      localStorage.removeItem(PROGRESS_STORAGE_KEY);
       onComplete(result, scores);
     }
   };
@@ -535,6 +645,7 @@ export const PersonalityAssessment = ({
           prompt={currentQuestion.question}
           minWords={15}
           onComplete={handleVoiceComplete}
+          onError={handleVoiceFallback}
         />
       </div>
     );
@@ -593,6 +704,24 @@ export const PersonalityAssessment = ({
                   )}
                 </div>
               </div>
+
+              {/* Ambiguous Response Warning */}
+              {showAmbiguousPrompt && (
+                <div className="mt-4 p-3 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg">
+                  <p className="text-sm text-amber-900 dark:text-amber-100 font-medium">
+                    I did not quite catch that. Could you choose from these options?
+                  </p>
+                </div>
+              )}
+
+              {/* Voice Error Warning */}
+              {voiceError && (
+                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
+                  <p className="text-sm text-red-900 dark:text-red-100 font-medium">
+                    Having trouble? Try typing instead or select from the options below.
+                  </p>
+                </div>
+              )}
             </motion.div>
           </div>
 
@@ -670,24 +799,35 @@ export const PersonalityAssessment = ({
 
           {onSkip && (
             <Button
-              onClick={handleSkipQuestion}
+              onClick={handleAbandonAssessment}
               variant="ghost"
               className="gap-2"
             >
-              <SkipForward className="w-4 h-4" />
-              Skip
+              Complete Later
             </Button>
           )}
         </div>
 
-        <Button
-          onClick={handleNext}
-          disabled={selectedOption === null}
-          size="lg"
-          className="ml-auto"
-        >
-          {step === ASSESSMENT_QUESTIONS.length - 1 ? 'See Results' : 'Next'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSkipQuestion}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <SkipForward className="w-4 h-4" />
+            Skip
+          </Button>
+          
+          <Button
+            onClick={handleNext}
+            disabled={selectedOption === null}
+            size="lg"
+            className="ml-auto"
+          >
+            {step === ASSESSMENT_QUESTIONS.length - 1 ? 'See Results' : 'Next'}
+          </Button>
+        </div>
       </div>
     </div>
   );
