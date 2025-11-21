@@ -199,6 +199,37 @@ export const MatchCard = ({
         )}
       </section>
 
+      {/* Behavioral Compatibility Badge */}
+      <div className="px-4 pb-3">
+        <div className="bg-gradient-to-r from-primary-forest/5 to-primary-forest/10 
+                        rounded-lg p-3 border border-primary-forest/20">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">
+              Communication Match
+            </span>
+            <span className="text-lg font-bold text-primary-forest">
+              87%
+            </span>
+          </div>
+          
+          {/* Matching Behavioral Traits */}
+          <div className="flex flex-wrap gap-2">
+            <span className="px-2 py-1 bg-background rounded-full text-xs 
+                             text-primary-forest border border-primary-forest/20">
+              🌙 Evening Person
+            </span>
+            <span className="px-2 py-1 bg-background rounded-full text-xs 
+                             text-primary-forest border border-primary-forest/20">
+              💬 Detailed Texter
+            </span>
+            <span className="px-2 py-1 bg-background rounded-full text-xs 
+                             text-primary-forest border border-primary-forest/20">
+              ⚡ Quick Responder
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* ChaiChat Preview */}
       {match.chaiChat && onChaiChatClick && (
         <div className="px-4 pb-4">
