@@ -1,0 +1,1 @@
+export { BehavioralConsentModal } from './BehavioralConsentModal';
