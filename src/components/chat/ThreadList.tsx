@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { formatDistanceToNow } from 'date-fns';
+import { useAgentName } from '@/hooks/useAgentName';
 
 // Thread types configuration
 export const THREAD_TYPES = {
@@ -54,6 +55,7 @@ export const ThreadList = ({
 }: ThreadListProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ThreadType | 'all'>('all');
+  const customAgentName = useAgentName();
 
   // Filter threads
   const filteredThreads = threads
@@ -174,7 +176,7 @@ export const ThreadList = ({
                 <p className="text-sm text-muted-foreground mb-4 max-w-xs">
                   {searchQuery
                     ? 'Try adjusting your search or filters'
-                    : 'Create a new chat to get guidance on matches, profile tips, or support'}
+                    : `Start a conversation with ${customAgentName || 'your MMAgent'} to get guidance on matches, profile tips, or support`}
                 </p>
                 {!searchQuery && (
                   <Button onClick={() => onNewThread('custom')} className="gap-2">
