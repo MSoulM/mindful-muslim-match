@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PersonalityAssessment, UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+import { PersonalityReveal } from '@/components/onboarding/PersonalityReveal';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { toast } from 'sonner';
@@ -8,20 +9,27 @@ import { toast } from 'sonner';
 export default function PersonalityAssessmentDemo() {
   const navigate = useNavigate();
   const [isComplete, setIsComplete] = useState(false);
+  const [assignedPersonality, setAssignedPersonality] = useState<UserPersonalityType | null>(null);
 
   const handleComplete = (personality: UserPersonalityType, scores: Record<UserPersonalityType, number>) => {
     console.log('Assessment complete:', { personality, scores });
-    
-    toast.success('Personality assessment complete!', {
-      description: `You've been identified as: ${personality}`
-    });
-
+    setAssignedPersonality(personality);
     setIsComplete(true);
-    
-    // Navigate to next onboarding step or profile
+  };
+
+  const handleContinue = () => {
+    toast.success('Personality confirmed!', {
+      description: 'Your MMAgent is ready to guide you'
+    });
     setTimeout(() => {
       navigate('/profile');
-    }, 2000);
+    }, 1000);
+  };
+
+  const handleTryDifferent = () => {
+    setIsComplete(false);
+    setAssignedPersonality(null);
+    toast.info('Let\'s reassess your personality');
   };
 
   const handleSkip = () => {
@@ -50,13 +58,21 @@ export default function PersonalityAssessmentDemo() {
           </p>
         </div>
 
-        {/* Assessment Component */}
+        {/* Assessment or Reveal */}
         <div className="flex-1 overflow-y-auto">
-          <PersonalityAssessment
-            onComplete={handleComplete}
-            onSkip={handleSkip}
-            allowVoice={true}
-          />
+          {!isComplete ? (
+            <PersonalityAssessment
+              onComplete={handleComplete}
+              onSkip={handleSkip}
+              allowVoice={true}
+            />
+          ) : assignedPersonality ? (
+            <PersonalityReveal
+              personality={assignedPersonality}
+              onContinue={handleContinue}
+              onTryDifferent={handleTryDifferent}
+            />
+          ) : null}
         </div>
 
         {/* Footer tip */}
