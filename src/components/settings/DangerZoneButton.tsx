@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { MobileTextInput } from '@/components/ui/Input/MobileTextInput';
 import { MobileTextArea } from '@/components/ui/Input/MobileTextArea';
 import { Camera, MapPin, Calendar, X } from 'lucide-react';

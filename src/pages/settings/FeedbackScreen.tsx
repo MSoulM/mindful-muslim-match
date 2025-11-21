@@ -4,7 +4,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { PremiumCard } from '@/components/ui/animated/PremiumCard';
 import { SuccessCelebration } from '@/components/ui/animated/SuccessCelebration';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare, Bug, Lightbulb, Star, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';

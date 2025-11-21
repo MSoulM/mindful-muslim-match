@@ -15,7 +15,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { PersonalityAdjustment, AdjustmentType } from '@/types/personality.types';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { cn } from '@/lib/utils';
 
 const adjustmentTypeLabels: Record<AdjustmentType, string> = {

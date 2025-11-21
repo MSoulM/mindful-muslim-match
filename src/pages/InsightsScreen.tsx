@@ -7,7 +7,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { FeatureCard } from '@/components/ui/Cards/FeatureCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 

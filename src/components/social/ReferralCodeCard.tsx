@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Copy, Check, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 

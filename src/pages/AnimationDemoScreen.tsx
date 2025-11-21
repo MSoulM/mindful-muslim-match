@@ -10,7 +10,7 @@ import { HeartAnimation } from '@/components/ui/animated/HeartAnimation';
 import { MessageSentAnimation } from '@/components/ui/animated/MessageSentAnimation';
 import { MatchCelebration } from '@/components/ui/animated/MatchCelebration';
 import { DNASelectionFeedback } from '@/components/ui/animated/DNASelectionFeedback';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Heart, MessageCircle, Sparkles, Fingerprint } from 'lucide-react';
 import { 
   staggerContainer, 

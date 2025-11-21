@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
+import { Button } from './CustomButton';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { MobileTextInput } from '@/components/ui/Input/MobileTextInput';
 import { MobileTextArea } from '@/components/ui/Input/MobileTextArea';
 import { Label } from '@/components/ui/label';

@@ -5,7 +5,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { ChaiChatRecommendation } from '@/components/chaichat/ChaiChatRecommendation';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useNotifications } from '@/hooks/useNotifications';

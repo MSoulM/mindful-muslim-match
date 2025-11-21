@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { BaseCard } from './BaseCard';
-import { Button } from '../Button';
+import { Button } from '../CustomButton';
 import { cn } from '@/lib/utils';
 
 interface InfoCardProps {

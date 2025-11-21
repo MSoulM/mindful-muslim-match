@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { IconButton } from '@/components/ui/IconButton';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';

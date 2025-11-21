@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Minus, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FAQItemProps {

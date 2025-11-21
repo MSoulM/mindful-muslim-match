@@ -17,7 +17,7 @@ import {
 import { useMemoryManagement } from '@/hooks/useMemoryManagement';
 import { ConversationMemory, MemoryCategory, MemorySortOption } from '@/types/memory.types';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
