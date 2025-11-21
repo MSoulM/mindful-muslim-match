@@ -118,6 +118,7 @@ const BehavioralTrackingTestScreen = lazy(() => import("./pages/BehavioralTracki
 const TestingHubScreen = lazy(() => import("./pages/TestingHubScreen"));
 const MemoryDashboardScreen = lazy(() => import("./pages/MemoryDashboardScreen"));
 const EvolutionStageDemo = lazy(() => import("./pages/EvolutionStageDemo"));
+const MemoryReferenceDemo = lazy(() => import("./pages/MemoryReferenceDemo"));
 const ThreadListTest = lazy(() => import("./pages/ThreadListTest"));
 const ChatViewTest = lazy(() => import("./pages/ChatViewTest"));
 const PersonalityQuizTest = lazy(() => import("./pages/PersonalityQuizTest"));
@@ -506,6 +507,11 @@ const AnimatedRoutes = () => {
         <Route path="/evolution-stage-demo" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <EvolutionStageDemo />
+          </motion.div>
+        } />
+        <Route path="/memory-reference-demo" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <MemoryReferenceDemo />
           </motion.div>
         } />
         <Route path="/behavioral-insights-demo" element={
