@@ -10,6 +10,7 @@ import {
 import { ContentAnalysisFeedback, SimilarityDetection, QualityMetrics } from '@/components/profile/ContentAnalysisFeedback';
 import { PerformanceInsights, PerformanceWidget } from '@/components/analytics/PerformanceInsights';
 import { ReligiousPracticesSelector, CareerSelector } from '@/components/profile/EmbeddingPoolSelector';
+import { MobileBatchStatusCard } from '@/components/mobile/MobileBatchStatusCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 
@@ -138,12 +139,13 @@ const OptimizationDemoScreen = () => {
           </motion.div>
 
           <Tabs defaultValue="insights" className="w-full">
-            <TabsList className="w-full grid grid-cols-2 lg:grid-cols-5 mb-6">
+            <TabsList className="w-full grid grid-cols-3 lg:grid-cols-6 mb-6">
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="batch">Batch</TabsTrigger>
               <TabsTrigger value="analysis">Analysis</TabsTrigger>
               <TabsTrigger value="performance">Performance</TabsTrigger>
               <TabsTrigger value="selectors">Selectors</TabsTrigger>
+              <TabsTrigger value="mobile">Mobile</TabsTrigger>
             </TabsList>
 
             {/* Insight Approval Interface */}
@@ -292,6 +294,52 @@ const OptimizationDemoScreen = () => {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Mobile Features */}
+            <TabsContent value="mobile" className="space-y-4">
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h2 className="text-xl font-bold text-foreground mb-4">
+                  Mobile-Optimized Features
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Native mobile features including push notifications, offline mode, progressive upload, data saver, and WhatsApp integration.
+                </p>
+                
+                <MobileBatchStatusCard
+                  batchInfo={{
+                    insights: 8,
+                    processingDate: 'Sunday 2 AM',
+                    queuePosition: 5
+                  }}
+                />
+
+                <div className="mt-6 p-4 bg-muted rounded-lg space-y-2">
+                  <h3 className="font-semibold text-sm text-foreground">Mobile Features:</h3>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>✅ Push notifications for batch completion</li>
+                    <li>✅ Offline insight review capability</li>
+                    <li>✅ Progressive upload with retry logic</li>
+                    <li>✅ Low-bandwidth mode for emerging markets</li>
+                    <li>✅ WhatsApp integration for status updates</li>
+                  </ul>
+                </div>
+
+                <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-sm text-foreground font-medium mb-2">
+                    📱 Setup Instructions:
+                  </p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Export to Github</li>
+                    <li>Run: <code className="bg-muted px-1 rounded">npm install</code></li>
+                    <li>Run: <code className="bg-muted px-1 rounded">npx cap add ios</code> or <code className="bg-muted px-1 rounded">npx cap add android</code></li>
+                    <li>Run: <code className="bg-muted px-1 rounded">npx cap update</code></li>
+                    <li>Run: <code className="bg-muted px-1 rounded">npm run build</code></li>
+                    <li>Run: <code className="bg-muted px-1 rounded">npx cap sync</code></li>
+                    <li>Run: <code className="bg-muted px-1 rounded">npx cap run ios</code> or <code className="bg-muted px-1 rounded">npx cap run android</code></li>
+                  </ol>
                 </div>
               </div>
             </TabsContent>
