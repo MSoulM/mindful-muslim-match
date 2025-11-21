@@ -21,6 +21,7 @@ import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { useVirtualList } from '@/hooks/useVirtualList';
 import { cn } from '@/lib/utils';
+import { useAgentName } from '@/hooks/useAgentName';
 
 export interface ChatMessage {
   id: string;
@@ -70,6 +71,7 @@ export const ChatView = ({
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   
   const { keyboardHeight, isKeyboardOpen } = useKeyboardHeight();
+  const customAgentName = useAgentName();
 
   const threadConfig = THREAD_TYPES[threadType];
   const maxChars = 500;
@@ -209,7 +211,9 @@ export const ChatView = ({
           <span className="text-2xl">{threadConfig.icon}</span>
           <div>
             <h3 className="font-semibold text-foreground">{threadTitle}</h3>
-            <p className="text-sm text-muted-foreground">MMAgent is here to help</p>
+            <p className="text-sm text-muted-foreground">
+              {customAgentName || 'MMAgent'} is here to help
+            </p>
           </div>
         </div>
         

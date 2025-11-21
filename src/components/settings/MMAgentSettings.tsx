@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+import { updateAgentName } from '@/hooks/useAgentName';
 
 interface MMAgentSettingsProps {
   personalityType: UserPersonalityType;
@@ -69,7 +70,7 @@ export function MMAgentSettings({ personalityType, daysAgo = 0 }: MMAgentSetting
   const handleSave = () => {
     const trimmedName = tempName.trim();
     setAgentName(trimmedName);
-    localStorage.setItem('mmAgentCustomName', trimmedName);
+    updateAgentName(trimmedName);
     setIsEditing(false);
   };
 

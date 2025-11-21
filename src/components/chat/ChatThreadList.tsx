@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ChevronDown } from 'lucide-react';
+import { useAgentName } from '@/hooks/useAgentName';
 
 interface ChatThreadListProps {
   activeThreads: ChatThread[];
@@ -61,6 +62,7 @@ export const ChatThreadList = ({
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [threadToDelete, setThreadToDelete] = useState<{ id: string; topic: string } | null>(null);
+  const customAgentName = useAgentName();
 
   const openDeleteDialog = (threadId: string, topic: string) => {
     setThreadToDelete({ id: threadId, topic });
@@ -106,7 +108,7 @@ export const ChatThreadList = ({
           </div>
           {lastMessage && (
             <p className="text-sm text-muted-foreground truncate">
-              {lastMessage.role === 'user' ? 'You: ' : 'MMAgent: '}
+              {lastMessage.role === 'user' ? 'You: ' : `${customAgentName || 'MMAgent'}: `}
               {lastMessage.content}
             </p>
           )}
@@ -281,7 +283,7 @@ export const ChatThreadList = ({
             <p className="text-sm text-muted-foreground mb-4">
               {searchQuery 
                 ? 'Try a different search term'
-                : 'Start a conversation with MMAgent to get personalized guidance'
+                : `Start a conversation with ${customAgentName || 'MMAgent'} to get personalized guidance`
               }
             </p>
             {!searchQuery && (

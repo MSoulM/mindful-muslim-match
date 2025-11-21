@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { AgentMessage } from './AgentMessage';
 import { Sparkles, TrendingUp, Heart, MessageCircle, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAgentName } from '@/hooks/useAgentName';
 
 interface QuickReply {
   id: string;
@@ -17,6 +18,8 @@ interface NewChatScreenProps {
 }
 
 export const NewChatScreen = ({ onQuickReply, className }: NewChatScreenProps) => {
+  const customAgentName = useAgentName();
+  
   const quickReplies: QuickReply[] = [
     {
       id: '1',
@@ -61,7 +64,7 @@ export const NewChatScreen = ({ onQuickReply, className }: NewChatScreenProps) =
       <div className="px-4 pt-6 pb-4">
         <AgentMessage
           avatar="🤖"
-          title="MMAgent"
+          title={customAgentName || "MMAgent"}
           message="Assalamu Alaikum! I'm here to guide you on your journey to find your soulmate. How can I help you today?"
           variant="welcome"
         />
