@@ -136,18 +136,24 @@ const OptimizationDemoScreen = () => {
             <p className="text-muted-foreground mb-4">
               Explore the optimization and deduplication components
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button 
                 onClick={() => navigate('/onboarding/voice-demo')}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Voice Onboarding Demo
+                Voice Onboarding
               </button>
               <button 
                 onClick={() => navigate('/onboarding/personality-assessment')}
                 className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
               >
                 Personality Assessment
+              </button>
+              <button 
+                onClick={() => navigate('/onboarding/cultural-profile')}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Cultural Profile
               </button>
             </div>
           </motion.div>

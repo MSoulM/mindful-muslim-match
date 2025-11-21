@@ -50,6 +50,7 @@ const CommunicationPrefsScreen = lazy(() => import("./pages/onboarding/Communica
 const ProfileCompleteScreen = lazy(() => import("./pages/onboarding/ProfileCompleteScreen"));
 const VoiceOnboardingDemo = lazy(() => import("./pages/onboarding/VoiceOnboardingDemo"));
 const PersonalityAssessmentDemo = lazy(() => import("./pages/onboarding/PersonalityAssessmentDemo"));
+const CulturalProfileDemo = lazy(() => import("./pages/onboarding/CulturalProfileDemo"));
 
 // Lazy load auth screens
 const LoginScreen = lazy(() => import("./pages/auth/LoginScreen").then(m => ({ default: m.LoginScreen })));
@@ -546,6 +547,11 @@ const AnimatedRoutes = () => {
         <Route path="/onboarding/personality-assessment" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <PersonalityAssessmentDemo />
+          </motion.div>
+        } />
+        <Route path="/onboarding/cultural-profile" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <CulturalProfileDemo />
           </motion.div>
         } />
         <Route path="/onboarding/complete" element={
