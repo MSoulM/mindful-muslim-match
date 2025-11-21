@@ -10,12 +10,14 @@ import { cn } from '@/lib/utils';
 
 interface VoiceRegistrationProps {
   onComplete: (transcript: string) => void;
+  onError?: () => void;
   prompt: string;
   minWords?: number;
 }
 
 export const VoiceRegistration = ({ 
   onComplete, 
+  onError,
   prompt,
   minWords = 10 
 }: VoiceRegistrationProps) => {
@@ -36,6 +38,16 @@ export const VoiceRegistration = ({
     undoLastSentence,
     setTranscript
   } = useSpeechToText();
+
+  // Voice error handling
+  useEffect(() => {
+    if (speechError) {
+      toast.error('Voice recognition error', {
+        description: speechError
+      });
+      onError?.();
+    }
+  }, [speechError, onError]);
 
   const {
     amplitude,
