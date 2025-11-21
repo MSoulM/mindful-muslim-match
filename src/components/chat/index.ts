@@ -14,3 +14,4 @@ export { ThreadList } from './ThreadList';
 export { ChatView } from './ChatView';
 export { UserStateIndicator } from './UserStateIndicator';
 export { SupportMode } from './SupportMode';
+export { CulturalBadge } from './CulturalBadge';

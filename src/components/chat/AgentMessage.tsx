@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
+import { CulturalBadge } from './CulturalBadge';
+import { CulturalVariant, applyCulturalVariant } from '@/utils/culturalAdaptation';
 
 interface AgentMessageProps {
   avatar?: string;
@@ -13,6 +15,8 @@ interface AgentMessageProps {
     onClick: () => void;
   }>;
   variant?: 'default' | 'highlight' | 'welcome';
+  culturalVariant?: CulturalVariant;
+  showCulturalBadge?: boolean;
   className?: string;
 }
 
@@ -23,11 +27,18 @@ export const AgentMessage = ({
   timestamp,
   actions,
   variant = 'default',
+  culturalVariant,
+  showCulturalBadge = true,
   className,
 }: AgentMessageProps) => {
   const isWelcome = variant === 'welcome';
   const avatarSize = 'w-8 h-8';
   const titleSize = isWelcome ? 'text-md font-bold' : 'text-sm font-semibold';
+
+  // Apply cultural adaptation if variant is provided
+  const adaptedMessage = culturalVariant 
+    ? applyCulturalVariant(message, culturalVariant)
+    : message;
 
   return (
     <motion.div
@@ -69,14 +80,19 @@ export const AgentMessage = ({
         >
           {/* Title */}
           {title && (
-            <h3 className={cn('text-neutral-700 mb-1', titleSize)}>
-              {title}
-            </h3>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h3 className={cn('text-neutral-700', titleSize)}>
+                {title}
+              </h3>
+              {culturalVariant && showCulturalBadge && (
+                <CulturalBadge variant={culturalVariant} size="sm" />
+              )}
+            </div>
           )}
 
           {/* Message */}
-          <p className="text-md text-neutral-900 leading-relaxed">
-            {message}
+          <p className="text-md text-neutral-900 leading-relaxed whitespace-pre-wrap">
+            {adaptedMessage}
           </p>
 
           {/* Timestamp */}

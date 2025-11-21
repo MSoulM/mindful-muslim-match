@@ -54,6 +54,7 @@ const CulturalProfileDemo = lazy(() => import("./pages/onboarding/CulturalProfil
 
 // Lazy load settings screens
 const PersonalityChangeDemo = lazy(() => import("./pages/settings/PersonalityChangeDemo"));
+const CulturalVariantDemo = lazy(() => import("./pages/settings/CulturalVariantDemo"));
 
 // Lazy load auth screens
 const LoginScreen = lazy(() => import("./pages/auth/LoginScreen").then(m => ({ default: m.LoginScreen })));
@@ -443,6 +444,11 @@ const AnimatedRoutes = () => {
         <Route path="/settings/personality-change" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <PersonalityChangeDemo />
+          </motion.div>
+        } />
+        <Route path="/settings/cultural-variant" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <CulturalVariantDemo />
           </motion.div>
         } />
         
