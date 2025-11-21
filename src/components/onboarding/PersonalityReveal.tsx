@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { UserPersonalityType } from './PersonalityAssessment';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Heart, Sparkles, BookOpen, Globe } from 'lucide-react';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 
@@ -65,6 +67,22 @@ const personalityConfig = {
 export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: PersonalityRevealProps) => {
   const config = personalityConfig[personality];
   const IconComponent = config.icon;
+  const [customName, setCustomName] = useState('');
+
+  const getPlaceholderByPersonality = (personalityType: UserPersonalityType) => {
+    switch(personalityType) {
+      case 'wise_aunty': 
+        return 'e.g., Auntie Sarah, Khalto Maryam';
+      case 'modern_scholar': 
+        return 'e.g., Dr. Hassan, Professor Amina';
+      case 'spiritual_guide': 
+        return 'e.g., Sister Fatima, Brother Omar';
+      case 'cultural_bridge': 
+        return 'e.g., Mentor Zara, Guide Rashid';
+      default: 
+        return 'Enter a name';
+    }
+  };
 
   return (
     <motion.div
@@ -128,11 +146,39 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
         />
       </motion.div>
 
+      {/* Make it Personal Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+        className="mt-6 p-6 bg-muted rounded-lg space-y-4"
+      >
+        <h3 className="text-lg font-semibold text-foreground">Make it Personal</h3>
+        <p className="text-muted-foreground">
+          Give your {config.name} a name to make your journey more personal
+        </p>
+        
+        <div className="flex flex-col gap-4">
+          <Input
+            type="text"
+            placeholder={getPlaceholderByPersonality(personality)}
+            maxLength={30}
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            className="h-12"
+          />
+          
+          <div className="text-sm text-muted-foreground">
+            {customName ? `You'll see "${customName}" throughout the app` : "You can always add a name later"}
+          </div>
+        </div>
+      </motion.div>
+
       {/* Action Buttons */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
+        transition={{ delay: 0.9 }}
         className="space-y-3"
       >
         <Button
@@ -140,7 +186,7 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
           className="w-full h-12 text-base"
           size="lg"
         >
-          Continue with {config.name}
+          Continue with {customName || config.name}
         </Button>
         <Button
           onClick={onTryDifferent}
