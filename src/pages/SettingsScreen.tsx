@@ -12,12 +12,18 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import { MMAgentSettings } from '@/components/settings/MMAgentSettings';
+import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const { isAdmin } = useAdminCheck();
+  
+  // Mock data - in production, this would come from user profile/database
+  const userPersonality: UserPersonalityType = 'wise_aunty';
+  const daysAgo = 12; // Days since personality was assigned
 
   const handleNotificationToggle = (checked: boolean) => {
     setNotificationsEnabled(checked);
@@ -33,8 +39,17 @@ export default function SettingsScreen() {
       />
 
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* Account Section */}
+        {/* My Agent Section */}
         <div className="px-5 pt-6 pb-4">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">My Agent</h2>
+          <MMAgentSettings 
+            personalityType={userPersonality}
+            daysAgo={daysAgo}
+          />
+        </div>
+
+        {/* Account Section */}
+        <div className="px-5 py-4">
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">Account</h2>
           <div className="space-y-2">
             <FeatureCard
