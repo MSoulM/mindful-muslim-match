@@ -10,6 +10,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
+import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
 
 type FilterType = 'all' | 'unread' | 'matches' | 'messages';
 
@@ -17,6 +18,9 @@ export const NotificationCenterScreen = () => {
   const navigate = useNavigate();
   const { notifications, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  
+  // Mock personality type - in production this would come from user profile/context
+  const userPersonality: UserPersonalityType = 'wise_aunty';
   
   const filters = [
     { id: 'all', label: 'All' },
@@ -127,6 +131,7 @@ export const NotificationCenterScreen = () => {
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
+                    personalityType={userPersonality}
                     onPress={() => {
                       markAsRead(notification.id);
                       if (notification.actionUrl) {
@@ -149,6 +154,7 @@ export const NotificationCenterScreen = () => {
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
+                    personalityType={userPersonality}
                     onPress={() => {
                       markAsRead(notification.id);
                       if (notification.actionUrl) {
@@ -171,6 +177,7 @@ export const NotificationCenterScreen = () => {
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
+                    personalityType={userPersonality}
                     onPress={() => {
                       markAsRead(notification.id);
                       if (notification.actionUrl) {
@@ -193,6 +200,7 @@ export const NotificationCenterScreen = () => {
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
+                    personalityType={userPersonality}
                     onPress={() => {
                       markAsRead(notification.id);
                       if (notification.actionUrl) {
