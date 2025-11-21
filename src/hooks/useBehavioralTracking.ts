@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import posthog from 'posthog-js';
 import { MicroMomentTracker } from '@/services/MicroMomentTracker';
+import { behavioralTracker, trackBehavioralEvent } from '@/utils/behavioralTracking';
 
 /**
  * Comprehensive behavioral tracking hook
@@ -48,9 +49,9 @@ export const useBehavioralTracking = () => {
       responseTime < 3600000 ? 'thoughtful' :   // < 1 hour
       'delayed';                                 // > 1 hour
     
-    // Send to PostHog with privacy-safe metadata
+    // Send to PostHog with privacy-safe metadata using batched tracker
     try {
-      posthog.capture('message_sent', {
+      trackBehavioralEvent.messageStyle({
         // Message structure
         length_category: lengthCategory,
         character_count_range: Math.floor(messageLength / 50) * 50, // Rounded to nearest 50
@@ -98,7 +99,7 @@ export const useBehavioralTracking = () => {
     const actualTimeSpent = timeSpent ?? (Date.now() - lastActivityTime.current);
     
     try {
-      posthog.capture('profile_viewed', {
+      trackBehavioralEvent.profileEngagement({
         // Viewing depth
         view_depth_percentage: Math.round(scrollDepth),
         profile_section: 
@@ -131,7 +132,7 @@ export const useBehavioralTracking = () => {
     if (!isTrackingEnabled()) return;
 
     try {
-      posthog.capture('feature_engagement', {
+      trackBehavioralEvent.featureUsage({
         feature_name: feature,
         action_type: action,
         session_time_minutes: Math.round((Date.now() - sessionStartTime.current) / 60000),
@@ -155,7 +156,7 @@ export const useBehavioralTracking = () => {
     if (!isTrackingEnabled()) return;
 
     try {
-      posthog.capture('match_decision', {
+      trackBehavioralEvent.matchDecision({
         decision_type: decision,
         view_time_seconds: Math.round(profileViewTime / 1000),
         scroll_depth_percentage: Math.round(scrollDepth),
@@ -182,7 +183,7 @@ export const useBehavioralTracking = () => {
     if (!isTrackingEnabled()) return;
 
     try {
-      posthog.capture('search_performed', {
+      trackBehavioralEvent.searchActivity({
         query_length: query.length,
         word_count: query.split(/\s+/).length,
         results_count: resultsCount,
