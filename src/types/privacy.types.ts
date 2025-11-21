@@ -39,3 +39,34 @@ export type PrivacyAction =
   | { type: 'UNBLOCK_USER'; payload: string }
   | { type: 'UPDATE_PHOTO_SETTINGS'; payload: Partial<PhotoPrivacy> }
   | { type: 'RESET_PRIVACY'; payload: PrivacyState };
+
+// Memory privacy types
+export interface MemoryConsent {
+  granted: boolean;
+  grantedAt?: Date;
+  revokedAt?: Date;
+  version: string; // Privacy policy version
+}
+
+export interface ConsentHistoryEntry {
+  id: string;
+  action: 'granted' | 'revoked' | 'modified';
+  timestamp: Date;
+  policyVersion: string;
+  details?: string;
+}
+
+export interface DataExportRequest {
+  id: string;
+  requestedAt: Date;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  downloadUrl?: string;
+  expiresAt?: Date;
+}
+
+export interface EncryptionStatus {
+  enabled: boolean;
+  algorithm: string;
+  lastRotated?: Date;
+  keyVersion: string;
+}
