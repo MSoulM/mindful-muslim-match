@@ -18,3 +18,4 @@ export { BatchProcessingNotification, BatchStatusBadge } from './BatchProcessing
 export { ContentAnalysisFeedback } from './ContentAnalysisFeedback';
 export { ReligiousPracticesSelector, CareerSelector } from './EmbeddingPoolSelector';
 export { EnhancedProfileSeed } from './EnhancedProfileSeed';
+export { BehavioralInsights } from './BehavioralInsights';
