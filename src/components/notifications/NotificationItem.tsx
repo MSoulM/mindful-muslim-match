@@ -4,6 +4,36 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useAgentName } from '@/hooks/useAgentName';
+import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+
+/**
+ * Personalizes notification text by replacing {agent} placeholder with custom name or fallback
+ */
+const personalizeNotificationText = (
+  text: string, 
+  agentName: string | null, 
+  personalityType?: UserPersonalityType
+): string => {
+  if (!agentName) {
+    const fallback = personalityType ? `your ${getPersonalityName(personalityType)}` : 'your MMAgent';
+    return text.replace(/\{agent\}/g, fallback);
+  }
+  return text.replace(/\{agent\}/g, agentName);
+};
+
+/**
+ * Get friendly personality type name
+ */
+const getPersonalityName = (personalityType: UserPersonalityType): string => {
+  const names: Record<UserPersonalityType, string> = {
+    wise_aunty: 'Wise Aunty',
+    modern_scholar: 'Modern Scholar',
+    spiritual_guide: 'Spiritual Guide',
+    cultural_bridge: 'Cultural Bridge'
+  };
+  return names[personalityType] || 'MMAgent';
+};
 
 interface Notification {
   id: string;
@@ -27,14 +57,31 @@ interface NotificationItemProps {
   onPress: () => void;
   onDelete: () => void;
   onToggleRead: () => void;
+  personalityType?: UserPersonalityType; // Optional: for better fallback text
 }
 
 export const NotificationItem = ({
   notification,
   onPress,
   onDelete,
-  onToggleRead
+  onToggleRead,
+  personalityType
 }: NotificationItemProps) => {
+  const customAgentName = useAgentName();
+  
+  // Personalize notification text
+  const personalizedTitle = personalizeNotificationText(
+    notification.title, 
+    customAgentName, 
+    personalityType
+  );
+  
+  const personalizedBody = personalizeNotificationText(
+    notification.body,
+    customAgentName,
+    personalityType
+  );
+  
   const getIconComponent = () => {
     const iconClasses = "h-5 w-5";
     
@@ -112,7 +159,7 @@ export const NotificationItem = ({
               "text-sm font-semibold text-foreground",
               !notification.read && "font-bold"
             )}>
-              {notification.title}
+              {personalizedTitle}
             </h4>
             {!notification.read && (
               <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" />
@@ -120,7 +167,7 @@ export const NotificationItem = ({
           </div>
           
           <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
-            {notification.body}
+            {personalizedBody}
           </p>
           
           <div className="flex items-center gap-2 mt-2">

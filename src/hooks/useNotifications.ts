@@ -21,8 +21,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: '1',
     type: 'match',
-    title: 'New Match Available!',
-    body: 'Sarah from North London matches 95% with you',
+    title: 'New Match Available',
+    body: '{agent} found a potential match for you',
     image: '/placeholder.svg',
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
     read: false,
@@ -42,8 +42,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: '3',
     type: 'chaichat',
-    title: 'ChaiChat Conversation Complete',
-    body: 'Your AI agents have finished discussing compatibility with Fatima',
+    title: 'ChaiChat Analysis Complete',
+    body: '{agent} has finished analyzing your compatibility - check the results',
     timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
     read: false,
     actionUrl: '/chaichat',
@@ -53,7 +53,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: '4',
     type: 'achievement',
     title: 'DNA Milestone! 🎉',
-    body: 'Your Values & Beliefs category reached Ultra Rare status',
+    body: '{agent} congratulates you - your Values & Beliefs reached Ultra Rare status!',
     timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
     read: true,
     actionUrl: '/dna',
@@ -62,11 +62,30 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: '5',
     type: 'system',
-    title: 'Weekly Matches Tomorrow',
-    body: 'Your 3 new curated matches arrive Sunday at 9 AM',
+    title: 'Weekly Check-In',
+    body: 'Time for your weekly check-in with {agent}',
     timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
     read: true,
-    data: { action: 'Set Reminder' }
+    data: { action: 'Start Chat' }
+  },
+  {
+    id: '6',
+    type: 'dna',
+    title: 'New Insight Available',
+    body: '{agent} has discovered something interesting about you',
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    read: true,
+    actionUrl: '/insights',
+    data: { action: 'Review Insight' }
+  },
+  {
+    id: '7',
+    type: 'system',
+    title: 'Profile Suggestion',
+    body: '{agent} has a suggestion to improve your profile',
+    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    read: true,
+    actionUrl: '/profile'
   }
 ];
 
