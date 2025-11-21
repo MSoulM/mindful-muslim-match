@@ -133,9 +133,15 @@ const OptimizationDemoScreen = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">
               System Optimization Features
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               Explore the optimization and deduplication components
             </p>
+            <button 
+              onClick={() => navigate('/onboarding/voice-demo')}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Try Voice Onboarding Demo
+            </button>
           </motion.div>
 
           <Tabs defaultValue="insights" className="w-full">
