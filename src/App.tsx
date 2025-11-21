@@ -48,6 +48,7 @@ const DNAQuestionnaireScreen = lazy(() => import("./pages/onboarding/DNAQuestion
 const NotificationsScreen = lazy(() => import("./pages/onboarding/NotificationsScreen"));
 const CommunicationPrefsScreen = lazy(() => import("./pages/onboarding/CommunicationPrefsScreen"));
 const ProfileCompleteScreen = lazy(() => import("./pages/onboarding/ProfileCompleteScreen"));
+const VoiceOnboardingDemo = lazy(() => import("./pages/onboarding/VoiceOnboardingDemo"));
 
 // Lazy load auth screens
 const LoginScreen = lazy(() => import("./pages/auth/LoginScreen").then(m => ({ default: m.LoginScreen })));
@@ -534,6 +535,11 @@ const AnimatedRoutes = () => {
               onNext={() => navigate('/onboarding/complete')}
               onBack={() => navigate('/onboarding/notifications')}
             />
+          </motion.div>
+        } />
+        <Route path="/onboarding/voice-demo" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <VoiceOnboardingDemo />
           </motion.div>
         } />
         <Route path="/onboarding/complete" element={
