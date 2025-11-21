@@ -161,6 +161,12 @@ const OptimizationDemoScreen = () => {
               >
                 Personality Change
               </button>
+              <button 
+                onClick={() => navigate('/settings/cultural-variant')}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Cultural Adaptation
+              </button>
             </div>
           </motion.div>
 
