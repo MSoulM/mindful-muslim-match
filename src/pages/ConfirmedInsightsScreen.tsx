@@ -6,7 +6,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { PremiumCard } from '@/components/ui/animated/PremiumCard';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { EmptyState } from '@/components/ui/states/EmptyState';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';

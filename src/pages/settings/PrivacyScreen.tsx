@@ -4,7 +4,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Badge } from '@/components/ui/badge';
 import { 
   Eye, CheckCheck, MapPin, Image as ImageIcon, 

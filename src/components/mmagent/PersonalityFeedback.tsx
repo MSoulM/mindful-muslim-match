@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ThumbsUp, ThumbsDown, RotateCcw, X } from 'lucide-react';
 import { PersonalityAdjustment, AdjustmentType } from '@/types/personality.types';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 
 const adjustmentTypeLabels: Record<AdjustmentType, string> = {
   warmer: 'warm and friendly',

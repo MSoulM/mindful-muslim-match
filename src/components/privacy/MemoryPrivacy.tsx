@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useMemoryPrivacy } from '@/hooks/useMemoryPrivacy';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,

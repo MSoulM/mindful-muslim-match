@@ -4,7 +4,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { VideoTutorialCard } from '@/components/help/VideoTutorialCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { 
   Play, Pause, Maximize, Eye, Calendar, 
   CheckCircle 

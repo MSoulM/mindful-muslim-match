@@ -10,7 +10,7 @@ import {
   FileText, PauseCircle, Trash2, Info, Send, Shield, Brain
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { MMAgentSettings } from '@/components/settings/MMAgentSettings';
 import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';

@@ -5,7 +5,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { PremiumCard } from '@/components/ui/animated/PremiumCard';
 import { SuccessCelebration } from '@/components/ui/animated/SuccessCelebration';
 import { FloatingParticles } from '@/components/ui/animated/FloatingParticles';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { ReadMore } from '@/components/ui/ReadMore';
 import { FormattedNumber } from '@/components/ui/FormattedNumber';
 import { RelativeTime } from '@/components/ui/RelativeTime';

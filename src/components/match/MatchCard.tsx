@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, ChevronRight, Coffee, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { InfoCard } from '@/components/ui/Cards/InfoCard';
 import { useState } from 'react';
 import { hoverLift } from '@/utils/animations';

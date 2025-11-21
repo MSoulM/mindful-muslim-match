@@ -5,7 +5,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { PersonalityFeedbackContainer, AdjustmentHistory } from '@/components/mmagent';
 import { usePersonalityAdjustment } from '@/hooks/usePersonalityAdjustment';
 import { AdjustmentType } from '@/types/personality.types';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, TrendingUp, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';

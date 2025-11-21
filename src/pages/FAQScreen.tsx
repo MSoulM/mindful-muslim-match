@@ -4,7 +4,7 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { FAQItem } from '@/components/help/FAQItem';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

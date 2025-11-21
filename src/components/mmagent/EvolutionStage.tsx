@@ -4,7 +4,7 @@ import { Info, Sparkles, Brain, Target } from 'lucide-react';
 import { useEvolutionStage } from '@/hooks/useEvolutionStage';
 import { EvolutionStageModal } from './EvolutionStageModal';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { EvolutionStage as EvolutionStageType } from '@/types/memory.types';
 
 const stageConfig = {

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { ProgressiveImage } from '@/components/ui/ProgressiveImage';
 import { CulturalBadge } from './CulturalBadge';
 import { CulturalVariant, applyCulturalVariant } from '@/utils/culturalAdaptation';

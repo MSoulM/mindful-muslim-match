@@ -6,7 +6,7 @@ import { HelpCategoryCard } from '@/components/help/HelpCategoryCard';
 import { HelpArticleItem } from '@/components/help/HelpArticleItem';
 import { VideoTutorialCard } from '@/components/help/VideoTutorialCard';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { 
   Search, X, Rocket, User, Heart, Shield, 

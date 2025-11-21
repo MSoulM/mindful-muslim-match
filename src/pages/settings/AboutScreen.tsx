@@ -4,7 +4,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { PremiumCard } from '@/components/ui/animated/PremiumCard';
 import { MSMLogo } from '@/components/brand/MSMLogo';
 import { Mail, Globe, Heart, Users, Shield, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 
 export default function AboutScreen() {
   const navigate = useNavigate();

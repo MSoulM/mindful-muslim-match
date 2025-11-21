@@ -4,7 +4,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { FeatureCard } from '@/components/ui/Cards/FeatureCard';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/CustomButton';
 import { Badge } from '@/components/ui/badge';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { DepthProgress } from '@/components/profile/DepthProgress';
