@@ -485,6 +485,8 @@ const MessageBubble = ({ message, onToggleImportant, gestures }: MessageBubblePr
 
 // Typing Indicator Component
 const TypingIndicator = () => {
+  const customAgentName = useAgentName();
+  
   return (
     <div className="flex gap-2">
       <Avatar className="h-8 w-8 mt-1">
@@ -494,6 +496,9 @@ const TypingIndicator = () => {
       
       <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-muted">
         <div className="flex gap-1">
+          <span className="text-sm text-muted-foreground">
+            {customAgentName || 'MMAgent'} is typing
+          </span>
           <motion.div
             className="w-2 h-2 bg-muted-foreground rounded-full"
             animate={{ y: [0, -8, 0] }}

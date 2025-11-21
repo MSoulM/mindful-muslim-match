@@ -16,12 +16,14 @@ import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { useChatPerformance } from '@/hooks/useChatPerformance';
 import { useDebouncedTyping } from '@/hooks/useDebouncedTyping';
 import { toast } from 'sonner';
+import { useAgentName } from '@/hooks/useAgentName';
 
 export default function AgentChatScreen() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentThreadId = searchParams.get('threadId');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const customAgentName = useAgentName();
   
   // Connect to chatStore
   const threads = useChatStore((state) => state.threads);
@@ -241,7 +243,7 @@ export default function AgentChatScreen() {
     <div className="relative min-h-screen bg-background" {...swipeHandlers}>
       <TopBar 
         variant="back" 
-        title={currentThread ? currentThread.topic : "MMAgent Chat"}
+        title={currentThread ? currentThread.topic : (customAgentName || "MMAgent Chat")}
         onBackClick={currentThread ? handleBack : () => navigate(-1)}
       />
       
