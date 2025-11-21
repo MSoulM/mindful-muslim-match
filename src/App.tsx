@@ -113,6 +113,9 @@ const ResponsiveDemo = lazy(() => import("./pages/ResponsiveDemo"));
 const AccessibilityDemo = lazy(() => import("./pages/AccessibilityDemo"));
 const PremiumPolishDemo = lazy(() => import("./pages/PremiumPolishDemo"));
 const DepthSystemDemo = lazy(() => import("./pages/DepthSystemDemo"));
+const BehavioralInsightsDemo = lazy(() => import("./pages/BehavioralInsightsDemo"));
+const BehavioralTrackingTestScreen = lazy(() => import("./pages/BehavioralTrackingTestScreen"));
+const TestingHubScreen = lazy(() => import("./pages/TestingHubScreen"));
 const ThreadListTest = lazy(() => import("./pages/ThreadListTest"));
 const ChatViewTest = lazy(() => import("./pages/ChatViewTest"));
 const PersonalityQuizTest = lazy(() => import("./pages/PersonalityQuizTest"));
@@ -486,6 +489,21 @@ const AnimatedRoutes = () => {
         <Route path="/depth-demo" element={
           <motion.div {...pageTransition} transition={pageTransitionConfig}>
             <DepthSystemDemo />
+          </motion.div>
+        } />
+        <Route path="/testing-hub" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <TestingHubScreen />
+          </motion.div>
+        } />
+        <Route path="/behavioral-insights-demo" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <BehavioralInsightsDemo />
+          </motion.div>
+        } />
+        <Route path="/behavioral-tracking-test" element={
+          <motion.div {...pageTransition} transition={pageTransitionConfig}>
+            <BehavioralTrackingTestScreen />
           </motion.div>
         } />
         
