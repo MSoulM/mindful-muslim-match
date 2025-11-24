@@ -1,0 +1,137 @@
+-- Migration: Create `profiles` and `profile_photos` tables
+-- Date: 2025-11-23
+-- Notes: Designed for Supabase (Postgres). Uses jsonb for flexible fields,
+-- gen_random_uuid() from pgcrypto for UUIDs, GIN indexes for jsonb/search,
+-- and triggers for search vector and updated_at.
+
+-- Enable extension often required for gen_random_uuid() in some Supabase setups
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  clerk_user_id text NOT NULL UNIQUE,
+
+  -- Basic profile fields
+  display_name text,
+  first_name text,
+  last_name text,
+  birthdate date,
+  gender text,
+  gender_preference text[],
+  bio text,
+
+  -- Photos (denormalized) and a quick-access primary photo URL
+  photos jsonb DEFAULT '[]'::jsonb,
+  primary_photo_url text,
+
+  -- Location / geolocation
+  location jsonb,
+  lat numeric(10,6),
+  lng numeric(10,6),
+
+  -- Flexible attributes
+  languages text[],
+  religion jsonb,
+  preferences jsonb DEFAULT '{}'::jsonb,
+  dna_score numeric,
+  dna_traits jsonb DEFAULT '{}'::jsonb,
+
+  -- Onboarding / visibility / moderation
+  onboarding_completed boolean DEFAULT false,
+  profile_visibility text DEFAULT 'members', -- allowed: public, members, private, hidden
+  is_matchable boolean DEFAULT true,
+  is_verified boolean DEFAULT false,
+  phone_verified boolean DEFAULT false,
+  email_verified boolean DEFAULT false,
+  subscription_tier text DEFAULT 'free',
+  preferences_notifications jsonb DEFAULT '{}'::jsonb,
+  tags text[],
+  settings_privacy jsonb DEFAULT '{}'::jsonb,
+  report_count integer DEFAULT 0,
+  status_text text,
+
+  -- Activity + soft delete
+  last_active_at timestamptz,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  deleted_at timestamptz
+);
+
+-- Constrain profile_visibility to known values to avoid typos and make queries reliable
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_visibility CHECK (profile_visibility IN ('public','members','private','hidden'));
+
+-- Profile photos table (normalized). Use this if you want per-photo metadata and queries.
+CREATE TABLE IF NOT EXISTS profile_photos (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  profile_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  url text NOT NULL,
+  storage_path text,
+  is_primary boolean DEFAULT false,
+  uploaded_at timestamptz DEFAULT now(),
+  approved boolean DEFAULT false,
+  metadata jsonb DEFAULT '{}'::jsonb
+);
+
+-- Ensure at most one primary photo per profile (partial unique index)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profile_photos_one_primary_per_profile
+  ON profile_photos(profile_id)
+  WHERE (is_primary = true);
+
+-- Triggers / helper functions
+-- Auto-update `updated_at` timestamp
+CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_profiles_set_timestamp ON profiles;
+CREATE TRIGGER trg_profiles_set_timestamp
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+
+-- Full-text search vector for display_name + bio
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS search_vector tsvector;
+
+CREATE OR REPLACE FUNCTION profiles_search_vector_trigger() RETURNS trigger AS $$
+BEGIN
+  NEW.search_vector := to_tsvector('english', coalesce(NEW.display_name,'') || ' ' || coalesce(NEW.bio,''));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_profiles_search_vector ON profiles;
+CREATE TRIGGER trg_profiles_search_vector
+  BEFORE INSERT OR UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION profiles_search_vector_trigger();
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_profiles_clerk_user_id ON profiles(clerk_user_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_last_active ON profiles(last_active_at);
+CREATE INDEX IF NOT EXISTS idx_profiles_search_vector ON profiles USING gin (search_vector);
+
+-- GIN indexes for frequently queried jsonb fields
+CREATE INDEX IF NOT EXISTS idx_profiles_preferences_gin ON profiles USING gin (preferences);
+CREATE INDEX IF NOT EXISTS idx_profiles_dna_traits_gin ON profiles USING gin (dna_traits);
+CREATE INDEX IF NOT EXISTS idx_profiles_location_gin ON profiles USING gin (location jsonb_path_ops);
+
+-- Index for lat/lng pair queries (if not using PostGIS). Consider a composite btree index if you query by lat then lng.
+CREATE INDEX IF NOT EXISTS idx_profiles_lat_lng ON profiles (lat, lng);
+
+-- Helpful index on tags and languages
+CREATE INDEX IF NOT EXISTS idx_profiles_tags_gin ON profiles USING gin (tags);
+CREATE INDEX IF NOT EXISTS idx_profiles_languages_gin ON profiles USING gin (languages);
+
+-- NOTE: If you enable PostGIS, consider converting lat/lng to a geometry/point and creating a spatial index instead.
+
+-- OPTIMIZATIONS & TIPS:
+-- 1) Use `profile_photos` for queries per-photo (reporting, moderation, likes). Keep `photos` jsonb as a denormalized cache for fast reads if desired.
+-- 2) Add row-level security policies (RLS) appropriate for Supabase to restrict access.
+-- 3) Use GIN indexes on jsonb columns you filter by. For occasional/analytic fields, avoid indexing until patterns stabilize.
+-- 4) Implement a background job to synchronize `primary_photo_url` from `profile_photos` when a primary photo changes, or maintain it in app logic.
+
+-- END OF MIGRATION
