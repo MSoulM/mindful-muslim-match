@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useClerk } from '@clerk/clerk-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
@@ -39,6 +40,7 @@ const ProfileScreen = () => {
   const { overallScore } = useDNA();
   const { notificationCount } = useApp();
   const { premiumState } = usePremium();
+  const { signOut } = useClerk();
   
   // Check if user is premium
   const isPremium = premiumState.isSubscribed;
@@ -66,11 +68,9 @@ const ProfileScreen = () => {
     navigate(`/${tabId}`);
   };
 
-  const handleSignOut = () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
-      logout();
-      navigate('/');
-    }
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth/sign-in');
   };
 
   const handlePauseProfile = () => {
@@ -318,10 +318,10 @@ const ProfileScreen = () => {
             <Pause className="w-5 h-5 mr-2" />
             Pause Profile
           </Button>
-          
+
           <button
             onClick={handleSignOut}
-            className="w-full text-center text-muted-foreground py-3 text-sm"
+            className="w-full text-center text-muted-foreground py-3 text-sm hover:bg-muted rounded-lg"
           >
             Sign Out
           </button>
