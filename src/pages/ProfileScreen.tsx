@@ -42,25 +42,34 @@ const ProfileScreen = () => {
   const { premiumState } = usePremium();
   const { signOut } = useClerk();
   
+  
   // Check if user is premium
   const isPremium = premiumState.isSubscribed;
 
-  // Mock category completion data (TODO: Replace with actual data from profile completion system)
-  const categoryProgress = {
-    values: 74,
-    interests: 50,
-    goals: 85,
-    lifestyle: 60,
-    family: 40,
+
+  // Category completion data (defaults are set in useProfile hook)
+  const categoryProgress = user?.categoryProgress || {
+    values: user?.valuesCompletion ?? 0,
+    interests: user?.interestsCompletion ?? 0,
+    goals: user?.goalsCompletion ?? 0,
+    lifestyle: user?.lifestyleCompletion ?? 0,
+    family: user?.familyCompletion ?? 0,
   };
 
-  // Mock content type data (TODO: Replace with actual data from user content)
-  const contentTypeData = {
-    text: 12,
-    photo: 4,
-    voice: 3,
-    video: 1,
+  // Content type data (defaults are set in useProfile hook)
+  const contentTypeData = user?.contentTypeData || {
+    text: user?.textCount ?? 0,
+    photo: user?.photoCount ?? 0,
+    voice: user?.voiceCount ?? 0,
+    video: user?.videoCount ?? 0,
   };
+
+
+  // Avatar logic
+  const avatarUrl = user?.primaryPhotoUrl || '';
+  const displayInitials = user?.firstName?.[0] && user?.lastName?.[0]
+    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    : 'U';
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -94,7 +103,7 @@ const ProfileScreen = () => {
       <TopBar 
         variant="logo" 
         notificationCount={notificationCount}
-        userInitials={user.initials}
+        userInitials={displayInitials}
         onNotificationClick={() => navigate('/notifications')}
         onProfileClick={() => {}}
       />
@@ -114,22 +123,31 @@ const ProfileScreen = () => {
           </button>
 
           {/* Avatar */}
+
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleEditAvatar}
-            className="relative inline-block mb-4"
+            className="inline-block mb-4"
           >
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/30 to-primary/60 flex items-center justify-center">
-              <span className="text-3xl font-bold text-white">{user.initials}</span>
-            </div>
-            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-background">
-              <Camera className="w-4 h-4 text-primary-foreground" />
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profile avatar"
+                className="w-24 h-24 rounded-full object-cover border-4 border-primary/20"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/30 to-primary/60 flex items-center justify-center">
+                <span className="text-3xl font-bold text-white">{displayInitials}</span>
+              </div>
+            )}
           </motion.button>
 
           {/* Name & Bio */}
-          <h1 className="text-2xl font-bold text-foreground mb-1">{user.name}</h1>
-          <p className="text-sm text-muted-foreground mb-2">{user.location} • {user.age}</p>
+          <h1 className="text-2xl font-bold text-foreground mb-1">{[user.firstName, user.lastName].filter(Boolean).join(' ')}</h1>
+          <p className="text-sm text-muted-foreground mb-2">
+            {user.location}
+            {user.birthdate ? ` • Age ${Math.floor((Date.now() - new Date(user.birthdate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}` : ''}
+          </p>
           <p className="text-sm text-foreground/80 max-w-md mx-auto">
             {user.bio}
           </p>
@@ -144,11 +162,11 @@ const ProfileScreen = () => {
                 <div className="text-xs text-white/80">DNA</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{user.matchCount}</div>
+                <div className="text-2xl font-bold text-white">{user.matchCount ?? 0}</div>
                 <div className="text-xs text-white/80">Matches</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{user.activeDays}d</div>
+                <div className="text-2xl font-bold text-white">{user.activeDays ?? 0}d</div>
                 <div className="text-xs text-white/80">Active</div>
               </div>
             </div>

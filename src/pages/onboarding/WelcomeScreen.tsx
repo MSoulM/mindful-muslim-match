@@ -50,7 +50,7 @@ export const WelcomeScreen = ({ onGetStarted, onSignIn }: WelcomeScreenProps) =>
     if (onSignIn) {
       onSignIn();
     } else {
-      navigate('/auth/login');
+      navigate('/auth/sign-in');
     }
   };
 
