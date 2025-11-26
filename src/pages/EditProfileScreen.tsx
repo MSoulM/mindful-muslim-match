@@ -1,13 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { Button } from '@/components/ui/CustomButton';
 import { MobileTextInput } from '@/components/ui/Input/MobileTextInput';
 import { MobileTextArea } from '@/components/ui/Input/MobileTextArea';
-import { Camera, MapPin, Calendar, X } from 'lucide-react';
+import { Camera, MapPin, X } from 'lucide-react';
+import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
+import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { compressImage } from '@/utils/imageCompression';
 import { CropModal } from '@/components/ui/CropModal';
@@ -15,30 +19,137 @@ import { CropModal } from '@/components/ui/CropModal';
 const EditProfileScreen = () => {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { getToken } = useAuth();
+  const { updateProfile } = useProfile();
   
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    bio: user?.bio || '',
-    location: user?.location || '',
-    age: user?.age || '',
+    name: '',
+    bio: '',
+    location: '',
+    birthdate: undefined as Date | undefined,
+  });
+
+  const [originalFormData, setOriginalFormData] = useState({
+    name: '',
+    bio: '',
+    location: '',
+    birthdate: undefined as Date | undefined,
+    photoUrl: null as string | null,
   });
 
   const [isSaving, setIsSaving] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(user?.primaryPhotoUrl || null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync form data when user profile loads
+  useEffect(() => {
+    if (user) {
+      const initialData = {
+        name: [user.firstName, user.lastName].filter(Boolean).join(' '),
+        bio: user.bio || '',
+        location: user.location || '',
+        birthdate: user.birthdate ? new Date(user.birthdate) : undefined,
+      };
+      setFormData(initialData);
+      setOriginalFormData({
+        ...initialData,
+        photoUrl: user.primaryPhotoUrl || null,
+      });
+      if (user.primaryPhotoUrl) {
+        setPhotoPreview(user.primaryPhotoUrl);
+      }
+    }
+  }, [user]);
+
+  // Check if form has changed
+  const hasChanged = () => {
+    return (
+      formData.name !== originalFormData.name ||
+      formData.bio !== originalFormData.bio ||
+      formData.location !== originalFormData.location ||
+      (formData.birthdate?.getTime() !== originalFormData.birthdate?.getTime()) ||
+      photoPreview !== originalFormData.photoUrl
+    );
+  };
+
+  // Upload the photo independently, returns the public URL or null on failure
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!user || !photoFile) return photoPreview;
+
+    try {
+      setIsUploadingPhoto(true);
+
+      const userId = user.id;
+      const filePath = `${userId}/avatar_images/${Date.now()}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('users')
+        .upload(filePath, photoFile, { cacheControl: '3600', upsert: true });
+
+      console.log('uploadError', uploadError);
+      
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Failed to upload avatar');
+      }
+      
+      const { data } = supabase.storage
+        .from('users')
+        .getPublicUrl(filePath);
+      
+      const publicUrl = data.publicUrl;
+      toast.success('Photo uploaded successfully!');
+
+      // Once uploaded, we can clear the local file but keep the preview + URL
+      setPhotoFile(null);
+      setPhotoPreview(publicUrl);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      toast.error('Failed to upload photo.');
+      return null;
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   const handleSave = async () => {
+    if (!user) return;
+
     setIsSaving(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      let uploadedPhotoUrl = photoPreview;
+
+      // If there is a pending local photo file, upload it first
+      if (photoFile) {
+        const newUrl = await uploadPhoto();
+        if (newUrl) {
+          uploadedPhotoUrl = newUrl;
+        }
+      }
+
+      await updateProfile({
+        firstName: formData.name.split(' ')[0] || '',
+        lastName: formData.name.split(' ')[1] || '',
+        bio: formData.bio,
+        location: formData.location || undefined,
+        birthdate: formData.birthdate ? formData.birthdate.toISOString().slice(0, 10) : undefined,
+        primaryPhotoUrl: uploadedPhotoUrl || undefined,
+      });
+
       toast.success('Profile updated successfully!');
       navigate('/profile');
-    }, 1000);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      toast.error('Failed to save profile. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePhotoEdit = () => {
@@ -101,8 +212,10 @@ const EditProfileScreen = () => {
         URL.revokeObjectURL(photoPreview);
       }
       
+      // Store the compressed file and preview
+      setPhotoFile(compressedFile);
       setPhotoPreview(previewUrl);
-      toast.success('Photo cropped and uploaded successfully!');
+      toast.success('Photo cropped successfully!');
     } catch (error) {
       console.error('Error processing cropped image:', error);
       toast.error('Failed to process cropped image');
@@ -126,6 +239,12 @@ const EditProfileScreen = () => {
       fileInputRef.current.value = '';
     }
   };
+
+  if (!user) return null;
+
+  const displayInitials = user?.firstName?.[0] && user?.lastName?.[0] 
+    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    : 'U';
 
   if (!user) return null;
 
@@ -156,7 +275,7 @@ const EditProfileScreen = () => {
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handlePhotoEdit}
-            disabled={isCompressing}
+            disabled={isCompressing || isUploadingPhoto}
             className="relative inline-block"
           >
             {photoPreview ? (
@@ -167,11 +286,15 @@ const EditProfileScreen = () => {
               />
             ) : (
               <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/30 to-primary/60 flex items-center justify-center">
-                <span className="text-4xl font-bold text-white">{user.initials}</span>
+                <span className="text-4xl font-bold text-white">{displayInitials}</span>
               </div>
             )}
             <div className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center border-4 border-background shadow-lg">
-              <Camera className="w-5 h-5 text-primary-foreground" />
+              {isUploadingPhoto ? (
+                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera className="w-5 h-5 text-primary-foreground" />
+              )}
             </div>
           </motion.button>
           
@@ -188,7 +311,11 @@ const EditProfileScreen = () => {
           )}
           
           <p className="text-sm text-muted-foreground mt-3">
-            {isCompressing ? 'Compressing image...' : 'Tap to change photo'}
+            {isUploadingPhoto
+              ? 'Uploading photo...'
+              : isCompressing
+              ? 'Compressing image...'
+              : 'Tap to change photo'}
           </p>
           
           {/* Hidden file input */}
@@ -237,16 +364,15 @@ const EditProfileScreen = () => {
             floatingLabel={false}
           />
 
-          {/* Age */}
-          <MobileTextInput
-            label="Age"
-            value={String(formData.age)}
-            onChange={(value) => setFormData({ ...formData, age: value })}
-            placeholder="Your age"
-            type="number"
-            icon={<Calendar className="w-5 h-5" />}
-            floatingLabel={false}
-          />
+          <div>
+            <label className="text-sm font-semibold text-foreground block mb-2">Date of Birth</label>
+            <CustomDatePicker
+              value={formData.birthdate}
+              onChange={(d) => setFormData(prev => ({ ...prev, birthdate: d ?? undefined }))}
+              minDate={new Date('1940-01-01')}
+              maxDate={new Date()}
+            />
+          </div>
         </div>
 
         {/* Save Button */}
@@ -254,7 +380,7 @@ const EditProfileScreen = () => {
           <Button
             size="lg"
             onClick={handleSave}
-            disabled={isSaving || !formData.name}
+            disabled={isSaving || isUploadingPhoto || !formData.name || !hasChanged()}
             className="w-full"
           >
             {isSaving ? 'Saving...' : 'Save Changes'}

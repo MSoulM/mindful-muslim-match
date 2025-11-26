@@ -1,24 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useUser as useClerkUser } from '@clerk/clerk-react';
+import { useProfile } from '@/hooks/useProfile';
+import { Profile } from '@/types/profile';
 
-export interface User {
-  id: string;
-  name: string;
-  age: number;
-  location: string;
-  bio: string;
-  initials: string;
-  profilePhoto?: string;
-  emoji: string;
-  dnaScore: number;
-  matchCount: number;
-  activeDays: number;
-  values: string[];
-  preferences: {
-    ageRange: [number, number];
-    distance: number;
-    values: string[];
-  };
-}
+// User is just Profile from Supabase
+export type User = Profile;
 
 interface UserContextType {
   user: User | null;
@@ -29,71 +15,36 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | null>(null);
 
-const mockUserData: User = {
-  id: 'user-1',
-  name: 'Ahmed Khan',
-  age: 32,
-  location: 'London, UK',
-  bio: 'Seeking a life partner to build a blessed family together. Software engineer with a passion for community service.',
-  initials: 'AK',
-  emoji: '👨‍💻',
-  dnaScore: 95,
-  matchCount: 12,
-  activeDays: 67,
-  values: ['Family First', 'Faith', 'Growth', 'Community'],
-  preferences: {
-    ageRange: [25, 35],
-    distance: 50,
-    values: ['Family', 'Faith', 'Career', 'Health']
-  }
-};
-
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user: ClerkUser, isSignedIn } = useClerkUser();
+  const { profile, isLoading: profileLoading, updateProfile } = useProfile();
   const [loading, setLoading] = useState(true);
-  
-  // Load from localStorage on mount
+
+  // Sync loading state with profile loading
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const stored = localStorage.getItem('matchme_user');
-        if (stored) {
-          setUser(JSON.parse(stored));
-        } else {
-          // Load default/mock user
-          setUser(mockUserData);
-          localStorage.setItem('matchme_user', JSON.stringify(mockUserData));
-        }
-      } catch (error) {
-        console.error('Failed to load user:', error);
-        setUser(mockUserData);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadUser();
-  }, []);
-  
+    setLoading(profileLoading);
+  }, [profileLoading]);
+
   const updateUser = async (updates: Partial<User>) => {
-    setUser(prev => {
-      if (!prev) return null;
-      const updated = { ...prev, ...updates };
-      localStorage.setItem('matchme_user', JSON.stringify(updated));
-      return updated;
-    });
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
+    if (!profile) throw new Error('No user profile loaded');
+    try {
+      await updateProfile(updates);
+    } catch (error) {
+      console.error('Failed to update user profile:', error);
+      throw error;
+    }
   };
-  
+
   const logout = () => {
-    setUser(null);
+    // Clerk handles logout, but we can clear local data if needed
     localStorage.removeItem('matchme_user');
     localStorage.removeItem('matchme_matches');
     localStorage.removeItem('matchme_dna');
   };
-  
+
+  // Return null user if not signed in
+  const user = isSignedIn && profile ? profile : null;
+
   return (
     <UserContext.Provider value={{ user, loading, updateUser, logout }}>
       {children}

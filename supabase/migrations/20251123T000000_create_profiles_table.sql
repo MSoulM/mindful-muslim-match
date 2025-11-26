@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS profiles (
   clerk_user_id text NOT NULL UNIQUE,
 
   -- Basic profile fields
-  display_name text,
   first_name text,
   last_name text,
   birthdate date,
@@ -26,7 +25,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   primary_photo_url text,
 
   -- Location / geolocation
-  location jsonb,
+  location text,
   lat numeric(10,6),
   lng numeric(10,6),
 
@@ -94,12 +93,12 @@ CREATE TRIGGER trg_profiles_set_timestamp
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 
--- Full-text search vector for display_name + bio
+-- Full-text search vector for name + bio
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
 CREATE OR REPLACE FUNCTION profiles_search_vector_trigger() RETURNS trigger AS $$
 BEGIN
-  NEW.search_vector := to_tsvector('english', coalesce(NEW.display_name,'') || ' ' || coalesce(NEW.bio,''));
+  NEW.search_vector := to_tsvector('english', coalesce(NEW.first_name,'') || coalesce(NEW.last_name, '') || ' ' || coalesce(NEW.bio,''));
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -117,7 +116,9 @@ CREATE INDEX IF NOT EXISTS idx_profiles_search_vector ON profiles USING gin (sea
 -- GIN indexes for frequently queried jsonb fields
 CREATE INDEX IF NOT EXISTS idx_profiles_preferences_gin ON profiles USING gin (preferences);
 CREATE INDEX IF NOT EXISTS idx_profiles_dna_traits_gin ON profiles USING gin (dna_traits);
-CREATE INDEX IF NOT EXISTS idx_profiles_location_gin ON profiles USING gin (location jsonb_path_ops);
+
+-- Text search index on location for city/region searching
+CREATE INDEX IF NOT EXISTS idx_profiles_location_text ON profiles (location);
 
 -- Index for lat/lng pair queries (if not using PostGIS). Consider a composite btree index if you query by lat then lng.
 CREATE INDEX IF NOT EXISTS idx_profiles_lat_lng ON profiles (lat, lng);

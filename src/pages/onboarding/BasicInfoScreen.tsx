@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar } from 'lucide-react';
+import { ArrowLeft, MapPin } from 'lucide-react';
 import { SafeArea } from '@/components/utils/SafeArea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -213,44 +212,15 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
                 <label className="text-sm font-semibold text-foreground">
                   Date of Birth <span className="text-destructive">*</span>
                 </label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full h-12 justify-start text-left font-normal rounded-xl",
-                        !formData.birthDate && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-5 w-5" />
-                      {formData.birthDate ? (
-                        <span>
-                          {format(formData.birthDate, "dd/MM/yyyy")}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            ({calculateAge(formData.birthDate)} years old)
-                          </span>
-                        </span>
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50 bg-white" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={formData.birthDate}
-                      onSelect={(date) => {
-                        setFormData(prev => ({ ...prev, birthDate: date }));
-                        setErrors(prev => ({ ...prev, birthDate: '' }));
-                      }}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date('1940-01-01')
-                      }
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <CustomDatePicker
+                  value={formData.birthDate}
+                  onChange={(date) => {
+                    setFormData(prev => ({ ...prev, birthDate: date ?? undefined }));
+                    setErrors(prev => ({ ...prev, birthDate: '' }));
+                  }}
+                  minDate={new Date('1940-01-01')}
+                  maxDate={new Date()}
+                />
                 {errors.birthDate && (
                   <p className="text-xs text-destructive">{errors.birthDate}</p>
                 )}
