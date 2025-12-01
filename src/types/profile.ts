@@ -47,6 +47,36 @@ export interface Profile {
   updatedAt?: string;
   deletedAt?: string | null;
   
+  // Interests & Hobbies (Category 2)
+  hobbies?: string[];
+  dietaryPreferences?: string[];
+  pets?: boolean;
+  
+  // Relationship Goals (Category 3)
+  maritalStatus?: 'never_married' | 'divorced' | 'widowed';
+  hasChildren?: boolean;
+  childrenCount?: number;
+  wantsChildren?: boolean;
+  
+  // Lifestyle & Personality (Category 4)
+  educationLevel?: string;
+  occupation?: string;
+  industry?: string;
+  annualIncomeRange?: string;
+  smoking?: 'never' | 'previously' | 'current';
+  exerciseFrequency?: 'daily' | 'regular' | 'sometimes' | 'never';
+  height?: number;
+  build?: string;
+  ethnicity?: string;
+  
+  // Family & Culture (Category 5)
+  familyStructure?: 'nuclear' | 'extended' | 'other';
+  parentsMaritalStatus?: 'together' | 'separated' | 'deceased' | 'other';
+  numberOfSiblings?: number;
+  familyValues?: 'traditional' | 'modern' | 'balanced';
+  culturalTraditions?: string;
+  hometown?: string;
+  
   // Profile completion metrics (stored in preferences or as computed)
   categoryProgress?: {
     values: number;

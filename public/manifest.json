@@ -9,12 +9,12 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/mysouldna-logo.jpg",
+      "src": "/mysouldna-logo.png",
       "sizes": "192x192",
       "type": "image/jpeg"
     },
     {
-      "src": "/mysouldna-logo.jpg",
+      "src": "/mysouldna-logo.png",
       "sizes": "512x512",
       "type": "image/jpeg"
     }

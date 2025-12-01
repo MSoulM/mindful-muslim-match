@@ -1,17 +1,9 @@
--- Migration: Create `profiles` and `profile_photos` tables
--- Date: 2025-11-23
--- Notes: Designed for Supabase (Postgres). Uses jsonb for flexible fields,
--- gen_random_uuid() from pgcrypto for UUIDs, GIN indexes for jsonb/search,
--- and triggers for search vector and updated_at.
-
--- Enable extension often required for gen_random_uuid() in some Supabase setups
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Profiles table
 CREATE TABLE IF NOT EXISTS profiles (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   clerk_user_id text NOT NULL UNIQUE,
-
   -- Basic profile fields
   first_name text,
   last_name text,
@@ -32,9 +24,18 @@ CREATE TABLE IF NOT EXISTS profiles (
   -- Flexible attributes
   languages text[],
   religion jsonb,
+  hobbies text[],
+  dietary_preferences text[],
+  pets boolean,
   preferences jsonb DEFAULT '{}'::jsonb,
   dna_score numeric,
   dna_traits jsonb DEFAULT '{}'::jsonb,
+
+  -- Relationship goals
+  marital_status text,
+  has_children boolean,
+  children_count integer,
+  wants_children boolean,
 
   -- Onboarding / visibility / moderation
   onboarding_completed boolean DEFAULT false,
@@ -50,6 +51,25 @@ CREATE TABLE IF NOT EXISTS profiles (
   report_count integer DEFAULT 0,
   status_text text,
 
+  -- Lifestyle & personality
+  education_level text,
+  occupation text,
+  industry text,
+  annual_income_range text,
+  smoking text,
+  exercise_frequency text,
+  height numeric(5,2),
+  build text,
+  ethnicity text,
+
+  -- Family & cultural data
+  family_structure text,
+  parents_marital_status text,
+  number_of_siblings integer,
+  family_values text,
+  cultural_traditions text,
+  hometown text,
+
   -- Activity + soft delete
   last_active_at timestamptz,
   created_at timestamptz DEFAULT now(),
@@ -60,6 +80,42 @@ CREATE TABLE IF NOT EXISTS profiles (
 -- Constrain profile_visibility to known values to avoid typos and make queries reliable
 ALTER TABLE profiles
   ADD CONSTRAINT chk_profiles_visibility CHECK (profile_visibility IN ('public','members','private','hidden'));
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_marital_status
+    CHECK (marital_status IS NULL OR marital_status IN ('never_married','divorced','widowed'));
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_smoking
+    CHECK (smoking IS NULL OR smoking IN ('never','previously','current'));
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_exercise_frequency
+    CHECK (exercise_frequency IS NULL OR exercise_frequency IN ('daily','regular','sometimes','never'));
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_family_structure
+    CHECK (family_structure IS NULL OR family_structure IN ('nuclear','extended','other'));
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_parents_marital_status
+    CHECK (parents_marital_status IS NULL OR parents_marital_status IN ('together','separated','deceased','other'));
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_family_values
+    CHECK (family_values IS NULL OR family_values IN ('traditional','modern','balanced'));
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_children_count
+    CHECK (children_count IS NULL OR children_count >= 0);
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_number_of_siblings
+    CHECK (number_of_siblings IS NULL OR number_of_siblings >= 0);
+
+ALTER TABLE profiles
+  ADD CONSTRAINT chk_profiles_height
+    CHECK (height IS NULL OR (height > 0 AND height < 300));
 
 -- Profile photos table (normalized). Use this if you want per-photo metadata and queries.
 CREATE TABLE IF NOT EXISTS profile_photos (
@@ -127,12 +183,13 @@ CREATE INDEX IF NOT EXISTS idx_profiles_lat_lng ON profiles (lat, lng);
 CREATE INDEX IF NOT EXISTS idx_profiles_tags_gin ON profiles USING gin (tags);
 CREATE INDEX IF NOT EXISTS idx_profiles_languages_gin ON profiles USING gin (languages);
 
--- NOTE: If you enable PostGIS, consider converting lat/lng to a geometry/point and creating a spatial index instead.
-
--- OPTIMIZATIONS & TIPS:
--- 1) Use `profile_photos` for queries per-photo (reporting, moderation, likes). Keep `photos` jsonb as a denormalized cache for fast reads if desired.
--- 2) Add row-level security policies (RLS) appropriate for Supabase to restrict access.
--- 3) Use GIN indexes on jsonb columns you filter by. For occasional/analytic fields, avoid indexing until patterns stabilize.
--- 4) Implement a background job to synchronize `primary_photo_url` from `profile_photos` when a primary photo changes, or maintain it in app logic.
-
--- END OF MIGRATION
+CREATE INDEX IF NOT EXISTS idx_profiles_marital_status ON profiles (marital_status);
+CREATE INDEX IF NOT EXISTS idx_profiles_has_children ON profiles (has_children);
+CREATE INDEX IF NOT EXISTS idx_profiles_wants_children ON profiles (wants_children);
+CREATE INDEX IF NOT EXISTS idx_profiles_education_level ON profiles (education_level);
+CREATE INDEX IF NOT EXISTS idx_profiles_smoking ON profiles (smoking);
+CREATE INDEX IF NOT EXISTS idx_profiles_exercise_frequency ON profiles (exercise_frequency);
+CREATE INDEX IF NOT EXISTS idx_profiles_ethnicity ON profiles (ethnicity);
+CREATE INDEX IF NOT EXISTS idx_profiles_family_structure ON profiles (family_structure);
+CREATE INDEX IF NOT EXISTS idx_profiles_hobbies_gin ON profiles USING gin (hobbies);
+CREATE INDEX IF NOT EXISTS idx_profiles_dietary_preferences_gin ON profiles USING gin (dietary_preferences);
