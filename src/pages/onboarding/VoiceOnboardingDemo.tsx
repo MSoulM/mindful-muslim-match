@@ -4,29 +4,12 @@ import { VoiceRegistration } from '@/components/onboarding/VoiceRegistration';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { toast } from 'sonner';
+import { VOICE_ONBOARDING_QUESTIONS } from '@/config/onboardingConstants';
 
 export default function VoiceOnboardingDemo() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [responses, setResponses] = useState<string[]>([]);
-
-  const questions = [
-    {
-      prompt: "Tell us about yourself",
-      subtitle: "Share what makes you unique",
-      minWords: 10
-    },
-    {
-      prompt: "What are your values and beliefs?",
-      subtitle: "What matters most to you in life?",
-      minWords: 15
-    },
-    {
-      prompt: "Describe your ideal relationship",
-      subtitle: "What does your perfect partnership look like?",
-      minWords: 20
-    }
-  ];
 
   const handleComplete = (transcript: string) => {
     const newResponses = [...responses, transcript];
@@ -36,7 +19,7 @@ export default function VoiceOnboardingDemo() {
       description: `${transcript.split(/\s+/).length} words captured`
     });
 
-    if (step < questions.length - 1) {
+    if (step < VOICE_ONBOARDING_QUESTIONS.length - 1) {
       setStep(step + 1);
     } else {
       // All questions complete
@@ -49,7 +32,7 @@ export default function VoiceOnboardingDemo() {
     }
   };
 
-  const currentQuestion = questions[step];
+  const currentQuestion = VOICE_ONBOARDING_QUESTIONS[step];
 
   return (
     <ScreenContainer>
@@ -64,16 +47,16 @@ export default function VoiceOnboardingDemo() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">
-              Question {step + 1} of {questions.length}
+              Question {step + 1} of {VOICE_ONBOARDING_QUESTIONS.length}
             </span>
             <span className="text-sm font-medium">
-              {Math.round(((step) / questions.length) * 100)}% Complete
+              {Math.round(((step) / VOICE_ONBOARDING_QUESTIONS.length) * 100)}% Complete
             </span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary transition-all duration-500"
-              style={{ width: `${((step) / questions.length) * 100}%` }}
+              style={{ width: `${((step) / VOICE_ONBOARDING_QUESTIONS.length) * 100}%` }}
             />
           </div>
         </div>
