@@ -74,8 +74,8 @@ export const WelcomeScreen = ({ onGetStarted, onSignIn }: WelcomeScreenProps) =>
           <div className="flex-1 flex flex-col items-center justify-center pt-12 pb-8">
             <div className="text-center space-y-4 px-6">
               <div className="flex justify-center mb-8">
-                <div className="filter brightness-0 invert">
-                  <MSMLogo variant="full" />
+                <div className="filter w-full max-w-xs">
+                  <MSMLogo variant="full" className="justify-center" />
                 </div>
               </div>
               <p className="text-lg font-medium text-white/90">
@@ -87,7 +87,7 @@ export const WelcomeScreen = ({ onGetStarted, onSignIn }: WelcomeScreenProps) =>
           {/* Feature Cards - Horizontal Scroll */}
           <div className="pb-8">
             <div className="relative px-6">
-              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2">
+              <div className="flex justify-around gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2">
                 {features.map((feature, index) => (
                   <div
                     key={index}

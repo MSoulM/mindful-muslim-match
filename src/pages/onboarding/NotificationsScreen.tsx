@@ -2,49 +2,47 @@ import { motion } from 'framer-motion';
 import { Bell, Lock, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-
-interface NotificationsScreenProps {
-  onAllow: () => void;
-  onSkip: () => void;
-}
-
-const benefits = [
-  {
-    icon: '💕',
-    title: 'New Matches',
-    description: 'Know when someone special appears'
-  },
-  {
-    icon: '💬',
-    title: 'Messages',
-    description: 'Stay engaged in conversations'
-  },
-  {
-    icon: '🤖',
-    title: 'AI Insights',
-    description: 'Get personalized compatibility updates'
-  },
-  {
-    icon: '📅',
-    title: 'Weekly Updates',
-    description: 'New ChaiChat conversations every Sunday'
-  }
-];
+import { NotificationsScreenProps } from '@/types/onboarding';
+import {
+  NOTIFICATIONS_SCREEN,
+  NOTIFICATION_BENEFITS
+} from '@/config/onboardingConstants';
+import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 
 export default function NotificationsScreen({ onAllow, onSkip }: NotificationsScreenProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
+  const { updateChannelFlags, isSaving } = useNotificationSettings();
 
   const handleAllow = async () => {
-    setIsLoading(true);
-    // Request notification permission
-    if ('Notification' in window) {
-      await Notification.requestPermission();
+    try {
+      setIsRequestingPermission(true);
+      let granted = true;
+
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        granted = permission === 'granted';
+      }
+
+      await updateChannelFlags({ pushEnabled: granted });
+
+      setTimeout(() => {
+        setIsRequestingPermission(false);
+        onAllow();
+      }, 300);
+    } catch (error) {
+      console.error('Failed to enable notifications', error);
+      setIsRequestingPermission(false);
     }
-    setTimeout(() => {
-      setIsLoading(false);
-      onAllow();
-    }, 500);
+  };
+
+  const handleSkip = async () => {
+    try {
+      await updateChannelFlags({ pushEnabled: false });
+    } catch (error) {
+      console.error('Failed to update notification preference', error);
+    } finally {
+      onSkip();
+    }
   };
 
   return (
@@ -52,10 +50,12 @@ export default function NotificationsScreen({ onAllow, onSkip }: NotificationsSc
       {/* Header */}
       <div className="flex items-center justify-between p-4 pt-safe">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Step 6 of 7</span>
+          <span className="text-sm font-medium text-muted-foreground">
+            Step {NOTIFICATIONS_SCREEN.STEP} of {NOTIFICATIONS_SCREEN.TOTAL_STEPS}
+          </span>
         </div>
         <button
-          onClick={onSkip}
+          onClick={handleSkip}
           className="text-muted-foreground hover:text-foreground transition-colors p-2"
           aria-label="Skip"
         >
@@ -67,8 +67,8 @@ export default function NotificationsScreen({ onAllow, onSkip }: NotificationsSc
       <div className="px-4 pb-6">
         <div className="w-full h-1 bg-secondary rounded-full overflow-hidden">
           <motion.div
-            initial={{ width: '71%' }}
-            animate={{ width: '86%' }}
+            initial={{ width: `${(NOTIFICATIONS_SCREEN.STEP - 1) / NOTIFICATIONS_SCREEN.TOTAL_STEPS * 100}%` }}
+            animate={{ width: `${NOTIFICATIONS_SCREEN.STEP / NOTIFICATIONS_SCREEN.TOTAL_STEPS * 100}%` }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="h-full bg-primary"
           />
@@ -104,15 +104,15 @@ export default function NotificationsScreen({ onAllow, onSkip }: NotificationsSc
 
         {/* Title & Subtitle */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Stay Connected</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{NOTIFICATIONS_SCREEN.title}</h1>
           <p className="text-base text-muted-foreground">
-            Never miss a meaningful connection
+            {NOTIFICATIONS_SCREEN.subtitle}
           </p>
         </div>
 
         {/* Benefits List */}
         <div className="space-y-4 mb-6">
-          {benefits.map((benefit, index) => (
+          {NOTIFICATION_BENEFITS.map((benefit, index) => (
             <motion.div
               key={benefit.title}
               initial={{ opacity: 0, x: -20 }}
@@ -140,7 +140,7 @@ export default function NotificationsScreen({ onAllow, onSkip }: NotificationsSc
         >
           <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
           <p className="text-sm text-muted-foreground">
-            We'll never spam. You control what you receive.
+            {NOTIFICATIONS_SCREEN.privacyNote}
           </p>
         </motion.div>
       </div>
@@ -150,17 +150,17 @@ export default function NotificationsScreen({ onAllow, onSkip }: NotificationsSc
         <div className="space-y-3">
           <Button
             onClick={handleAllow}
-            disabled={isLoading}
+            disabled={isRequestingPermission || isSaving}
             className="w-full h-14 text-base"
             size="lg"
           >
-            {isLoading ? 'Enabling...' : 'Enable Notifications'}
+            {isRequestingPermission ? NOTIFICATIONS_SCREEN.enablingButton : NOTIFICATIONS_SCREEN.enableButton}
           </Button>
           <button
-            onClick={onSkip}
+            onClick={handleSkip}
             className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
           >
-            Maybe Later
+            {NOTIFICATIONS_SCREEN.skipButton}
           </button>
         </div>
       </div>

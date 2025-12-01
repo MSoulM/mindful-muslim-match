@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import logoImage from '@/assets/msm-logo.jpg';
+import logoImage from '@/assets/mysouldna-logo.png';
 
 interface MSMLogoProps {
   variant?: 'full' | 'icon' | 'compact';
@@ -67,53 +67,87 @@ export const MSMLogo = ({
 
   // Compact variant - icon + name only
   if (variant === 'compact') {
-    return (
-      <motion.button
-        onClick={onClick}
-        disabled={!onClick}
-        className={cn(
-          "flex items-center gap-2 min-h-[44px] px-2",
-          "touch-feedback transition-all duration-200",
-          onClick && "cursor-pointer",
-          !onClick && "cursor-default",
-          className
-        )}
-        whileTap={onClick ? { scale: 0.97, opacity: 0.9 } : undefined}
-        aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
-      >
+    const compactContent = (
+      <>
         <LogoIcon size={44} />
         <span className="text-lg font-bold text-primary-forest leading-none">
           MuslimSoulmate.ai
         </span>
-      </motion.button>
+      </>
+    );
+
+    if (onClick) {
+      return (
+        <motion.button
+          onClick={onClick}
+          className={cn(
+            "flex items-center gap-2 min-h-[44px] px-2",
+            "touch-feedback transition-all duration-200 cursor-pointer",
+            className
+          )}
+          whileTap={{ scale: 0.97, opacity: 0.9 }}
+          aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
+        >
+          {compactContent}
+        </motion.button>
+      );
+    }
+
+    return (
+      <motion.div
+        className={cn(
+          "flex items-center gap-2 px-2",
+          className
+        )}
+        aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
+      >
+        {compactContent}
+      </motion.div>
     );
   }
 
   // Full variant - icon + name + tagline
-  return (
-    <motion.button
-      onClick={onClick}
-      disabled={!onClick}
-      className={cn(
-        "flex items-center gap-2 min-h-[44px] px-2",
-        "touch-feedback transition-all duration-200",
-        onClick && "cursor-pointer",
-        !onClick && "cursor-default",
-        className
-      )}
-      whileTap={onClick ? { scale: 0.97, opacity: 0.9 } : undefined}
-      aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
-    >
+  const content = (
+    <>
       <LogoIcon size={50} />
       <div className="flex flex-col items-start">
-        <span className="text-xl font-bold text-primary-forest leading-none">
+        <span className="text-xl text-white font-bold text-primary-forest leading-none">
           MuslimSoulmate.ai
         </span>
-        <span className="text-xs font-semibold text-primary-gold leading-none mt-0.5">
+        <span className="text-xs text-white font-semibold text-primary-gold leading-none mt-0.5">
           Mindful Matchmaking
         </span>
       </div>
-    </motion.button>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <motion.button
+        onClick={onClick}
+        className={cn(
+          "flex items-center gap-2 min-h-[44px] px-2",
+          "touch-feedback transition-all duration-200 cursor-pointer",
+          className
+        )}
+        whileTap={{ scale: 0.97, opacity: 0.9 }}
+        aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
+      >
+        {content}
+      </motion.button>
+    );
+  }
+
+  return (
+    <motion.div
+      className={cn(
+        "flex items-center gap-2 px-2",
+        className
+      )}
+      aria-label="MuslimSoulmate.ai - Mindful Matchmaking"
+    >
+      {content}
+    </motion.div>
   );
 };
 
