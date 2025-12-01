@@ -375,3 +375,22 @@ export const EMAIL_DIGEST_OPTIONS = [
   { value: 'weekly' as const, label: 'Weekly Summary', description: 'Recommended - once a week' },
   { value: 'never' as const, label: 'No Emails', description: 'App notifications only' }
 ] as const;
+
+// Voice Onboarding Demo Questions
+export const VOICE_ONBOARDING_QUESTIONS = [
+  {
+    prompt: 'Tell us about yourself',
+    subtitle: 'Share what makes you unique',
+    minWords: 10
+  },
+  {
+    prompt: 'What are your values and beliefs?',
+    subtitle: 'What matters most to you in life?',
+    minWords: 15
+  },
+  {
+    prompt: 'Describe your ideal relationship',
+    subtitle: 'What does your perfect partnership look like?',
+    minWords: 20
+  }
+] as const;
