@@ -1,31 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { SafeArea } from '@/components/utils/SafeArea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import CustomDatePicker from '@/components/ui/CustomDatePicker';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useProfile } from '@/hooks/useProfile';
+import { ONBOARDING_STEPS, BASIC_INFO_TEXT } from '@/config/onboardingConstants';
+import type { BasicInfo, BasicInfoScreenProps } from '@/types/onboarding';
 
-interface BasicInfoScreenProps {
-  onNext?: (data: BasicInfo) => void;
-  onBack?: () => void;
-}
-
-export interface BasicInfo {
-  firstName: string;
-  lastName: string;
-  birthDate: Date | undefined;
-  gender: 'male' | 'female' | '';
-  location: string;
-}
-
-const TOTAL_STEPS = 7;
-const CURRENT_STEP = 1;
+const PROGRESS_PERCENTAGE = (ONBOARDING_STEPS.BASIC_INFO / ONBOARDING_STEPS.TOTAL) * 100;
 
 export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
   const navigate = useNavigate();
+  const { profile, isLoading: profileLoading, updateProfile, createProfile } = useProfile();
   const [formData, setFormData] = useState<BasicInfo>({
     firstName: '',
     lastName: '',
@@ -33,6 +22,8 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
     gender: '',
     location: ''
   });
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [errors, setErrors] = useState({
     firstName: '',
@@ -41,6 +32,66 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
     gender: '',
     location: ''
   });
+
+  // Auto-fill form from profile data if it exists
+  useEffect(() => {
+    if (profile && !hasAutoFilled && !profileLoading) {
+      setFormData(prevFormData => {
+        const newFormData: BasicInfo = { ...prevFormData };
+
+        // Fill firstName if available and form is empty
+        if (profile.firstName && !prevFormData.firstName) {
+          newFormData.firstName = profile.firstName;
+        }
+
+        // Fill lastName if available and form is empty
+        if (profile.lastName && !prevFormData.lastName) {
+          newFormData.lastName = profile.lastName;
+        }
+
+        // Fill birthdate if available and form is empty
+        if (profile.birthdate && !prevFormData.birthDate) {
+          try {
+            const birthDate = new Date(profile.birthdate);
+            if (!isNaN(birthDate.getTime())) {
+              newFormData.birthDate = birthDate;
+            }
+          } catch (e) {
+            console.error('Error parsing birthdate:', e);
+          }
+        }
+
+        // Fill gender if available and form is empty
+        if (profile.gender && !prevFormData.gender) {
+          const genderLower = profile.gender.toLowerCase();
+          if (genderLower === 'male' || genderLower === 'm') {
+            newFormData.gender = 'male';
+          } else if (genderLower === 'female' || genderLower === 'f') {
+            newFormData.gender = 'female';
+          }
+        }
+
+        // Fill location if available and form is empty
+        if (profile.location && !prevFormData.location) {
+          newFormData.location = profile.location;
+        }
+
+        // Only update if we actually have data to fill
+        const hasDataToFill = 
+          newFormData.firstName !== prevFormData.firstName ||
+          newFormData.lastName !== prevFormData.lastName ||
+          newFormData.birthDate !== prevFormData.birthDate ||
+          newFormData.gender !== prevFormData.gender ||
+          newFormData.location !== prevFormData.location;
+
+        if (hasDataToFill) {
+          setHasAutoFilled(true);
+        }
+
+        return newFormData;
+      });
+    }
+  }, [profile, profileLoading, hasAutoFilled]);
 
   const calculateAge = (birthDate: Date): number => {
     const today = new Date();
@@ -90,13 +141,61 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
     return Object.values(newErrors).every(error => error === '');
   };
 
-  const handleContinue = () => {
-    if (validateForm()) {
+  const handleContinue = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    // Check if there are actual changes from the profile data
+    const hasChanges = 
+      (profile?.firstName !== formData.firstName) ||
+      (profile?.lastName !== formData.lastName) ||
+      (profile?.birthdate !== (formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : undefined)) ||
+      (profile?.gender !== formData.gender) ||
+      (profile?.location !== formData.location) ||
+      (!profile); // If no profile exists, consider it as a new entry
+
+    // If no changes and profile exists, skip API call
+    if (!hasChanges && profile) {
+      // Just navigate to next step without API call
       if (onNext) {
         onNext(formData);
       } else {
         navigate('/onboarding/religious-preferences', { state: { basicInfo: formData } });
       }
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Prepare profile data for saving
+      const profileData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        birthdate: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : undefined, // Convert Date to YYYY-MM-DD format
+        gender: formData.gender || undefined,
+        location: formData.location || undefined,
+      };
+
+      // Update existing profile or create new one
+      if (profile) {
+        await updateProfile(profileData);
+      } else {
+        await createProfile(profileData);
+      }
+
+      // Navigate to next step
+      if (onNext) {
+        onNext(formData);
+      } else {
+        navigate('/onboarding/religious-preferences', { state: { basicInfo: formData } });
+      }
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      // You might want to show an error toast here
+      alert('Failed to save your information. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -121,8 +220,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
     formData.gender !== '' &&
     formData.location.length >= 3;
 
-  const progress = (CURRENT_STEP / TOTAL_STEPS) * 100;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
       <SafeArea top bottom>
@@ -130,7 +227,7 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
         <div className="w-full h-1 bg-neutral-200">
           <div 
             className="h-full bg-primary transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${PROGRESS_PERCENTAGE}%` }}
           />
         </div>
 
@@ -158,10 +255,10 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
             {/* Title Section */}
             <div className="space-y-2">
               <h1 className="text-2xl font-bold text-foreground">
-                Basic Information
+                {BASIC_INFO_TEXT.title}
               </h1>
               <p className="text-sm text-neutral-600">
-                Let's get to know you
+                {BASIC_INFO_TEXT.subtitle}
               </p>
             </div>
 
@@ -170,7 +267,7 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               {/* First Name */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
-                  First Name <span className="text-destructive">*</span>
+                  {BASIC_INFO_TEXT.firstName} <span className="text-destructive">*</span>
                 </label>
                 <Input
                   type="text"
@@ -190,7 +287,7 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               {/* Last Name */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
-                  Last Name <span className="text-destructive">*</span>
+                  {BASIC_INFO_TEXT.lastName} <span className="text-destructive">*</span>
                 </label>
                 <Input
                   type="text"
@@ -210,7 +307,7 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               {/* Birth Date */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
-                  Date of Birth <span className="text-destructive">*</span>
+                  {BASIC_INFO_TEXT.birthdate} <span className="text-destructive">*</span>
                 </label>
                 <CustomDatePicker
                   value={formData.birthDate}
@@ -278,7 +375,7 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               {/* Location */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
-                  Location <span className="text-destructive">*</span>
+                  {BASIC_INFO_TEXT.location} <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -302,14 +399,14 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
             {/* Continue Button */}
             <div className="space-y-3 pt-4">
               <div className="text-center text-xs text-neutral-500 mb-2">
-                Step {CURRENT_STEP} of {TOTAL_STEPS}
+                {BASIC_INFO_TEXT.stepCounter(ONBOARDING_STEPS.BASIC_INFO, ONBOARDING_STEPS.TOTAL)}
               </div>
               <Button
                 onClick={handleContinue}
-                disabled={!isFormValid}
+                disabled={!isFormValid || isSaving}
                 className="w-full h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80"
               >
-                Continue
+                {isSaving ? 'Saving...' : 'Continue'}
               </Button>
             </div>
           </div>

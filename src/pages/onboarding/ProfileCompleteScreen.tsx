@@ -1,48 +1,25 @@
 import { motion } from 'framer-motion';
-import { Sparkles, Camera, Dna, Calendar, Coffee, TrendingUp, User } from 'lucide-react';
+import { Sparkles, Camera, Dna, Calendar, Coffee, TrendingUp, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 import { Progress } from '@/components/ui/progress';
+import { ProfileCompleteScreenProps } from '@/types/onboarding';
+import {
+  PROFILE_COMPLETE_SCREEN,
+  ACHIEVEMENTS,
+  NEXT_STEPS
+} from '@/config/onboardingConstants';
+import { useProfile } from '@/hooks/useProfile';
 
-interface ProfileCompleteScreenProps {
-  profile: {
-    name: string;
-    age: number;
-    location: string;
-    photoUrl?: string;
-    dnaScore: number;
-  };
-  onViewProfile: () => void;
-  onStartMatching: () => void;
-}
-
-const achievements = [
-  { icon: Sparkles, title: 'Profile Created', points: '+100', color: 'text-primary' },
-  { icon: Camera, title: 'Photos Added', points: '+50', color: 'text-blue-500' },
-  { icon: Dna, title: 'DNA Initialized', points: '+75', color: 'text-purple-500' },
-  { icon: TrendingUp, title: 'Notifications On', points: '+25', color: 'text-green-500' }
-];
-
-const nextSteps = [
-  {
-    icon: Calendar,
-    title: 'Weekly Matches',
-    description: 'Every Sunday, 3 curated matches',
-    color: 'bg-primary/10 text-primary'
-  },
-  {
-    icon: Coffee,
-    title: 'ChaiChat',
-    description: 'AI explores compatibility for you',
-    color: 'bg-orange-500/10 text-orange-500'
-  },
-  {
-    icon: Dna,
-    title: 'Build DNA',
-    description: 'Share posts to improve matching',
-    color: 'bg-purple-500/10 text-purple-500'
-  }
-];
+// Icon map for dynamic icon rendering
+const iconMap = {
+  Sparkles,
+  Camera,
+  Dna,
+  Calendar,
+  Coffee,
+  TrendingUp
+};
 
 // Confetti animation component
 const Confetti = () => {
@@ -80,10 +57,49 @@ const Confetti = () => {
 };
 
 export default function ProfileCompleteScreen({
-  profile,
   onViewProfile,
   onStartMatching
 }: ProfileCompleteScreenProps) {
+  const { profile, isLoading } = useProfile();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 text-primary animate-spin" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Unable to load profile</p>
+          <Button onClick={onStartMatching}>Continue</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate age from birthdate
+  const birthDate = new Date(profile.birthdate);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  const profileData = {
+    name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim(),
+    age,
+    location: profile.location || 'Not specified',
+    photoUrl: profile.primaryPhotoUrl || undefined,
+    dnaScore: profile.dnaScore || 0
+  };
   return (
     <div className="min-h-screen bg-background">
       <Confetti />
@@ -124,10 +140,10 @@ export default function ProfileCompleteScreen({
           className="text-center mb-8"
         >
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome to MuslimSoulmate.ai!
+            {PROFILE_COMPLETE_SCREEN.title}
           </h1>
           <p className="text-base text-muted-foreground">
-            Your profile is ready to shine ✨
+            {PROFILE_COMPLETE_SCREEN.subtitle}
           </p>
         </motion.div>
 
@@ -139,10 +155,10 @@ export default function ProfileCompleteScreen({
           className="bg-card border border-border rounded-2xl p-6 mb-6"
         >
           <div className="flex items-center gap-4 mb-4">
-            {profile.photoUrl ? (
+            {profileData.photoUrl ? (
               <img
-                src={profile.photoUrl}
-                alt={profile.name}
+                src={profileData.photoUrl}
+                alt={profileData.name}
                 className="w-20 h-20 rounded-full object-cover"
               />
             ) : (
@@ -152,19 +168,19 @@ export default function ProfileCompleteScreen({
             )}
             <div className="flex-1">
               <h2 className="text-xl font-bold text-foreground">
-                {profile.name}, {profile.age}
+                {profileData.name}, {profileData.age}
               </h2>
-              <p className="text-sm text-muted-foreground">{profile.location}</p>
+              <p className="text-sm text-muted-foreground">{profileData.location}</p>
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">DNA Profile</span>
-              <span className="text-sm font-semibold text-primary">{profile.dnaScore}% Complete</span>
+              <span className="text-sm font-medium text-foreground">{PROFILE_COMPLETE_SCREEN.dnaProfileLabel}</span>
+              <span className="text-sm font-semibold text-primary">{profileData.dnaScore}{PROFILE_COMPLETE_SCREEN.completeLabel}</span>
             </div>
-            <Progress value={profile.dnaScore} className="h-2" />
-            <p className="text-xs text-muted-foreground text-center">Great start! Keep building your DNA for better matches</p>
+            <Progress value={profileData.dnaScore} className="h-2" />
+            <p className="text-xs text-muted-foreground text-center">{PROFILE_COMPLETE_SCREEN.dnaMessage}</p>
           </div>
         </motion.div>
 
@@ -175,10 +191,10 @@ export default function ProfileCompleteScreen({
           transition={{ delay: 0.6 }}
           className="mb-8"
         >
-          <h3 className="text-lg font-semibold text-foreground mb-4">Achievements Unlocked</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">{PROFILE_COMPLETE_SCREEN.achievementsTitle}</h3>
           <div className="grid grid-cols-2 gap-3">
-            {achievements.map((achievement, index) => {
-              const Icon = achievement.icon;
+            {ACHIEVEMENTS.map((achievement, index) => {
+              const Icon = iconMap[achievement.icon as keyof typeof iconMap];
               return (
                 <motion.div
                   key={achievement.title}
@@ -205,10 +221,10 @@ export default function ProfileCompleteScreen({
           transition={{ delay: 1 }}
           className="mb-6"
         >
-          <h3 className="text-lg font-semibold text-foreground mb-4 text-center">Your Journey Begins!</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4 text-center">{PROFILE_COMPLETE_SCREEN.journeyTitle}</h3>
           <div className="space-y-3">
-            {nextSteps.map((step, index) => {
-              const Icon = step.icon;
+            {NEXT_STEPS.map((step, index) => {
+              const Icon = iconMap[step.icon as keyof typeof iconMap];
               return (
                 <motion.div
                   key={step.title}
@@ -235,12 +251,12 @@ export default function ProfileCompleteScreen({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.4 }}
-          className="mb-6"
+          className="mb-12"
         >
           <AgentMessage
             avatar="🤖"
-            title="Your MMAgent"
-            message="Assalamu Alaikum! I'm your personal AI matchmaker. I'll be working behind the scenes to find your most compatible matches. Your first batch arrives this Sunday!"
+            title={PROFILE_COMPLETE_SCREEN.agentTitle}
+            message={PROFILE_COMPLETE_SCREEN.agentMessage}
             variant="welcome"
           />
         </motion.div>
@@ -251,19 +267,19 @@ export default function ProfileCompleteScreen({
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.6 }}
-        className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 pb-safe"
+        className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-3"
       >
         <div className="space-y-3">
-          <Button onClick={onStartMatching} className="w-full h-14 text-base" size="lg">
-            Start Exploring
+          <Button onClick={onStartMatching} className="w-full h-12 text-base" size="lg">
+            {PROFILE_COMPLETE_SCREEN.startExploring}
           </Button>
           <Button
             onClick={onViewProfile}
             variant="outline"
-            className="w-full h-14 text-base"
+            className="w-full h-12 text-base"
             size="lg"
           >
-            View My Profile
+            {PROFILE_COMPLETE_SCREEN.viewProfile}
           </Button>
         </div>
       </motion.div>
