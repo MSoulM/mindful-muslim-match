@@ -83,7 +83,7 @@ export const useProfile = () => {
       }
 
       const payload = {
-        auth_user_id: authUserId,
+        clerk_user_id: authUserId,
         ...convertProfileToDB(profileData),
         created_at: new Date().toISOString(),
       };
@@ -137,6 +137,32 @@ function convertProfileFromDB(dbProfile: any): Profile {
     languages: dbProfile.languages,
     religion: dbProfile.religion,
     preferences: dbProfile.preferences,
+    // Interests & Hobbies
+    hobbies: dbProfile.hobbies,
+    dietaryPreferences: dbProfile.dietary_preferences,
+    pets: dbProfile.pets,
+    // Relationship Goals
+    maritalStatus: dbProfile.marital_status,
+    hasChildren: dbProfile.has_children,
+    childrenCount: dbProfile.children_count,
+    wantsChildren: dbProfile.wants_children,
+    // Lifestyle & Personality
+    educationLevel: dbProfile.education_level,
+    occupation: dbProfile.occupation,
+    industry: dbProfile.industry,
+    annualIncomeRange: dbProfile.annual_income_range,
+    smoking: dbProfile.smoking,
+    exerciseFrequency: dbProfile.exercise_frequency,
+    height: dbProfile.height,
+    build: dbProfile.build,
+    ethnicity: dbProfile.ethnicity,
+    // Family & Culture
+    familyStructure: dbProfile.family_structure,
+    parentsMaritalStatus: dbProfile.parents_marital_status,
+    numberOfSiblings: dbProfile.number_of_siblings,
+    familyValues: dbProfile.family_values,
+    culturalTraditions: dbProfile.cultural_traditions,
+    hometown: dbProfile.hometown,
     dnaScore: dbProfile.dna_score,
     dnaTraits: dbProfile.dna_traits,
     onboardingCompleted: dbProfile.onboarding_completed,
@@ -216,6 +242,20 @@ function convertProfileToDB(profile: Partial<Profile>): Record<string, any> {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     deletedAt: 'deleted_at',
+    // New fields
+    dietaryPreferences: 'dietary_preferences',
+    maritalStatus: 'marital_status',
+    hasChildren: 'has_children',
+    childrenCount: 'children_count',
+    wantsChildren: 'wants_children',
+    educationLevel: 'education_level',
+    annualIncomeRange: 'annual_income_range',
+    exerciseFrequency: 'exercise_frequency',
+    familyStructure: 'family_structure',
+    parentsMaritalStatus: 'parents_marital_status',
+    numberOfSiblings: 'number_of_siblings',
+    familyValues: 'family_values',
+    culturalTraditions: 'cultural_traditions',
   };
 
   Object.entries(profile).forEach(([key, value]) => {

@@ -611,12 +611,6 @@ const AnimatedRoutes = () => {
             <Route path="/onboarding/complete" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <ProfileCompleteScreen 
-                  profile={{
-                    name: 'User',
-                    age: 0,
-                    location: '',
-                    dnaScore: 0
-                  }}
                   onViewProfile={() => navigate('/profile')}
                   onStartMatching={() => navigate('/discover')}
                 />

@@ -1,85 +1,196 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Camera, Image as ImageIcon, Star, X, Info, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
+import { ArrowLeft, Star, X, Info, ChevronDown, ChevronUp, ShieldCheck, Image as ImageIcon, Loader } from 'lucide-react';
+import { toast } from 'sonner';
 import { SafeArea } from '@/components/utils/SafeArea';
 import { Button } from '@/components/ui/button';
+import PhotoUploadPicker from '@/components/ui/PhotoUploadPicker';
+import { supabase } from '@/lib/supabase';
+import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/utils';
+import { ONBOARDING_STEPS, PHOTO_GUIDELINES, PHOTO_UPLOAD, FILE_UPLOAD } from '@/config/onboardingConstants';
+import type { Photo, PhotoUploadScreenProps } from '@/types/onboarding';
+import type { ProfilePhoto } from '@/types/profile';
 
-interface PhotoUploadScreenProps {
-  onNext?: (photos: Photo[]) => void;
-  onBack?: () => void;
-  onSkip?: () => void;
-}
-
-export interface Photo {
-  id: string;
-  uri: string;
-  isMain: boolean;
-  isVerified: boolean;
-}
-
-const TOTAL_STEPS = 7;
-const CURRENT_STEP = 3;
-const MAX_PHOTOS = 6;
-
-const guidelines = [
-  { text: 'Clear face visible (no sunglasses)', valid: true },
-  { text: 'Modest clothing', valid: true },
-  { text: 'Recent photos (within 2 years)', valid: true },
-  { text: 'Smile! Show your personality', valid: true },
-  { text: 'No group photos as main', valid: false },
-  { text: 'No filters or heavy editing', valid: false }
-];
+const TOTAL_STEPS = ONBOARDING_STEPS.TOTAL;
+const CURRENT_STEP = ONBOARDING_STEPS.PROFILE_PHOTO;
+const MAX_PHOTOS = PHOTO_UPLOAD.MAX_PHOTOS;
 
 export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useUser();
+  const { profile, isLoading: profileLoading, updateProfile } = useProfile();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [showGuidelines, setShowGuidelines] = useState(true);
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  useEffect(() => {
+    if (profile?.photos && profile.photos.length > 0) {
+      const convertedPhotos: Photo[] = profile.photos.map(p => ({
+        id: p.id,
+        url: p.url,
+        isMain: p.isPrimary,
+        isVerified: p.approved || false
+      }));
+      setPhotos(convertedPhotos);
+    }
+  }, [profile]);
 
-    const file = files[0];
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      const uri = e.target?.result as string;
+  const handleFileSelect = async (file: File) => {
+    if (!user.id) {
+      toast.error('You must be logged in to upload photos.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `photo_${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/images/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('users')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('users')
+        .getPublicUrl(filePath);
+
       const newPhoto: Photo = {
-        id: Date.now().toString(),
-        uri,
-        isMain: photos.length === 0,
+        id: `${Date.now()}`,
+        url: publicUrl,
+        isMain: photos.length === 0 || !photos.some(p => p.isMain),
         isVerified: false
       };
-      
-      setPhotos(prev => [...prev, newPhoto]);
-    };
-    
-    reader.readAsDataURL(file);
-    setShowPhotoOptions(false);
-  };
 
-  const handleDeletePhoto = (id: string) => {
-    if (confirm('Remove this photo?')) {
-      setPhotos(prev => {
-        const filtered = prev.filter(p => p.id !== id);
-        // If we deleted the main photo, make the first remaining one main
-        if (filtered.length > 0 && !filtered.some(p => p.isMain)) {
-          filtered[0].isMain = true;
-        }
-        return filtered;
+      const updatedPhotos = [...photos, newPhoto];
+      setPhotos(updatedPhotos);
+
+      // Convert to ProfilePhoto format for database
+      const profilePhotos: ProfilePhoto[] = updatedPhotos.map(p => ({
+        id: p.id,
+        url: p.url,
+        isPrimary: p.isMain,
+        approved: p.isVerified
+      }));
+
+      // Update Profiles table with new photos
+      await updateProfile({
+        photos: profilePhotos,
+        primaryPhotoUrl: newPhoto.url
       });
+
+      toast.success('Photo uploaded successfully!');
+    } catch (err: any) {
+      console.error('Error uploading photo:', err);
+      toast.error('Failed to upload photo. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
+  const handleDeletePhoto = (id: string) => {
+    toast.custom((t) => (
+      <div className="flex flex-col gap-3 bg-white p-4 rounded-lg shadow-lg border border-neutral-200">
+        <p className="font-semibold text-neutral-900">Are you sure you want to remove this photo?</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              toast.dismiss(t);
+              confirmDeletePhoto(id);
+            }}
+            className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss(t)}
+            className="flex-1 px-3 py-2 bg-neutral-300 text-neutral-700 rounded-lg font-medium hover:bg-neutral-400 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), {
+      position: 'top-center'
+    });
+  };
+
+  const confirmDeletePhoto = (id: string) => {
+    setPhotos(prev => {
+      const filtered = prev.filter(p => p.id !== id);
+      const photoToDelete = prev.find(p => p.id === id);
+      
+      if (photoToDelete && user?.id) {
+        const filePath = `${user.id}/images/${photoToDelete.url.split('/').slice(-1)[0]}`;
+
+        supabase.storage
+          .from('users')
+          .remove([filePath])
+          .catch(err => {
+            console.error('Failed to delete photo from storage:', err);
+          });
+      }
+      
+      if (filtered.length > 0 && !filtered.some(p => p.isMain)) {
+        filtered[0].isMain = true;
+        toast.success('Photo deleted. Main photo updated.');
+      } else {
+        toast.success('Photo deleted successfully!');
+      }
+      
+      const profilePhotos: ProfilePhoto[] = filtered.map(p => ({
+        id: p.id,
+        url: p.url,
+        isPrimary: p.isMain,
+        approved: p.isVerified
+      }));
+
+      updateProfile({ 
+        photos: profilePhotos,
+        primaryPhotoUrl: filtered.find(p => p.isMain)?.url || null
+      }).catch(err => {
+        console.error('Failed to update photos in database:', err);
+      });
+
+      return filtered;
+    });
+  };
+
   const handleSetAsMain = (id: string) => {
-    setPhotos(prev => prev.map(p => ({
-      ...p,
-      isMain: p.id === id
-    })));
+    setPhotos(prev => {
+      const updated = prev.map(p => ({
+        ...p,
+        isMain: p.id === id
+      }));
+      
+      // Convert to ProfilePhoto format for database
+      const profilePhotos: ProfilePhoto[] = updated.map(p => ({
+        id: p.id,
+        url: p.url,
+        isPrimary: p.isMain,
+        approved: p.isVerified
+      }));
+
+      // Update Profiles table
+      updateProfile({ 
+        photos: profilePhotos,
+        primaryPhotoUrl: updated.find(p => p.isMain)?.url || null
+      }).catch(err => {
+        console.error('Failed to update main photo in database:', err);
+      });
+
+      return updated;
+    });
+    toast.success('Set as main photo!');
   };
 
   const handleContinue = () => {
@@ -177,7 +288,7 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
 
               {showGuidelines && (
                 <div className="px-4 pb-4 space-y-2">
-                  {guidelines.map((guideline, index) => (
+                  {PHOTO_GUIDELINES.map((guideline, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
                       <span className={guideline.valid ? "text-green-600" : "text-red-600"}>
                         {guideline.valid ? '✓' : '✗'}
@@ -189,91 +300,93 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
               )}
             </div>
 
-            {/* Photo Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {Array.from({ length: MAX_PHOTOS }).map((_, index) => {
-                const photo = photos[index];
-                
-                if (photo) {
-                  return (
-                    <div
-                      key={photo.id}
-                      className="relative aspect-[3/4] rounded-xl overflow-hidden bg-neutral-100 group"
-                    >
-                      <img
-                        src={photo.uri}
-                        alt={`Photo ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      
-                      {/* Main Photo Badge */}
-                      {photo.isMain && (
-                        <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-[#D4A574] rounded-full">
-                          <Star className="w-3 h-3 text-white fill-white" />
-                          <span className="text-xs font-semibold text-white">Main</span>
-                        </div>
-                      )}
-
-                      {/* Overlay Actions */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        {!photo.isMain && (
-                          <button
-                            onClick={() => handleSetAsMain(photo.id)}
-                            className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-neutral-100 active:scale-95 transition-all"
-                            aria-label="Set as main"
-                          >
-                            <Star className="w-5 h-5 text-[#D4A574]" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeletePhoto(photo.id)}
-                          className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-red-50 active:scale-95 transition-all"
-                          aria-label="Delete photo"
-                        >
-                          <X className="w-5 h-5 text-red-600" />
-                        </button>
-                      </div>
-
-                      {/* Index Label */}
-                      {index === 0 && (
-                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-xs text-white">
-                          Main Photo
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => setShowPhotoOptions(true)}
-                    disabled={photos.length >= MAX_PHOTOS}
-                    className={cn(
-                      "relative aspect-[3/4] rounded-xl border-2 border-dashed transition-all",
-                      "flex flex-col items-center justify-center gap-2",
-                      photos.length >= MAX_PHOTOS
-                        ? "border-neutral-200 bg-neutral-50 cursor-not-allowed"
-                        : "border-neutral-300 bg-white hover:border-primary hover:bg-primary/5 active:scale-95"
-                    )}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-neutral-400" />
-                    </div>
-                    <span className="text-xs text-neutral-500">Add Photo</span>
-                    {index === 0 && photos.length === 0 && (
-                      <div className="absolute bottom-2 left-2 right-2 text-center">
-                        <span className="text-xs font-medium text-neutral-600">Main Photo</span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
             {/* Photo Counter */}
             <div className="text-center text-sm text-neutral-600">
               {photos.length} of {MAX_PHOTOS} photos added
+            </div>
+
+            {/* Photo Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Display uploaded photos - main photo first */}
+              {photos
+                .sort((a, b) => (b.isMain ? 1 : 0) - (a.isMain ? 1 : 0))
+                .map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className="relative aspect-[3/4] rounded-xl overflow-hidden bg-neutral-100 group"
+                >
+                  <img
+                    src={photo.url}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Main Photo Badge */}
+                  {photo.isMain && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-[#D4A574] rounded-full">
+                      <Star className="w-3 h-3 text-white fill-white" />
+                      <span className="text-xs font-semibold text-white">Main</span>
+                    </div>
+                  )}
+
+                  {/* Overlay Actions */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    {!photo.isMain && (
+                      <button
+                        onClick={() => handleSetAsMain(photo.id)}
+                        className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-neutral-100 active:scale-95 transition-all"
+                        aria-label="Set as main"
+                      >
+                        <Star className="w-5 h-5 text-[#D4A574]" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeletePhoto(photo.id)}
+                      className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-red-50 active:scale-95 transition-all"
+                      aria-label="Delete photo"
+                    >
+                      <X className="w-5 h-5 text-red-600" />
+                    </button>
+                  </div>
+
+                  {photo.isMain && (
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-xs text-white">
+                      Main Photo
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Add Photo Button - Only show if photos are less than max */}
+              {photos.length < MAX_PHOTOS && (
+                <button
+                  onClick={() => !isUploading && setShowPhotoOptions(true)}
+                  disabled={isUploading}
+                  className={cn(
+                    "relative aspect-[3/4] rounded-xl border-2 border-dashed transition-all",
+                    "flex flex-col items-center justify-center gap-2",
+                    isUploading 
+                      ? "border-neutral-300 bg-neutral-50 cursor-not-allowed" 
+                      : "border-neutral-300 bg-white hover:border-primary hover:bg-primary/5 active:scale-95"
+                  )}
+                >
+                  <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
+                    {isUploading ? (
+                      <Loader className="w-6 h-6 text-primary animate-spin" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-neutral-400" />
+                    )}
+                  </div>
+                  <span className="text-xs text-neutral-500">
+                    {isUploading ? 'Uploading...' : 'Add Photo'}
+                  </span>
+                  {photos.length === 0 && !isUploading && (
+                    <div className="absolute bottom-2 left-2 right-2 text-center">
+                      <span className="text-xs font-medium text-neutral-600">Main Photo</span>
+                    </div>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Verification Card */}
@@ -320,55 +433,16 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
         </div>
 
         {/* Photo Options Bottom Sheet */}
-        {showPhotoOptions && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-50 flex items-end"
-            onClick={() => setShowPhotoOptions(false)}
-          >
-            <div 
-              className="w-full bg-white rounded-t-3xl p-6 space-y-3"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-12 h-1 bg-neutral-300 rounded-full mx-auto mb-4" />
-              
-              <h3 className="text-lg font-bold text-center mb-4">Add Photo</h3>
-              
-              <label className="block">
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <div className="w-full h-14 bg-primary text-white rounded-xl flex items-center justify-center gap-3 font-semibold active:scale-95 transition-all cursor-pointer">
-                  <Camera className="w-5 h-5" />
-                  Take Photo
-                </div>
-              </label>
-
-              <label className="block">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <div className="w-full h-14 bg-white border-2 border-primary text-primary rounded-xl flex items-center justify-center gap-3 font-semibold active:scale-95 transition-all cursor-pointer">
-                  <ImageIcon className="w-5 h-5" />
-                  Choose from Gallery
-                </div>
-              </label>
-
-              <button
-                onClick={() => setShowPhotoOptions(false)}
-                className="w-full h-12 text-neutral-600 font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+        <PhotoUploadPicker
+          isOpen={showPhotoOptions}
+          onClose={() => setShowPhotoOptions(false)}
+          options={{
+            acceptTypes: 'image/*',
+            maxSize: FILE_UPLOAD.MAX_SIZE_BYTES,
+            onFileSelect: handleFileSelect,
+            onError: (error) => toast.error(error)
+          }}
+        />
       </SafeArea>
     </div>
   );

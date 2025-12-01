@@ -1,54 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Info } from 'lucide-react';
+import { ArrowLeft, Info, Loader2 } from 'lucide-react';
 import { SafeArea } from '@/components/utils/SafeArea';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-
-interface PreferencesScreenProps {
-  onNext?: (preferences: MatchPreferences) => void;
-  onBack?: () => void;
-}
-
-export interface MatchPreferences {
-  ageRange: { min: number; max: number };
-  distance: number;
-  education: string[];
-  maritalStatus: string[];
-  hasChildren: 'yes' | 'no' | 'doesntMatter';
-  religiosity: string[];
-}
-
-const TOTAL_STEPS = 7;
-const CURRENT_STEP = 5;
-
-const educationOptions = [
-  'High School',
-  "Bachelor's Degree",
-  "Master's Degree",
-  'Doctorate/PhD',
-  'Trade/Vocational',
-  'Other'
-];
-
-const maritalStatusOptions = [
-  'Never Married',
-  'Divorced',
-  'Widowed'
-];
-
-const religiosityOptions = [
-  'Very Practicing',
-  'Practicing',
-  'Moderate',
-  'Cultural',
-  'Flexible'
-];
+import {
+  PreferencesScreenProps,
+  MatchPreferences
+} from '@/types/onboarding';
+import {
+  PREFERENCES_SCREEN,
+  EDUCATION_OPTIONS,
+  MARITAL_STATUS_OPTIONS,
+  RELIGIOSITY_OPTIONS,
+  PREFERENCES_TEXT
+} from '@/config/onboardingConstants';
+import { useMatchPreferences } from '@/hooks/useMatchPreferences';
 
 export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { preferences: savedPreferences, isLoading: isSaving, savePreferences } = useMatchPreferences();
 
   const [preferences, setPreferences] = useState<MatchPreferences>({
     ageRange: { min: 25, max: 35 },
@@ -59,7 +32,17 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
     religiosity: []
   });
 
-  const handleContinue = () => {
+  // Sync saved preferences from database when they load
+  useEffect(() => {
+    if (savedPreferences) {
+      setPreferences(savedPreferences);
+    }
+  }, [savedPreferences]);
+
+  const handleContinue = async () => {
+    // Save preferences to database
+    await savePreferences(preferences);
+
     if (onNext) {
       onNext(preferences);
     } else {
@@ -120,7 +103,7 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
     preferences.maritalStatus.length > 0 &&
     preferences.religiosity.length > 0;
 
-  const progress = (CURRENT_STEP / TOTAL_STEPS) * 100;
+  const progress = (PREFERENCES_SCREEN.STEP / PREFERENCES_SCREEN.TOTAL_STEPS) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
@@ -155,25 +138,23 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
         <div className="px-6 pb-8">
           <div className="max-w-md mx-auto space-y-8">
             {/* Title Section */}
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-foreground">
-                Match Preferences
-              </h1>
-              <p className="text-sm text-neutral-600">
-                Who are you looking to meet?
-              </p>
-            </div>
-
-            {/* Preferences Form */}
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              {PREFERENCES_TEXT.title}
+            </h1>
+            <p className="text-sm text-neutral-600">
+              {PREFERENCES_TEXT.subtitle}
+            </p>
+          </div>            {/* Preferences Form */}
             <div className="space-y-8">
               {/* Age Range */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-foreground">
-                    Age Range
+                    {PREFERENCES_TEXT.ageRange}
                   </label>
                   <span className="text-sm font-medium text-primary">
-                    {preferences.ageRange.min} - {preferences.ageRange.max} years old
+                    {PREFERENCES_TEXT.yearsOld(preferences.ageRange.min, preferences.ageRange.max)}
                   </span>
                 </div>
                 <div className="px-2">
@@ -198,10 +179,10 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-foreground">
-                    Maximum Distance
+                    {PREFERENCES_TEXT.maxDistance}
                   </label>
                   <span className="text-sm font-medium text-primary">
-                    {preferences.distance === 100 ? 'Anywhere' : `Within ${preferences.distance} km`}
+                    {preferences.distance === 100 ? PREFERENCES_TEXT.anywhere : PREFERENCES_TEXT.within(preferences.distance)}
                   </span>
                 </div>
                 <div className="px-2">
@@ -217,7 +198,7 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
                   />
                   <div className="flex justify-between text-xs text-neutral-500 mt-2">
                     <span>5 km</span>
-                    <span>Anywhere</span>
+                    <span>{PREFERENCES_TEXT.anywhere}</span>
                   </div>
                 </div>
               </div>
@@ -225,10 +206,10 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
               {/* Education Level */}
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-foreground">
-                  Education Level
+                  {PREFERENCES_TEXT.education}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {educationOptions.map((education) => (
+                  {EDUCATION_OPTIONS.map((education) => (
                     <button
                       key={education}
                       onClick={() => toggleEducation(education)}
@@ -249,10 +230,10 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
               {/* Marital Status */}
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-foreground">
-                  Marital Status
+                  {PREFERENCES_TEXT.maritalStatus}
                 </label>
                 <div className="space-y-2">
-                  {maritalStatusOptions.map((status) => (
+                  {MARITAL_STATUS_OPTIONS.map((status) => (
                     <button
                       key={status}
                       onClick={() => toggleMaritalStatus(status)}
@@ -273,7 +254,7 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
               {/* Has Children */}
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-foreground">
-                  Open to partners with children?
+                  {PREFERENCES_TEXT.hasChildren}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   <button
@@ -287,7 +268,7 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
                         : "border-neutral-300 bg-white"
                     )}
                   >
-                    <span className="text-sm font-semibold">Yes</span>
+                    <span className="text-sm font-semibold">{PREFERENCES_TEXT.yes}</span>
                   </button>
 
                   <button
@@ -301,7 +282,7 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
                         : "border-neutral-300 bg-white"
                     )}
                   >
-                    <span className="text-sm font-semibold">No</span>
+                    <span className="text-sm font-semibold">{PREFERENCES_TEXT.no}</span>
                   </button>
 
                   <button
@@ -315,7 +296,7 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
                         : "border-neutral-300 bg-white"
                     )}
                   >
-                    <span className="text-sm font-semibold text-center">No Preference</span>
+                    <span className="text-sm font-semibold text-center">{PREFERENCES_TEXT.noPreference}</span>
                   </button>
                 </div>
               </div>
@@ -324,17 +305,17 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-foreground">
-                    Religious Practice Level
+                    {PREFERENCES_TEXT.religiousLevel}
                   </label>
                   <button
                     onClick={handleSetSimilarReligiosity}
                     className="text-xs font-medium text-primary hover:underline"
                   >
-                    Similar to mine
+                    {PREFERENCES_TEXT.similarToMine}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {religiosityOptions.map((level) => (
+                  {RELIGIOSITY_OPTIONS.map((level) => (
                     <button
                       key={level}
                       onClick={() => toggleReligiosity(level)}
@@ -356,10 +337,10 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
                 <div className="flex items-center gap-2">
                   <Info className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                  <p className="text-sm font-semibold text-blue-900">Tip</p>
+                  <p className="text-sm font-semibold text-blue-900">{PREFERENCES_TEXT.flexibility}</p>
                 </div>
                 <p className="text-sm text-blue-800">
-                  Being flexible with your preferences increases your potential matches. You can always adjust these later in settings.
+                  {PREFERENCES_TEXT.flexibilityMessage}
                 </p>
               </div>
             </div>
@@ -367,14 +348,21 @@ export const PreferencesScreen = ({ onNext, onBack }: PreferencesScreenProps) =>
             {/* Continue Button */}
             <div className="space-y-3 pt-4">
               <div className="text-center text-xs text-neutral-500 mb-2">
-                Step {CURRENT_STEP} of {TOTAL_STEPS}
+                {PREFERENCES_TEXT.stepCounter(PREFERENCES_SCREEN.STEP, PREFERENCES_SCREEN.TOTAL_STEPS)}
               </div>
               <Button
                 onClick={handleContinue}
-                disabled={!isFormValid}
+                disabled={!isFormValid || isSaving}
                 className="w-full h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80"
               >
-                Continue
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  'Continue'
+                )}
               </Button>
             </div>
           </div>

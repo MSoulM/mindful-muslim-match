@@ -1,249 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { SafeArea } from '@/components/utils/SafeArea';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-
-interface DNAQuestionnaireScreenProps {
-  onNext?: (answers: DNAAnswers) => void;
-  onBack?: () => void;
-}
-
-type Category = 'values' | 'personality' | 'interests' | 'lifestyle' | 'goals';
-type QuestionType = 'multiChoice' | 'scale' | 'multiSelect' | 'text';
-
-interface DNAQuestion {
-  id: string;
-  category: Category;
-  question: string;
-  type: QuestionType;
-  options?: string[];
-  maxSelections?: number;
-}
-
-export interface DNAAnswers {
-  [questionId: string]: string | string[] | number;
-}
-
-const TOTAL_STEPS = 7;
-const CURRENT_STEP = 4;
-const QUESTIONS_PER_CATEGORY = 5;
-const MAX_SKIPS_PER_CATEGORY = 3;
-
-const categoryLabels: Record<Category, string> = {
-  values: 'Values & Beliefs',
-  personality: 'Personality Traits',
-  interests: 'Interests & Hobbies',
-  lifestyle: 'Lifestyle & Habits',
-  goals: 'Life Goals'
-};
-
-const categoryColors: Record<Category, string> = {
-  values: 'bg-[#0D7377] text-white',
-  personality: 'bg-[#8B7AB8] text-white',
-  interests: 'bg-[#FF6B6B] text-white',
-  lifestyle: 'bg-[#0066CC] text-white',
-  goals: 'bg-[#FDB813] text-white'
-};
-
-const questions: DNAQuestion[] = [
-  // Values & Beliefs (5 questions)
-  {
-    id: 'v1',
-    category: 'values',
-    question: 'What role does family play in your decisions?',
-    type: 'multiChoice',
-    options: ['Central - Family first always', 'Important - Consider their input', 'Considered - Part of the picture', 'Independent - My own path']
-  },
-  {
-    id: 'v2',
-    category: 'values',
-    question: 'How important is community service to you?',
-    type: 'scale',
-    options: ['Not Important', 'Slightly Important', 'Moderately Important', 'Very Important', 'Essential']
-  },
-  {
-    id: 'v3',
-    category: 'values',
-    question: 'How do you balance faith and modern life?',
-    type: 'multiChoice',
-    options: ['Faith guides everything', 'Faith with flexibility', 'Balanced approach', 'Modern with faith values']
-  },
-  {
-    id: 'v4',
-    category: 'values',
-    question: 'What are your top 3 life values?',
-    type: 'multiSelect',
-    options: ['Family', 'Faith', 'Career Success', 'Health', 'Education', 'Community', 'Adventure', 'Stability'],
-    maxSelections: 3
-  },
-  {
-    id: 'v5',
-    category: 'values',
-    question: 'How important is preserving cultural traditions?',
-    type: 'scale',
-    options: ['Not Important', 'Somewhat', 'Moderately', 'Very', 'Essential']
-  },
-
-  // Personality (5 questions)
-  {
-    id: 'p1',
-    category: 'personality',
-    question: 'How do you recharge your energy?',
-    type: 'multiChoice',
-    options: ['Alone time - Peace and quiet', 'Small groups - Close friends', 'Large gatherings - Social energy', 'Various - Depends on mood']
-  },
-  {
-    id: 'p2',
-    category: 'personality',
-    question: 'How do you handle conflict?',
-    type: 'multiChoice',
-    options: ['Direct discussion immediately', 'Time to cool off first', 'Need mediator help', 'Avoid if possible']
-  },
-  {
-    id: 'p3',
-    category: 'personality',
-    question: 'Rate your communication style',
-    type: 'scale',
-    options: ['Very Reserved', 'Reserved', 'Balanced', 'Expressive', 'Very Expressive']
-  },
-  {
-    id: 'p4',
-    category: 'personality',
-    question: 'How do you approach new situations?',
-    type: 'multiChoice',
-    options: ['Cautious planner', 'Thoughtful observer', 'Calculated risk-taker', 'Spontaneous adventurer']
-  },
-  {
-    id: 'p5',
-    category: 'personality',
-    question: 'What best describes your emotional expression?',
-    type: 'multiChoice',
-    options: ['Very private', 'Selective sharing', 'Open with close ones', 'Openly expressive']
-  },
-
-  // Interests (5 questions)
-  {
-    id: 'i1',
-    category: 'interests',
-    question: 'Select your top interests (up to 5)',
-    type: 'multiSelect',
-    options: ['Reading', 'Sports', 'Cooking', 'Travel', 'Art', 'Technology', 'Music', 'Nature', 'Gaming', 'Photography'],
-    maxSelections: 5
-  },
-  {
-    id: 'i2',
-    category: 'interests',
-    question: 'How do you prefer to learn new things?',
-    type: 'multiChoice',
-    options: ['Books and research', 'Hands-on experience', 'Classes and courses', 'Social learning']
-  },
-  {
-    id: 'i3',
-    category: 'interests',
-    question: 'What type of content do you enjoy most?',
-    type: 'multiChoice',
-    options: ['Educational podcasts', 'Entertainment shows', 'News and current affairs', 'Creative content']
-  },
-  {
-    id: 'i4',
-    category: 'interests',
-    question: 'How often do you pursue hobbies?',
-    type: 'scale',
-    options: ['Rarely', 'Monthly', 'Weekly', 'Several times/week', 'Daily']
-  },
-  {
-    id: 'i5',
-    category: 'interests',
-    question: 'What role does physical activity play in your life?',
-    type: 'multiChoice',
-    options: ['Essential daily routine', 'Regular exercise habit', 'Occasional activity', 'Not a priority currently']
-  },
-
-  // Lifestyle (5 questions)
-  {
-    id: 'l1',
-    category: 'lifestyle',
-    question: 'Your ideal weekend involves?',
-    type: 'multiChoice',
-    options: ['Adventure and exploration', 'Relaxation and rest', 'Productivity and projects', 'Socializing with others']
-  },
-  {
-    id: 'l2',
-    category: 'lifestyle',
-    question: 'How would you describe your daily routine?',
-    type: 'multiChoice',
-    options: ['Highly structured', 'Loosely planned', 'Flexible and spontaneous', 'Varies greatly']
-  },
-  {
-    id: 'l3',
-    category: 'lifestyle',
-    question: 'How important is work-life balance to you?',
-    type: 'scale',
-    options: ['Not Important', 'Somewhat', 'Moderately', 'Very', 'Essential']
-  },
-  {
-    id: 'l4',
-    category: 'lifestyle',
-    question: 'How often do you travel?',
-    type: 'multiChoice',
-    options: ['Multiple times per year', 'Once or twice yearly', 'Every few years', 'Prefer staying local']
-  },
-  {
-    id: 'l5',
-    category: 'lifestyle',
-    question: 'What describes your social life?',
-    type: 'multiChoice',
-    options: ['Large social circle', 'Close-knit group', 'Few close friends', 'More independent']
-  },
-
-  // Goals (5 questions)
-  {
-    id: 'g1',
-    category: 'goals',
-    question: 'When do you envision starting a family?',
-    type: 'multiChoice',
-    options: ['Soon (within 1 year)', '1-2 years', '3-5 years', 'After career establishment']
-  },
-  {
-    id: 'g2',
-    category: 'goals',
-    question: 'What are your career aspirations?',
-    type: 'multiChoice',
-    options: ['Climb the corporate ladder', 'Build my own business', 'Work-life balance focus', 'Make social impact']
-  },
-  {
-    id: 'g3',
-    category: 'goals',
-    question: 'Where do you see yourself living long-term?',
-    type: 'multiChoice',
-    options: ['Current city/country', 'Open to relocation', 'Return to homeland', 'Undecided/flexible']
-  },
-  {
-    id: 'g4',
-    category: 'goals',
-    question: 'How important is financial stability before marriage?',
-    type: 'scale',
-    options: ['Not Important', 'Somewhat', 'Moderately', 'Very', 'Essential']
-  },
-  {
-    id: 'g5',
-    category: 'goals',
-    question: 'What is your ideal family size?',
-    type: 'multiChoice',
-    options: ['1-2 children', '3-4 children', '5+ children', 'Open to what Allah wills']
-  }
-];
+import { 
+  DNA_QUESTIONNAIRE, 
+  DNA_CATEGORY_LABELS, 
+  DNA_CATEGORY_COLORS
+} from '@/config/onboardingConstants';
+import { 
+  DNAQuestionnaireScreenProps, 
+  DNAAnswers, 
+  DNACategory 
+} from '@/types/onboarding';
+import { useDNAAnswers } from '@/hooks/useDNAAnswers';
+import { useDNAQuestions } from '@/hooks/useDNAQuestions';
 
 export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScreenProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { answers: hookedAnswers, saveAllAnswers, isLoading: isSaving } = useDNAAnswers();
+  const { questions, isLoading: questionsLoading } = useDNAQuestions();
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<DNAAnswers>({});
-  const [skippedCount, setSkippedCount] = useState<Record<Category, number>>({
+  const [skippedCount, setSkippedCount] = useState<Record<DNACategory, number>>({
     values: 0,
     personality: 0,
     interests: 0,
@@ -251,20 +34,53 @@ export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScree
     goals: 0
   });
 
-  const currentQuestion = questions[currentQuestionIndex];
+  // Sync answers from hook when they load from database
+  useEffect(() => {
+    if (hookedAnswers && Object.keys(hookedAnswers).length > 0) {
+      setAnswers(hookedAnswers);
+    }
+  }, [hookedAnswers]);
+
+  // Wait for questions to load from database
+  if (questionsLoading) {
+    return (
+      <SafeArea className="flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 text-purple-600 animate-spin" />
+          <p className="text-gray-600">Loading questions...</p>
+        </div>
+      </SafeArea>
+    );
+  }
+
+  // Handle case where questions haven't loaded
+  if (!questions || questions.length === 0) {
+    return (
+      <SafeArea className="flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-gray-600">No questions available</p>
+          <Button onClick={onBack}>Go Back</Button>
+        </div>
+      </SafeArea>
+    );
+  }
+
+  // Ensure currentQuestionIndex is valid
+  const safeIndex = Math.min(currentQuestionIndex, questions.length - 1);
+  const currentQuestion = questions[safeIndex];
   const currentAnswer = answers[currentQuestion.id];
   const isAnswered = currentAnswer !== undefined && currentAnswer !== '' && 
     (Array.isArray(currentAnswer) ? currentAnswer.length > 0 : true);
 
   const categoryQuestions = questions.filter(q => q.category === currentQuestion.category);
   const categoryIndex = categoryQuestions.findIndex(q => q.id === currentQuestion.id) + 1;
-  const totalCategories = Object.keys(categoryLabels).length;
-  const currentCategoryNumber = Math.floor(currentQuestionIndex / QUESTIONS_PER_CATEGORY) + 1;
+  const totalCategories = DNA_QUESTIONNAIRE.TOTAL_CATEGORIES;
+  const currentCategoryNumber = Math.floor(safeIndex / DNA_QUESTIONNAIRE.QUESTIONS_PER_CATEGORY) + 1;
 
-  const progress = (CURRENT_STEP / TOTAL_STEPS) * 100;
-  const questionProgress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const progress = (DNA_QUESTIONNAIRE.STEP / DNA_QUESTIONNAIRE.TOTAL_CATEGORIES) * 100;
+  const questionProgress = ((safeIndex + 1) / questions.length) * 100;
 
-  const canSkip = skippedCount[currentQuestion.category] < MAX_SKIPS_PER_CATEGORY;
+  const canSkip = skippedCount[currentQuestion.category as DNACategory] < DNA_QUESTIONNAIRE.MAX_SKIPS_PER_CATEGORY;
 
   const handleAnswer = (value: string | string[] | number) => {
     setAnswers(prev => ({
@@ -273,11 +89,13 @@ export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScree
     }));
   };
 
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
+  const handleNext = async () => {
+    if (safeIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      // Questionnaire complete
+      // Questionnaire complete - save all answers
+      await saveAllAnswers(answers);
+      
       if (onNext) {
         onNext(answers);
       } else {
@@ -299,9 +117,10 @@ export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScree
 
   const handleSkip = () => {
     if (canSkip) {
+      const category = currentQuestion.category as DNACategory;
       setSkippedCount(prev => ({
         ...prev,
-        [currentQuestion.category]: prev[currentQuestion.category] + 1
+        [category]: prev[category] + 1
       }));
       handleNext();
     }
@@ -368,7 +187,7 @@ export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScree
 
       case 'multiSelect':
         const selectedOptions = (currentAnswer as string[]) || [];
-        const maxReached = selectedOptions.length >= (currentQuestion.maxSelections || 5);
+        const maxReached = selectedOptions.length >= (currentQuestion.max_selections || 5);
 
         return (
           <div className="space-y-4">
@@ -404,7 +223,7 @@ export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScree
               })}
             </div>
             <p className="text-xs text-center text-neutral-600">
-              Selected {selectedOptions.length} of {currentQuestion.maxSelections}
+              Selected {selectedOptions.length} of {currentQuestion.max_selections}
             </p>
           </div>
         );
@@ -472,9 +291,9 @@ export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScree
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "px-3 py-1 rounded-full text-xs font-semibold",
-                  categoryColors[currentQuestion.category]
+                  DNA_CATEGORY_COLORS[currentQuestion.category as DNACategory]
                 )}>
-                  {categoryLabels[currentQuestion.category]}
+                  {DNA_CATEGORY_LABELS[currentQuestion.category as DNACategory]}
                 </span>
                 <span className="text-xs text-neutral-600">
                   ({currentCategoryNumber} of {totalCategories})
@@ -530,23 +349,32 @@ export const DNAQuestionnaireScreen = ({ onNext, onBack }: DNAQuestionnaireScree
                   variant="ghost"
                   className="flex-1 h-12 rounded-xl text-neutral-600"
                 >
-                  Skip ({MAX_SKIPS_PER_CATEGORY - skippedCount[currentQuestion.category]} left)
+                  Skip ({DNA_QUESTIONNAIRE.MAX_SKIPS_PER_CATEGORY - skippedCount[currentQuestion.category as DNACategory]} left)
                 </Button>
               )}
 
               <Button
                 onClick={handleNext}
-                disabled={!isAnswered}
+                disabled={!isAnswered || isSaving}
                 className="flex-1 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/90"
               >
-                {currentQuestionIndex === questions.length - 1 ? 'Complete' : 'Next'}
-                <ChevronRight className="w-5 h-5" />
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    {currentQuestionIndex === questions.length - 1 ? 'Complete' : 'Next'}
+                    <ChevronRight className="w-5 h-5" />
+                  </>
+                )}
               </Button>
             </div>
 
             {/* Step Indicator */}
             <div className="text-center text-xs text-neutral-500">
-              Step {CURRENT_STEP} of {TOTAL_STEPS}
+              Step {DNA_QUESTIONNAIRE.STEP} of {DNA_QUESTIONNAIRE.TOTAL_CATEGORIES}
             </div>
           </div>
         </div>
