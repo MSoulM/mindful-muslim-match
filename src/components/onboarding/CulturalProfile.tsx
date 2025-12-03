@@ -1,130 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Globe, 
-  MapPin, 
-  Info, 
-  Check, 
-  ChevronRight,
-  Languages,
-  Heart
-} from 'lucide-react';
+import { Globe, MapPin, Info, Check, ChevronRight, Languages, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import type { CulturalBackground, CulturalStrength, CulturalProfile as CulturalProfileType, CulturalProfileProps } from '@/types/onboarding';
+import { CULTURAL_OPTIONS, COMMON_LANGUAGES } from '@/config/onboardingConstants';
 
-export type CulturalBackground = 
-  | 'south_asian' 
-  | 'arab' 
-  | 'western_convert' 
-  | 'african' 
-  | 'southeast_asian' 
-  | 'other';
-
-export type CulturalStrength = 'weak' | 'moderate' | 'strong';
-
-export interface CulturalProfile {
-  backgrounds: CulturalBackground[]; // Multi-select for mixed heritage
-  primaryBackground: CulturalBackground;
-  strength: CulturalStrength;
-  strengthValue: number; // 1-10 slider value
-  location: string;
-  languages: string[];
-}
-
-interface CulturalOption {
-  id: CulturalBackground;
-  label: string;
-  emoji: string;
-  gradient: string;
-  description: string;
-  commonRegions: string[];
-  commonLanguages: string[];
-}
-
-const CULTURAL_OPTIONS: CulturalOption[] = [
-  {
-    id: 'south_asian',
-    label: 'South Asian',
-    emoji: '🇮🇳',
-    gradient: 'from-orange-500 to-green-600',
-    description: 'Heritage from India, Pakistan, Bangladesh, Sri Lanka',
-    commonRegions: ['India', 'Pakistan', 'Bangladesh', 'Sri Lanka', 'Nepal'],
-    commonLanguages: ['Urdu', 'Hindi', 'Bengali', 'Punjabi', 'Tamil', 'Gujarati']
-  },
-  {
-    id: 'arab',
-    label: 'Arab',
-    emoji: '🇸🇦',
-    gradient: 'from-emerald-600 to-teal-500',
-    description: 'Heritage from Middle East and North Africa',
-    commonRegions: ['Saudi Arabia', 'UAE', 'Egypt', 'Jordan', 'Lebanon', 'Morocco'],
-    commonLanguages: ['Arabic', 'French', 'Berber']
-  },
-  {
-    id: 'western_convert',
-    label: 'Western Convert',
-    emoji: '🌍',
-    gradient: 'from-blue-500 to-purple-600',
-    description: 'Reverted to Islam from Western background',
-    commonRegions: ['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France'],
-    commonLanguages: ['English', 'French', 'German', 'Spanish']
-  },
-  {
-    id: 'african',
-    label: 'African',
-    emoji: '🇳🇬',
-    gradient: 'from-yellow-500 to-red-600',
-    description: 'Heritage from Sub-Saharan Africa',
-    commonRegions: ['Nigeria', 'Somalia', 'Senegal', 'Kenya', 'Mali', 'Ethiopia'],
-    commonLanguages: ['Swahili', 'Somali', 'Hausa', 'Wolof', 'Amharic']
-  },
-  {
-    id: 'southeast_asian',
-    label: 'Southeast Asian',
-    emoji: '🇲🇾',
-    gradient: 'from-red-500 to-yellow-500',
-    description: 'Heritage from Malaysia, Indonesia, Brunei, Philippines',
-    commonRegions: ['Malaysia', 'Indonesia', 'Brunei', 'Singapore', 'Thailand'],
-    commonLanguages: ['Malay', 'Indonesian', 'Tagalog', 'Thai']
-  },
-  {
-    id: 'other',
-    label: 'Other/Mixed',
-    emoji: '🌏',
-    gradient: 'from-pink-500 to-indigo-600',
-    description: 'Multiple heritages or other cultural background',
-    commonRegions: [],
-    commonLanguages: []
-  }
-];
-
-const COMMON_LANGUAGES = [
-  'Arabic', 'Urdu', 'English', 'Hindi', 'Bengali', 'Punjabi',
-  'Malay', 'Indonesian', 'Turkish', 'Persian', 'French',
-  'Swahili', 'Somali', 'Tamil', 'Gujarati', 'Spanish'
-];
-
-interface CulturalProfileProps {
-  onComplete: (profile: CulturalProfile) => void;
-  onSkip?: () => void;
-  initialLocation?: string;
-  allowMultiple?: boolean;
-}
+// Re-export types for backward compatibility
+export type { CulturalBackground, CulturalStrength };
 
 export const CulturalProfile = ({ 
   onComplete, 
   onSkip,
   initialLocation = '',
-  allowMultiple = true 
+  allowMultiple = true,
+  initialProfile = null,
+  isSaving = false
 }: CulturalProfileProps) => {
   const [selectedBackgrounds, setSelectedBackgrounds] = useState<CulturalBackground[]>([]);
   const [strengthValue, setStrengthValue] = useState<number>(7);
@@ -132,6 +27,21 @@ export const CulturalProfile = ({
   const [step, setStep] = useState<'background' | 'strength' | 'languages'>('background');
 
   const primaryBackground = selectedBackgrounds[0];
+
+  // Prefill from saved profile if provided
+  useEffect(() => {
+    if (initialProfile) {
+      setSelectedBackgrounds(initialProfile.backgrounds);
+      setStrengthValue(initialProfile.strengthValue);
+      setSelectedLanguages(initialProfile.languages);
+      // If they already have languages, jump straight to languages step for quick review
+      if (initialProfile.languages.length > 0) {
+        setStep('languages');
+      } else if (initialProfile.backgrounds.length > 0) {
+        setStep('strength');
+      }
+    }
+  }, [initialProfile]);
   
   // Map slider value (1-10) to strength category
   const getStrengthCategory = (value: number): CulturalStrength => {
@@ -189,7 +99,7 @@ export const CulturalProfile = ({
       return;
     }
 
-    const profile: CulturalProfile = {
+    const profile: CulturalProfileType = {
       backgrounds: selectedBackgrounds,
       primaryBackground: primaryBackground,
       strength: strengthCategory,
@@ -343,7 +253,7 @@ export const CulturalProfile = ({
             Skip
           </Button>
         )}
-        <Button
+          <Button
           onClick={handleContinueToStrength}
           disabled={selectedBackgrounds.length === 0}
           className="flex-1 gap-2"
@@ -357,14 +267,6 @@ export const CulturalProfile = ({
   );
 
   const renderStrengthStep = () => {
-    const strengthLabels = {
-      1: 'Not very connected',
-      3: 'Somewhat connected',
-      5: 'Moderately connected',
-      7: 'Strongly connected',
-      10: 'Very strongly connected'
-    };
-
     const strengthColors = {
       weak: 'text-amber-600',
       moderate: 'text-blue-600',
@@ -591,11 +493,11 @@ export const CulturalProfile = ({
           </Button>
           <Button
             onClick={handleComplete}
-            disabled={selectedLanguages.length === 0}
+            disabled={selectedLanguages.length === 0 || isSaving}
             className="flex-1"
             size="lg"
           >
-            Complete Profile
+            {isSaving ? 'Saving...' : 'Complete Profile'}
           </Button>
         </div>
       </motion.div>

@@ -1,30 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  CulturalProfile as CulturalProfileComponent, 
-  type CulturalProfile 
-} from '@/components/onboarding/CulturalProfile';
+import { CulturalProfile as CulturalProfileComponent } from '@/components/onboarding/CulturalProfile';
+import type { CulturalProfile } from '@/types/onboarding';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { toast } from 'sonner';
+import { useCulturalProfile } from '@/hooks/useCulturalProfile';
 
 export default function CulturalProfileDemo() {
   const navigate = useNavigate();
   const [isComplete, setIsComplete] = useState(false);
+  const { profile, saveProfile, isSaving } = useCulturalProfile();
 
-  const handleComplete = (profile: CulturalProfile) => {
-    console.log('Cultural profile complete:', profile);
-    
-    toast.success('Cultural profile created!', {
-      description: `Primary: ${profile.primaryBackground}, Strength: ${profile.strength}`
-    });
+  const handleComplete = async (profile: CulturalProfile) => {
+    try {
+      await saveProfile(profile);
 
-    setIsComplete(true);
-    
-    // Navigate to next onboarding step
-    setTimeout(() => {
-      navigate('/profile');
-    }, 2000);
+      toast.success('Cultural profile created!', {
+        description: `Primary: ${profile.primaryBackground}, Strength: ${profile.strength}`
+      });
+
+      setIsComplete(true);
+
+      // Navigate to next onboarding step
+      setTimeout(() => {
+        navigate('/profile');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to save cultural profile from demo:', error);
+      toast.error('Failed to save cultural profile');
+    }
   };
 
   const handleSkip = () => {
@@ -60,6 +65,8 @@ export default function CulturalProfileDemo() {
             onSkip={handleSkip}
             initialLocation="London, UK"
             allowMultiple={true}
+            initialProfile={profile}
+            isSaving={isSaving}
           />
         </div>
 

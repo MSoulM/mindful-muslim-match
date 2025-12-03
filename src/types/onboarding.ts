@@ -161,3 +161,72 @@ export interface CommunicationPrefsScreenProps {
   onNext: (prefs: CommunicationPrefs) => void;
   onBack: () => void;
 }
+
+// Personality Assessment Types
+export type UserPersonalityType = 'wise_aunty' | 'modern_scholar' | 'spiritual_guide' | 'cultural_bridge';
+
+export interface AssessmentOption {
+  text: string;
+  scores: Record<UserPersonalityType, number>;
+}
+
+export interface AssessmentQuestion {
+  id: string;
+  question: string;
+  subtitle?: string;
+  options: AssessmentOption[];
+  voicePrompt?: string;
+}
+
+export interface AssessmentProgress {
+  currentStep: number;
+  answers: number[];
+  scores: Record<UserPersonalityType, number>;
+  timestamp: number;
+}
+
+export interface PersonalityAssessmentProps {
+  onComplete: (personality: UserPersonalityType, scores: Record<UserPersonalityType, number>) => void;
+  onSkip?: () => void;
+  allowVoice?: boolean;
+  onProgressSave?: (progress: AssessmentProgress) => void;
+}
+
+// Cultural Profile Types
+export type CulturalBackground = 
+  | 'south_asian' 
+  | 'arab' 
+  | 'western_convert' 
+  | 'african' 
+  | 'southeast_asian' 
+  | 'other';
+
+export type CulturalStrength = 'weak' | 'moderate' | 'strong';
+
+export interface CulturalProfile {
+  backgrounds: CulturalBackground[]; // Multi-select for mixed heritage
+  primaryBackground: CulturalBackground;
+  strength: CulturalStrength;
+  strengthValue: number; // 1-10 slider value
+  location: string;
+  languages: string[];
+}
+
+export interface CulturalOption {
+  id: CulturalBackground;
+  label: string;
+  emoji: string;
+  gradient: string;
+  description: string;
+  commonRegions: string[];
+  commonLanguages: string[];
+}
+
+export interface CulturalProfileProps {
+  onComplete: (profile: CulturalProfile) => void;
+  onSkip?: () => void;
+  initialLocation?: string;
+  allowMultiple?: boolean;
+  initialProfile?: CulturalProfile | null;
+  isSaving?: boolean;
+}

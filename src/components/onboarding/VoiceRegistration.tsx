@@ -118,6 +118,8 @@ export const VoiceRegistration = ({
     setManualText(transcript);
   };
 
+  console.log(useTextFallback)
+
   const wordCount = (useTextFallback ? manualText : transcript).trim().split(/\s+/).filter(w => w.length > 0).length;
   const isComplete = wordCount >= minWords;
 
