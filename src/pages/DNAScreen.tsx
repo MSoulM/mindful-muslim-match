@@ -129,12 +129,11 @@ export default function DNAScreen() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen flex flex-col">
+      <div className="h-screen flex flex-col">
         {/* TopBar */}
         <TopBar
           variant="logo"
           notificationCount={unreadCount}
-          userInitials="AK"
           onNotificationClick={handleNotificationClick}
           onProfileClick={handleProfileClick}
         />
