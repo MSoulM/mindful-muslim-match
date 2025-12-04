@@ -1,7 +1,4 @@
-/**
- * Centralized constants for the onboarding process
- * Used across all onboarding screens
- */
+import type { UserPersonalityType, AssessmentQuestion, CulturalOption } from '@/types/onboarding';
 
 // Step constants
 export const ONBOARDING_STEPS = {
@@ -393,4 +390,223 @@ export const VOICE_ONBOARDING_QUESTIONS = [
     subtitle: 'What does your perfect partnership look like?',
     minWords: 20
   }
+] as const;
+
+// Personality Assessment Constants
+export const USER_PERSONALITIES = {
+  wise_aunty: {
+    name: 'Traditional Wisdom Seeker',
+    tagline: 'Values family guidance and heritage',
+    emoji: '👵🏽',
+    description: 'You value traditional wisdom, family guidance, and cultural heritage in decision-making',
+    traits: ['Family-oriented', 'Traditional', 'Community-focused', 'Heritage-conscious']
+  },
+  modern_scholar: {
+    name: 'Analytical Thinker',
+    tagline: 'Research-driven and data-focused',
+    emoji: '📚',
+    description: 'You approach decisions through research, analysis, and evidence-based reasoning',
+    traits: ['Analytical', 'Research-driven', 'Independent', 'Progressive']
+  },
+  spiritual_guide: {
+    name: 'Faith-Centered Believer',
+    tagline: 'Guided by prayer and spirituality',
+    emoji: '🤲🏽',
+    description: 'You seek spiritual guidance through prayer, reflection, and Islamic principles',
+    traits: ['Spiritual', 'Faith-driven', 'Reflective', 'Prayerful']
+  },
+  cultural_bridge: {
+    name: 'Balanced Integrator',
+    tagline: 'Bridges multiple perspectives',
+    emoji: '🌉',
+    description: 'You balance multiple cultural perspectives, integrating tradition with modern values',
+    traits: ['Adaptable', 'Open-minded', 'Multicultural', 'Balanced']
+  }
+} as const;
+
+export const ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
+  {
+    id: 'decision_making',
+    question: 'When making important life decisions, what matters most to you?',
+    subtitle: 'Think about major choices like career, marriage, or life direction',
+    voicePrompt: 'Tell me about what matters most when you make important life decisions',
+    options: [
+      { 
+        text: 'Family guidance and traditional wisdom', 
+        scores: { wise_aunty: 3, modern_scholar: 1, spiritual_guide: 2, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Research, data, and personal analysis', 
+        scores: { wise_aunty: 1, modern_scholar: 3, spiritual_guide: 1, cultural_bridge: 2 } 
+      },
+      { 
+        text: 'Prayer, istikhara, and spiritual guidance', 
+        scores: { wise_aunty: 2, modern_scholar: 1, spiritual_guide: 3, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Balancing multiple perspectives and cultures', 
+        scores: { wise_aunty: 1, modern_scholar: 2, spiritual_guide: 1, cultural_bridge: 3 } 
+      }
+    ]
+  },
+  {
+    id: 'relationship_values',
+    question: 'What do you value most in a life partner?',
+    subtitle: 'Consider the qualities that are non-negotiable for you',
+    voicePrompt: 'Describe what qualities you value most in a life partner',
+    options: [
+      { 
+        text: 'Strong family connections and traditional values', 
+        scores: { wise_aunty: 3, modern_scholar: 1, spiritual_guide: 2, cultural_bridge: 2 } 
+      },
+      { 
+        text: 'Intellectual compatibility and shared ambitions', 
+        scores: { wise_aunty: 1, modern_scholar: 3, spiritual_guide: 1, cultural_bridge: 2 } 
+      },
+      { 
+        text: 'Deep faith and spiritual alignment', 
+        scores: { wise_aunty: 2, modern_scholar: 1, spiritual_guide: 3, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Open-mindedness and cultural adaptability', 
+        scores: { wise_aunty: 1, modern_scholar: 2, spiritual_guide: 1, cultural_bridge: 3 } 
+      }
+    ]
+  },
+  {
+    id: 'conflict_resolution',
+    question: 'How do you prefer to resolve conflicts in relationships?',
+    subtitle: 'Your natural approach to disagreements',
+    voicePrompt: 'Share how you typically handle conflicts or disagreements',
+    options: [
+      { 
+        text: 'Seek advice from family elders or community', 
+        scores: { wise_aunty: 3, modern_scholar: 1, spiritual_guide: 2, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Analyze objectively and find logical solutions', 
+        scores: { wise_aunty: 1, modern_scholar: 3, spiritual_guide: 1, cultural_bridge: 2 } 
+      },
+      { 
+        text: 'Turn to prayer and seek divine guidance', 
+        scores: { wise_aunty: 2, modern_scholar: 1, spiritual_guide: 3, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Consider all viewpoints and find middle ground', 
+        scores: { wise_aunty: 1, modern_scholar: 2, spiritual_guide: 1, cultural_bridge: 3 } 
+      }
+    ]
+  },
+  {
+    id: 'lifestyle_approach',
+    question: 'Which lifestyle approach resonates most with you?',
+    subtitle: 'How you envision your daily life and routines',
+    voicePrompt: 'Describe the lifestyle that feels most authentic to you',
+    options: [
+      { 
+        text: 'Close-knit community with regular family gatherings', 
+        scores: { wise_aunty: 3, modern_scholar: 1, spiritual_guide: 2, cultural_bridge: 2 } 
+      },
+      { 
+        text: 'Independent pursuits with focus on personal growth', 
+        scores: { wise_aunty: 1, modern_scholar: 3, spiritual_guide: 1, cultural_bridge: 2 } 
+      },
+      { 
+        text: 'Centered around worship, dhikr, and Islamic learning', 
+        scores: { wise_aunty: 2, modern_scholar: 1, spiritual_guide: 3, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Blend of traditional values with modern flexibility', 
+        scores: { wise_aunty: 2, modern_scholar: 2, spiritual_guide: 1, cultural_bridge: 3 } 
+      }
+    ]
+  },
+  {
+    id: 'future_planning',
+    question: 'How do you approach planning your future?',
+    subtitle: 'Your mindset about long-term goals and aspirations',
+    voicePrompt: 'Tell me about how you think about and plan for your future',
+    options: [
+      { 
+        text: 'Follow the path my family and culture have laid out', 
+        scores: { wise_aunty: 3, modern_scholar: 1, spiritual_guide: 2, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Set ambitious goals with detailed action plans', 
+        scores: { wise_aunty: 1, modern_scholar: 3, spiritual_guide: 1, cultural_bridge: 2 } 
+      },
+      { 
+        text: 'Trust in Allah\'s plan and stay spiritually prepared', 
+        scores: { wise_aunty: 2, modern_scholar: 1, spiritual_guide: 3, cultural_bridge: 1 } 
+      },
+      { 
+        text: 'Create flexible plans that honor both tradition and innovation', 
+        scores: { wise_aunty: 1, modern_scholar: 2, spiritual_guide: 1, cultural_bridge: 3 } 
+      }
+    ]
+  }
+];
+
+// Cultural Profile Constants
+export const CULTURAL_OPTIONS: CulturalOption[] = [
+  {
+    id: 'south_asian',
+    label: 'South Asian',
+    emoji: '🇮🇳',
+    gradient: 'from-orange-500 to-green-600',
+    description: 'Heritage from India, Pakistan, Bangladesh, Sri Lanka',
+    commonRegions: ['India', 'Pakistan', 'Bangladesh', 'Sri Lanka', 'Nepal'],
+    commonLanguages: ['Urdu', 'Hindi', 'Bengali', 'Punjabi', 'Tamil', 'Gujarati']
+  },
+  {
+    id: 'arab',
+    label: 'Arab',
+    emoji: '🇸🇦',
+    gradient: 'from-emerald-600 to-teal-500',
+    description: 'Heritage from Middle East and North Africa',
+    commonRegions: ['Saudi Arabia', 'UAE', 'Egypt', 'Jordan', 'Lebanon', 'Morocco'],
+    commonLanguages: ['Arabic', 'French', 'Berber']
+  },
+  {
+    id: 'western_convert',
+    label: 'Western Convert',
+    emoji: '🌍',
+    gradient: 'from-blue-500 to-purple-600',
+    description: 'Reverted to Islam from Western background',
+    commonRegions: ['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France'],
+    commonLanguages: ['English', 'French', 'German', 'Spanish']
+  },
+  {
+    id: 'african',
+    label: 'African',
+    emoji: '🇳🇬',
+    gradient: 'from-yellow-500 to-red-600',
+    description: 'Heritage from Sub-Saharan Africa',
+    commonRegions: ['Nigeria', 'Somalia', 'Senegal', 'Kenya', 'Mali', 'Ethiopia'],
+    commonLanguages: ['Swahili', 'Somali', 'Hausa', 'Wolof', 'Amharic']
+  },
+  {
+    id: 'southeast_asian',
+    label: 'Southeast Asian',
+    emoji: '🇲🇾',
+    gradient: 'from-red-500 to-yellow-500',
+    description: 'Heritage from Malaysia, Indonesia, Brunei, Philippines',
+    commonRegions: ['Malaysia', 'Indonesia', 'Brunei', 'Singapore', 'Thailand'],
+    commonLanguages: ['Malay', 'Indonesian', 'Tagalog', 'Thai']
+  },
+  {
+    id: 'other',
+    label: 'Other/Mixed',
+    emoji: '🌏',
+    gradient: 'from-pink-500 to-indigo-600',
+    description: 'Multiple heritages or other cultural background',
+    commonRegions: [],
+    commonLanguages: []
+  }
+];
+
+export const COMMON_LANGUAGES = [
+  'Arabic', 'Urdu', 'English', 'Hindi', 'Bengali', 'Punjabi',
+  'Malay', 'Indonesian', 'Turkish', 'Persian', 'French',
+  'Swahili', 'Somali', 'Tamil', 'Gujarati', 'Spanish'
 ] as const;
