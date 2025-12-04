@@ -204,12 +204,11 @@ export const MessageComposer = ({
       <div className="px-4 py-3">
         <div className="flex items-end gap-2">
             <Button
-              variant="ghost"
               size="icon"
               onClick={handleImagePicker}
-              className="shrink-0 h-10 w-10"
+              className="shrink-0 h-10 w-10 mb-1"
             >
-              <Image className="h-5 w-5" />
+              <Image />
             </Button>
             
             <div className="flex-1 relative">
@@ -219,34 +218,25 @@ export const MessageComposer = ({
                 onChange={handleMessageChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
-                className="min-h-[44px] max-h-[120px] resize-none pr-10 py-3"
+                className="min-h-12 max-h-[120px] h-auto resize-none pr-10 py-3 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus:ring-0 focus:ring-offset-0 focus:outline-none"
                 rows={1}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 bottom-2 h-8 w-8"
-                disabled
-                title="Coming Soon"
-              >
-                <Smile className="h-5 w-5" />
-              </Button>
+              <Smile className="absolute right-6 bottom-3 h-6 w-6" />
             </div>
             
             {message.trim() ? (
               <Button
                 onClick={handleSend}
                 size="icon"
-                className="shrink-0 h-10 w-10 rounded-full"
+                className="shrink-0 h-10 w-10 mb-1"
               >
                 <Send className="h-5 w-5" />
               </Button>
             ) : (
               <Button
-                variant="ghost"
                 size="icon"
                 onClick={handleVoiceRecord}
-                className="shrink-0 h-10 w-10"
+                className="shrink-0 h-10 w-10 mb-1"
               >
                 <Mic className="h-5 w-5" />
               </Button>

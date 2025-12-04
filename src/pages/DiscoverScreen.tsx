@@ -223,7 +223,6 @@ export default function DiscoverScreen() {
           <TopBar
             variant="logo"
             notificationCount={unreadCount}
-            userInitials="AK"
             onNotificationClick={handleNotificationClick}
             onProfileClick={handleProfileClick}
           />
@@ -267,7 +266,6 @@ export default function DiscoverScreen() {
         <TopBar
           variant="logo"
           notificationCount={unreadCount}
-          userInitials="AK"
           onNotificationClick={handleNotificationClick}
           onProfileClick={handleProfileClick}
         />

@@ -70,7 +70,7 @@ export const MSMLogo = ({
     const compactContent = (
       <>
         <LogoIcon size={44} />
-        <span className="text-lg font-bold text-primary-forest leading-none">
+        <span className="text-lg font-bold text-primary-forest leading-none hidden sm:block">
           MuslimSoulmate.ai
         </span>
       </>
