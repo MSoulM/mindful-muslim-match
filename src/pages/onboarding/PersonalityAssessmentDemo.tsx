@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PersonalityAssessment, UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+import { PersonalityAssessment } from '@/components/onboarding/PersonalityAssessment';
 import { PersonalityReveal } from '@/components/onboarding/PersonalityReveal';
 import { TopBar } from '@/components/layout/TopBar';
+import { UserPersonalityType } from '@/types/onboarding';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { toast } from 'sonner';
 
@@ -12,7 +13,6 @@ export default function PersonalityAssessmentDemo() {
   const [assignedPersonality, setAssignedPersonality] = useState<UserPersonalityType | null>(null);
 
   const handleComplete = (personality: UserPersonalityType, scores: Record<UserPersonalityType, number>) => {
-    console.log('Assessment complete:', { personality, scores });
     setAssignedPersonality(personality);
     setIsComplete(true);
   };
@@ -48,7 +48,6 @@ export default function PersonalityAssessmentDemo() {
       />
 
       <div className="flex-1 flex flex-col">
-        {/* Header */}
         <div className="p-6 bg-gradient-to-b from-primary/5 to-transparent">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Discover Your Personality
@@ -75,7 +74,6 @@ export default function PersonalityAssessmentDemo() {
           ) : null}
         </div>
 
-        {/* Footer tip */}
         {!isComplete && (
           <div className="p-4 bg-muted/30 border-t">
             <p className="text-xs text-center text-muted-foreground">

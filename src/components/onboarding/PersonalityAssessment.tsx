@@ -7,19 +7,9 @@ import { cn } from '@/lib/utils';
 import { VoiceRegistration } from './VoiceRegistration';
 import { toast } from 'sonner';
 import { PersonalityTieBreaker } from './PersonalityTieBreaker';
-import type { 
-  UserPersonalityType, 
-  PersonalityAssessmentProps, 
-  AssessmentProgress 
-} from '@/types/onboarding';
-import { 
-  USER_PERSONALITIES, 
-  ASSESSMENT_QUESTIONS 
-} from '@/config/onboardingConstants';
-
-// Re-export types and constants for backward compatibility
-export type { UserPersonalityType };
-export { USER_PERSONALITIES };
+import type { UserPersonalityType, PersonalityAssessmentProps, AssessmentProgress } from '@/types/onboarding';
+import { USER_PERSONALITIES, ASSESSMENT_QUESTIONS } from '@/config/onboardingConstants';
+import { usePersonalityAssessment } from '@/hooks/usePersonalityAssessment';
 
 export const PersonalityAssessment = ({ 
   onComplete, 
@@ -45,6 +35,14 @@ export const PersonalityAssessment = ({
   const [showAmbiguousPrompt, setShowAmbiguousPrompt] = useState(false);
 
   const PROGRESS_STORAGE_KEY = 'personality_assessment_progress';
+  const {
+    progress: remoteProgress,
+    saveProgress: saveProgressRemote,
+    clearProgress: clearProgressRemote,
+    assessment: remoteAssessment,
+    saveAssessment,
+    savingAssessment,
+  } = usePersonalityAssessment();
 
   // Load saved progress on mount
   useEffect(() => {
@@ -73,6 +71,37 @@ export const PersonalityAssessment = ({
     }
   }, []);
 
+  // Load saved progress from Supabase
+  useEffect(() => {
+    if (!remoteProgress || answers.length > 0 || showResult) return;
+
+    setStep(remoteProgress.currentStep ?? 0);
+    setAnswers(remoteProgress.answers ?? []);
+    setScores(remoteProgress.scores ?? {
+      wise_aunty: 0,
+      modern_scholar: 0,
+      spiritual_guide: 0,
+      cultural_bridge: 0,
+    });
+
+    toast.info('Resuming your saved assessment', {
+      description: `Question ${(remoteProgress.currentStep ?? 0) + 1} of ${ASSESSMENT_QUESTIONS.length}`
+    });
+  }, [remoteProgress, answers.length, showResult]);
+
+  // Load completed assessment from Supabase on first render
+  useEffect(() => {
+    if (!remoteAssessment || showResult) return;
+
+    setResult(remoteAssessment.personalityType);
+    setScores(remoteAssessment.scores);
+    setShowResult(true);
+
+    if (Array.isArray(remoteAssessment.answers) && remoteAssessment.answers.length) {
+      setAnswers(remoteAssessment.answers);
+    }
+  }, [remoteAssessment, showResult]);
+
   // Save progress whenever step or answers change
   useEffect(() => {
     if (answers.length > 0 && !showResult) {
@@ -84,8 +113,12 @@ export const PersonalityAssessment = ({
       };
       localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
       onProgressSave?.(progress);
+
+      saveProgressRemote?.(progress).catch((error: unknown) => {
+        console.error('Failed to save assessment progress', error);
+      });
     }
-  }, [step, answers, scores, showResult, onProgressSave]);
+  }, [step, answers, scores, showResult, onProgressSave, saveProgressRemote]);
 
   const currentQuestion = ASSESSMENT_QUESTIONS[step];
   const progress = ((step + 1) / ASSESSMENT_QUESTIONS.length) * 100;
@@ -98,9 +131,10 @@ export const PersonalityAssessment = ({
       spiritual_guide: 0,
       cultural_bridge: 0
     };
-
+    
     answers.forEach((answerIndex, questionIndex) => {
       const question = ASSESSMENT_QUESTIONS[questionIndex];
+      console.log(ASSESSMENT_QUESTIONS)
       const selectedAnswer = question.options[answerIndex];
       
       Object.entries(selectedAnswer.scores).forEach(([personality, score]) => {
@@ -299,11 +333,25 @@ export const PersonalityAssessment = ({
     });
   };
 
-  const handleSaveAndContinue = () => {
+  const handleSaveAndContinue = async () => {
     if (result) {
       // Clear saved progress on completion
-      localStorage.removeItem(PROGRESS_STORAGE_KEY);
-      onComplete(result, scores);
+      try {
+        await saveAssessment?.({
+          personalityType: result,
+          scores,
+          answers,
+        });
+        await clearProgressRemote?.();
+        localStorage.removeItem(PROGRESS_STORAGE_KEY);
+        toast.success('Assessment saved to your profile');
+        onComplete(result, scores);
+      } catch (error) {
+        console.error('Failed to save assessment', error);
+        toast.error('Could not save assessment', {
+          description: error instanceof Error ? error.message : 'Please try again'
+        });
+      }
     }
   };
 
