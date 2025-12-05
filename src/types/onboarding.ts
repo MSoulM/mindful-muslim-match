@@ -192,6 +192,21 @@ export interface PersonalityAssessmentProps {
   onProgressSave?: (progress: AssessmentProgress) => void;
 }
 
+export interface PersonalityRevealProps {
+  personality: UserPersonalityType;
+  onContinue: () => void;
+  onTryDifferent: () => void;
+}
+
+export type PersonalityRevealConfig = Record<UserPersonalityType, {
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; color?: string }>;
+  name: string;
+  tagline: string;
+  color: string;
+  expectations: string[];
+  sampleGreeting: string;
+}>;
+
 // Cultural Profile Types
 export type CulturalBackground = 
   | 'south_asian' 
@@ -229,4 +244,12 @@ export interface CulturalProfileProps {
   allowMultiple?: boolean;
   initialProfile?: CulturalProfile | null;
   isSaving?: boolean;
+}
+
+// Voice Registration Types
+export interface VoiceRegistrationProps {
+  onComplete: (transcript: string) => void;
+  onError?: () => void;
+  prompt: string;
+  minWords?: number;
 }

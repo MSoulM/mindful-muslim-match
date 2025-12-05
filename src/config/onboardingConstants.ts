@@ -1,4 +1,5 @@
-import type { UserPersonalityType, AssessmentQuestion, CulturalOption } from '@/types/onboarding';
+import type { UserPersonalityType, AssessmentQuestion, CulturalOption, PersonalityRevealConfig } from '@/types/onboarding';
+import { Heart, Sparkles, BookOpen, Globe } from 'lucide-react';
 
 // Step constants
 export const ONBOARDING_STEPS = {
@@ -423,6 +424,57 @@ export const USER_PERSONALITIES = {
     traits: ['Adaptable', 'Open-minded', 'Multicultural', 'Balanced']
   }
 } as const;
+
+export const PERSONALITY_REVEAL_CONFIG: PersonalityRevealConfig = {
+  wise_aunty: {
+    icon: Heart,
+    name: "The Wise Aunty",
+    tagline: "Traditional warmth meets modern wisdom",
+    color: "hsl(var(--primary))",
+    expectations: [
+      "Warm, motherly guidance with Islamic values",
+      "Practical advice rooted in family wisdom",
+      "Gentle nudges toward halal connections"
+    ],
+    sampleGreeting: "Assalamu alaikum beta! I'm so happy to guide you on this blessed journey. Let's find someone who will cherish you the way you deserve, insha'Allah. 💚"
+  },
+  modern_scholar: {
+    icon: BookOpen,
+    name: "The Modern Scholar",
+    tagline: "Data-driven insights with spiritual depth",
+    color: "hsl(var(--accent))",
+    expectations: [
+      "Evidence-based compatibility analysis",
+      "Balanced modern and traditional perspectives",
+      "Clear, structured guidance"
+    ],
+    sampleGreeting: "As-salamu alaykum! I'm here to help you make informed decisions about your future. Let's analyze compatibility factors while keeping your values at the center."
+  },
+  spiritual_guide: {
+    icon: Sparkles,
+    name: "The Spiritual Guide",
+    tagline: "Faith-centered matchmaking wisdom",
+    color: "hsl(var(--chart-3))",
+    expectations: [
+      "Dua-inspired guidance and spiritual support",
+      "Emphasis on taqwa and character",
+      "Reminders of Allah's plan for you"
+    ],
+    sampleGreeting: "Peace be upon you, dear soul. Remember, Allah has written your rizq, including your spouse. Let's journey together with trust in His perfect timing. ✨"
+  },
+  cultural_bridge: {
+    icon: Globe,
+    name: "The Cultural Bridge",
+    tagline: "Navigating traditions with modern grace",
+    color: "hsl(var(--chart-4))",
+    expectations: [
+      "Understanding of multicultural dynamics",
+      "Help balancing heritage and modernity",
+      "Respectful navigation of family expectations"
+    ],
+    sampleGreeting: "Hello! I understand the beautiful complexity of straddling cultures. Let's find someone who appreciates all the facets that make you, you. 🌍"
+  }
+};
 
 export const ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
   {
