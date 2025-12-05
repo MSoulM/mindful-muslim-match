@@ -1,105 +1,127 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
-interface SpeechToTextResult {
+interface AzureSpeechToTextProps {
   transcript: string;
   isListening: boolean;
   confidence: number;
   error: string | null;
+  startListening: () => void;
+  stopListening: () => void;
+  pauseListening: () => void;
+  resumeListening: () => void;
+  clearTranscript: () => void;
+  undoLastSentence: () => void;
+  setTranscript: (text: string) => void;
 }
 
-export const useSpeechToText = () => {
+const SPEECH_KEY = import.meta.env.VITE_AZURE_SPEECH_KEY;;
+const SPEECH_REGION = import.meta.env.VITE_AZURE_SPEECH_REGION;
+
+export const useSpeechToText = (language: string = 'en-US') => {
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [confidence, setConfidence] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [recognition, setRecognition] = useState<any>(null);
+
+  const recognizerRef = useRef<sdk.SpeechRecognizer | null>(null);
+  const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
 
   useEffect(() => {
-    // Check browser support
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      setError('Speech recognition not supported in this browser');
+    if (!SPEECH_KEY || !SPEECH_REGION) {
+      setError('Azure Speech key or region not configured');
       return;
     }
 
-    const recognitionInstance = new SpeechRecognition();
-    recognitionInstance.continuous = true;
-    recognitionInstance.interimResults = true;
-    recognitionInstance.lang = 'en-US';
+    audioConfigRef.current = sdk.AudioConfig.fromDefaultMicrophoneInput();
 
-    recognitionInstance.onresult = (event: any) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
+    const speechConfig = sdk.SpeechConfig.fromSubscription(SPEECH_KEY, SPEECH_REGION);
+    speechConfig.speechRecognitionLanguage = language;
+    speechConfig.enableAudioLogging();
+    speechConfig.setProperty(sdk.PropertyId.Speech_SegmentationSilenceTimeoutMs, "1000");
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          finalTranscript += result[0].transcript + ' ';
-          setConfidence(result[0].confidence);
-        } else {
-          interimTranscript += result[0].transcript;
+    const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfigRef.current);
+    recognizerRef.current = recognizer;
+
+    recognizer.recognizing = (_, event) => {
+      const interim = event.result.text || '';
+      setTranscript(prev => {
+        const finalPart = prev.replace(/ ?[\u200B-\u200D\uFEFF]+$/, '');
+        return finalPart + interim;
+      });
+    };
+    
+    recognizer.recognized = (_, event) => {
+      if (event.result.reason === sdk.ResultReason.RecognizedSpeech) {
+        const text = event.result.text.trim();
+        if (text) {
+          const conf = event.result.properties?.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult);
+          let confScore = 0.9;
+          try {
+            const json = JSON.parse(conf || '{}');
+            confScore = json.NBest?.[0]?.Confidence || 0.9;
+          } catch {}
+          
+          setConfidence(confScore);
+          setTranscript(prev => prev + (prev.endsWith(' ') ? '' : ' ') + text + ' ');
         }
+      } else if (event.result.reason === sdk.ResultReason.NoMatch) {
+        setError('No speech could be recognized.');
       }
-
-      setTranscript(prev => prev + finalTranscript || interimTranscript);
     };
 
-    recognitionInstance.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      setError(`Speech recognition error: ${event.error}`);
+    recognizer.canceled = (_, event) => {
+      let msg = 'Recognition canceled.';
+      if (event.reason === sdk.CancellationReason.Error) {
+        msg = `Error: ${event.errorDetails} (Code: ${event.errorCode})`;
+      }
+      setError(msg);
       setIsListening(false);
     };
 
-    recognitionInstance.onend = () => {
-      setIsListening(false);
+    recognizer.sessionStarted = () => {
+      setIsListening(true);
+      setError(null);
     };
 
-    setRecognition(recognitionInstance);
+    recognizer.sessionStopped = () => {
+      setIsListening(false);
+    };
 
     return () => {
-      if (recognitionInstance) {
-        recognitionInstance.stop();
+      if (recognizerRef.current) {
+        recognizerRef.current.stopContinuousRecognitionAsync();
+        recognizerRef.current.close();
+      }
+      if (audioConfigRef.current) {
+        audioConfigRef.current.close();
       }
     };
-  }, []);
+  }, [language]);
 
   const startListening = useCallback(() => {
-    if (!recognition) {
-      setError('Speech recognition not initialized');
+    if (!recognizerRef.current) {
+      setError('Recognizer not initialized');
       return;
     }
 
-    try {
-      setError(null);
-      recognition.start();
-      setIsListening(true);
-    } catch (err) {
-      console.error('Error starting speech recognition:', err);
-      setError('Failed to start speech recognition');
-    }
-  }, [recognition]);
+    setError(null);
+    recognizerRef.current.startContinuousRecognitionAsync(
+      () => console.log('Azure STT started'),
+      (err) => {
+        setError('Failed to start recognition');
+      }
+    );
+  }, []);
 
   const stopListening = useCallback(() => {
-    if (recognition) {
-      recognition.stop();
-      setIsListening(false);
+    if (recognizerRef.current) {
+      recognizerRef.current.stopContinuousRecognitionAsync();
     }
-  }, [recognition]);
+  }, []);
 
-  const pauseListening = useCallback(() => {
-    if (recognition && isListening) {
-      recognition.stop();
-      setIsListening(false);
-    }
-  }, [recognition, isListening]);
-
-  const resumeListening = useCallback(() => {
-    if (recognition && !isListening) {
-      recognition.start();
-      setIsListening(true);
-    }
-  }, [recognition, isListening]);
+  const pauseListening = stopListening;
+  const resumeListening = startListening;
 
   const clearTranscript = useCallback(() => {
     setTranscript('');
@@ -110,7 +132,7 @@ export const useSpeechToText = () => {
     const sentences = transcript.trim().split(/[.!?]\s+/);
     if (sentences.length > 1) {
       sentences.pop();
-      setTranscript(sentences.join('. ') + '. ');
+      setTranscript(sentences.join('. ') + (sentences.length > 0 ? '. ' : ''));
     } else {
       setTranscript('');
     }
@@ -128,5 +150,5 @@ export const useSpeechToText = () => {
     clearTranscript,
     undoLastSentence,
     setTranscript
-  };
-};
+  }
+}
