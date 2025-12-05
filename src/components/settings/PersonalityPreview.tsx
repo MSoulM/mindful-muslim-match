@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { UserPersonalityType, USER_PERSONALITIES } from '@/components/onboarding/PersonalityAssessment';
+import { UserPersonalityType } from '@/types/onboarding';
+import { USER_PERSONALITIES } from '@/config/onboardingConstants';
 import { Heart, BookOpen, Sparkles, Globe, MessageCircle, ArrowRight } from 'lucide-react';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 
