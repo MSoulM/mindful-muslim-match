@@ -1,76 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { UserPersonalityType } from './PersonalityAssessment';
+import { PersonalityRevealProps } from '@/types/onboarding';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Heart, Sparkles, BookOpen, Globe } from 'lucide-react';
+import { Sparkles, TrendingUp } from 'lucide-react';
 import { AgentMessage } from '@/components/chat/AgentMessage';
 import { updateAgentName } from '@/hooks/useAgentName';
-
-interface PersonalityRevealProps {
-  personality: UserPersonalityType;
-  onContinue: () => void;
-  onTryDifferent: () => void;
-}
-
-const personalityConfig = {
-  wise_aunty: {
-    icon: Heart,
-    name: "The Wise Aunty",
-    tagline: "Traditional warmth meets modern wisdom",
-    color: "hsl(var(--primary))",
-    expectations: [
-      "Warm, motherly guidance with Islamic values",
-      "Practical advice rooted in family wisdom",
-      "Gentle nudges toward halal connections"
-    ],
-    sampleGreeting: "Assalamu alaikum beta! I'm so happy to guide you on this blessed journey. Let's find someone who will cherish you the way you deserve, insha'Allah. 💚"
-  },
-  modern_scholar: {
-    icon: BookOpen,
-    name: "The Modern Scholar",
-    tagline: "Data-driven insights with spiritual depth",
-    color: "hsl(var(--accent))",
-    expectations: [
-      "Evidence-based compatibility analysis",
-      "Balanced modern and traditional perspectives",
-      "Clear, structured guidance"
-    ],
-    sampleGreeting: "As-salamu alaykum! I'm here to help you make informed decisions about your future. Let's analyze compatibility factors while keeping your values at the center."
-  },
-  spiritual_guide: {
-    icon: Sparkles,
-    name: "The Spiritual Guide",
-    tagline: "Faith-centered matchmaking wisdom",
-    color: "hsl(var(--chart-3))",
-    expectations: [
-      "Dua-inspired guidance and spiritual support",
-      "Emphasis on taqwa and character",
-      "Reminders of Allah's plan for you"
-    ],
-    sampleGreeting: "Peace be upon you, dear soul. Remember, Allah has written your rizq, including your spouse. Let's journey together with trust in His perfect timing. ✨"
-  },
-  cultural_bridge: {
-    icon: Globe,
-    name: "The Cultural Bridge",
-    tagline: "Navigating traditions with modern grace",
-    color: "hsl(var(--chart-4))",
-    expectations: [
-      "Understanding of multicultural dynamics",
-      "Help balancing heritage and modernity",
-      "Respectful navigation of family expectations"
-    ],
-    sampleGreeting: "Hello! I understand the beautiful complexity of straddling cultures. Let's find someone who appreciates all the facets that make you, you. 🌍"
-  }
-};
+import { usePersonalityAssessment } from '@/hooks/usePersonalityAssessment';
+import { PERSONALITY_REVEAL_CONFIG } from '@/config/onboardingConstants';
 
 export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: PersonalityRevealProps) => {
-  const config = personalityConfig[personality];
-  const IconComponent = config.icon;
+  const { assessment, isLoadingAssessment } = usePersonalityAssessment();
+  const config = PERSONALITY_REVEAL_CONFIG[personality];
+  const IconComponent = config.icon as React.ComponentType<{ className?: string; color?: string }>;
   const [customName, setCustomName] = useState('');
 
-  const getPlaceholderByPersonality = (personalityType: UserPersonalityType) => {
+  // Load saved agent name if exists
+  useEffect(() => {
+    const savedName = localStorage.getItem('mmAgentCustomName');
+    if (savedName) {
+      setCustomName(savedName);
+    }
+  }, []);
+
+  const getPlaceholderByPersonality = (personalityType: PersonalityRevealProps['personality']) => {
     switch(personalityType) {
       case 'wise_aunty': 
         return 'e.g., Auntie Sarah, Khalto Maryam';
@@ -83,6 +37,32 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
       default: 
         return 'Enter a name';
     }
+  };
+
+  // Format completion date
+  const formatCompletionDate = (dateString?: string | null) => {
+    if (!dateString) return null;
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  // Calculate score percentage
+  const getScorePercentage = (score: number, maxScore: number = 15) => {
+    return Math.round((score / maxScore) * 100);
+  };
+
+  // Get max score for percentage calculation
+  const getMaxScore = () => {
+    if (!assessment?.scores) return 15;
+    return Math.max(...Object.values(assessment.scores));
   };
 
   return (
@@ -100,19 +80,76 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
           className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4"
         >
-          <IconComponent className="w-10 h-10" style={{ color: config.color }} />
+          <IconComponent className="w-10 h-10" color={config.color} />
         </motion.div>
         
         <h2 className="text-2xl font-bold text-foreground">
           Your MMAgent: {config.name}
         </h2>
         <p className="text-muted-foreground">{config.tagline}</p>
+        
+        {/* Show completion date if available from real data */}
+        {assessment?.completedAt && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Assessment completed on {formatCompletionDate(assessment.completedAt)}
+          </p>
+        )}
       </div>
+
+      {/* Assessment Scores Card - Show real data from database */}
+      {assessment && assessment.scores && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card className="p-4 bg-muted/50">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <h4 className="text-sm font-semibold text-foreground">Your Assessment Results</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {Object.entries(assessment.scores).map(([type, score]) => {
+                const isSelected = type === personality;
+                const maxScore = getMaxScore();
+                const percentage = maxScore > 0 ? getScorePercentage(score, maxScore) : 0;
+                return (
+                  <div
+                    key={type}
+                    className={`p-2 rounded transition-colors ${
+                      isSelected
+                        ? 'bg-primary/10 border border-primary/20'
+                        : 'bg-background/50 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`font-medium text-xs ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                      <span className={`text-xs font-semibold ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {score} pts
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${
+                          isSelected ? 'bg-primary' : 'bg-muted-foreground/30'
+                        }`}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* What to Expect Card */}
       <Card className="p-6 space-y-4 border-2" style={{ borderColor: config.color }}>
         <h3 className="font-semibold text-foreground flex items-center gap-2">
-          <Sparkles className="w-5 h-5" style={{ color: config.color }} />
+          <Sparkles className="w-5 h-5" color={config.color} />
           What to Expect
         </h3>
         <ul className="space-y-2">
@@ -139,7 +176,9 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
         className="space-y-2"
       >
         <p className="text-sm text-muted-foreground text-center">
-          Here's a sample greeting from your MMAgent:
+          {assessment?.completedAt 
+            ? "Here's your personalized greeting from your MMAgent:"
+            : "Here's a sample greeting from your MMAgent:"}
         </p>
         <AgentMessage
           message={config.sampleGreeting}

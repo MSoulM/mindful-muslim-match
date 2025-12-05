@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { VoiceRegistration } from '@/components/onboarding/VoiceRegistration';
 import { TopBar } from '@/components/layout/TopBar';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
+import { ProgressBar } from '@/components/ui/Feedback/ProgressBar';
 import { toast } from 'sonner';
 import { VOICE_ONBOARDING_QUESTIONS } from '@/config/onboardingConstants';
 
@@ -53,12 +54,7 @@ export default function VoiceOnboardingDemo() {
               {Math.round(((step) / VOICE_ONBOARDING_QUESTIONS.length) * 100)}% Complete
             </span>
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-500"
-              style={{ width: `${((step) / VOICE_ONBOARDING_QUESTIONS.length) * 100}%` }}
-            />
-          </div>
+          <ProgressBar value={((step) / VOICE_ONBOARDING_QUESTIONS.length) * 100} showPercentage={false} />
         </div>
 
         {/* Subtitle */}
