@@ -104,7 +104,6 @@ const ProfileScreen = () => {
         variant="logo" 
         notificationCount={notificationCount}
         onNotificationClick={() => navigate('/notifications')}
-        onProfileClick={() => {}}
       />
       
       <ScreenContainer 

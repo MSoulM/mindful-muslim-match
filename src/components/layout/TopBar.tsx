@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ChevronLeft, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { MSMLogo } from '@/components/brand/MSMLogo';
 import { useUser } from '@/context/UserContext';
 
@@ -9,7 +10,6 @@ interface TopBarProps {
   onBackClick?: () => void;
   notificationCount?: number;
   onNotificationClick?: () => void;
-  onProfileClick?: () => void;
   loading?: boolean;
 }
 
@@ -19,12 +19,11 @@ export const TopBar = ({
   onBackClick,
   notificationCount = 0,
   onNotificationClick,
-  onProfileClick,
   loading = false,
 }: TopBarProps) => {
   // Get user data
   const { user } = useUser();
-  
+  const navigate = useNavigate();
   // Extract user image and initials
   const userImage = user?.primaryPhotoUrl;
   const userInitials = user?.firstName?.[0] && user?.lastName?.[0]
@@ -115,29 +114,26 @@ export const TopBar = ({
             </motion.button>
           )}
 
-          {/* Profile Avatar */}
-          {onProfileClick && (
-            <motion.button
-              onClick={onProfileClick}
-              className="p-xs touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
-              whileTap={{ scale: 0.95 }}
-              aria-label={`Profile${userInitials ? `, ${userInitials}` : ''}`}
-            >
-              {userImage ? (
-                <img
-                  src={userImage}
-                  alt="Profile"
-                  className="w-[34px] h-[34px] rounded-full object-cover border-2 border-white shadow-lg"
-                />
-              ) : (
-                <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center border-2 border-white shadow-lg">
-                  <span className="text-sm font-bold text-white leading-none" aria-hidden="true">
-                    {userInitials || 'UN'}
-                  </span>
-                </div>
-              )}
-            </motion.button>
-          )}
+          <motion.button
+            onClick={() => navigate('/profile')}
+            className="p-xs touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
+            whileTap={{ scale: 0.95 }}
+            aria-label={`Profile${userInitials ? `, ${userInitials}` : ''}`}
+          >
+            {userImage ? (
+              <img
+                src={userImage}
+                alt="Profile"
+                className="w-[34px] h-[34px] rounded-full object-cover border-2 border-white shadow-lg"
+              />
+            ) : (
+              <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center border-2 border-white shadow-lg">
+                <span className="text-sm font-bold text-white leading-none" aria-hidden="true">
+                  {userInitials || 'UN'}
+                </span>
+              </div>
+            )}
+          </motion.button>
         </div>
       </nav>
     </motion.header>

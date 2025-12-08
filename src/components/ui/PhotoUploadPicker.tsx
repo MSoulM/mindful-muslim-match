@@ -1,9 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
-import { Camera, Image as ImageIcon, X, RotateCw } from 'lucide-react';
+import { Camera, Image as ImageIcon, X } from 'lucide-react';
 
 export interface PhotoPickerOptions {
   acceptTypes?: string;
-  maxSize?: number; // in bytes
+  maxSize?: number;
   onFileSelect: (file: File) => void;
   onError?: (error: string) => void;
 }
@@ -25,9 +25,8 @@ export const PhotoUploadPicker = ({
 
   const [mode, setMode] = useState<'menu' | 'camera' | 'preview'>('menu');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCameraReady, setIsCameraReady] = useState(false);
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +38,8 @@ export const PhotoUploadPicker = ({
 
   const startCamera = async (mode: 'user' | 'environment') => {
     try {
+      setIsCameraReady(false);
+      
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -48,11 +49,7 @@ export const PhotoUploadPicker = ({
         audio: false
       });
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-      }
-
+      streamRef.current = stream;
       setError(null);
       setMode('camera');
     } catch (err) {
@@ -61,6 +58,7 @@ export const PhotoUploadPicker = ({
       onError?.('Camera access denied or not available.');
     }
   }
+
 
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -101,12 +99,6 @@ export const PhotoUploadPicker = ({
       });
   }
 
-  const switchCamera = () => {
-    const newMode = facingMode === 'user' ? 'environment' : 'user';
-    setFacingMode(newMode);
-    startCamera(newMode);
-  }
-
   const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
@@ -128,6 +120,7 @@ export const PhotoUploadPicker = ({
     setCapturedPhoto(null);
     setMode('menu');
     setError(null);
+    setIsCameraReady(false);
     onClose();
   }
 
@@ -139,6 +132,80 @@ export const PhotoUploadPicker = ({
       if (capturedPhoto) URL.revokeObjectURL(capturedPhoto);
     };
   }, [capturedPhoto]);
+
+  // Handle video element when camera mode is active
+  useEffect(() => {
+    if (mode === 'camera') {
+      if (!streamRef.current) {
+        setMode('menu');
+        setError('Camera stream not available.');
+        return;
+      }
+      
+      // Check if stream is still active
+      const activeTracks = streamRef.current.getVideoTracks().filter(track => track.readyState === 'live');
+      if (activeTracks.length === 0) {
+        // Stream is dead, need to restart camera
+        startCamera('environment');
+        return;
+      }
+      
+      setIsCameraReady(false);
+      
+      // Set up video element with stream
+      const setupVideo = () => {
+        const video = videoRef.current;
+        if (video && streamRef.current) {
+          // Ensure srcObject is set
+          video.srcObject = streamRef.current;
+          
+          // Check if video already has dimensions (stream is working)
+          if (video.videoWidth > 0 && video.videoHeight > 0 && !video.paused) {
+            setIsCameraReady(true);
+            return;
+          }
+          
+          // Try to play
+          video.play().then(() => {
+            setIsCameraReady(true);
+          }).catch((err) => {
+            console.error('Error playing video:', err);
+            // Will be handled by React event handlers or fallback
+          });
+        }
+      };
+      
+      // Try immediately and after delays to ensure element is rendered
+      setupVideo();
+      const timeout1 = setTimeout(setupVideo, 100);
+      const timeout2 = setTimeout(setupVideo, 500);
+      
+      // Fallback: check if video is playing after a delay
+      const fallbackTimeout = setTimeout(() => {
+        const video = videoRef.current;
+        if (video && streamRef.current && !isCameraReady) {
+          // If video has dimensions, it's ready
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            if (video.paused) {
+              video.play().then(() => {
+                setIsCameraReady(true);
+              }).catch(() => {
+                // Still trying
+              });
+            } else {
+              setIsCameraReady(true);
+            }
+          }
+        }
+      }, 1000);
+      
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(fallbackTimeout);
+      };
+    }
+  }, [mode]);
 
   if (!isOpen) return null;
 
@@ -190,11 +257,51 @@ export const PhotoUploadPicker = ({
         {/* Camera View */}
         {mode === 'camera' && (
           <div className="relative bg-black h-screen max-h-screen" onClick={e => e.stopPropagation()}>
+            {!isCameraReady && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="text-white text-lg">Loading camera...</div>
+              </div>
+            )}
             <video
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full h-full object-cover"
+              muted
+              onLoadedMetadata={async () => {
+                const video = videoRef.current;
+                if (video && streamRef.current) {
+                  try {
+                    await video.play();
+                    setIsCameraReady(true);
+                  } catch (err) {
+                    console.error('Error playing on loadedmetadata:', err);
+                  }
+                }
+              }}
+              onCanPlay={async () => {
+                const video = videoRef.current;
+                if (video && streamRef.current) {
+                  try {
+                    if (video.paused) {
+                      await video.play();
+                    }
+                    setIsCameraReady(true);
+                  } catch (err) {
+                    console.error('Error playing on canplay:', err);
+                  }
+                }
+              }}
+              onPlaying={() => {
+                setIsCameraReady(true);
+              }}
+              onTimeUpdate={() => {
+                // Fallback: if video is playing and has time updates, it's ready
+                const video = videoRef.current;
+                if (video && video.currentTime > 0 && !isCameraReady) {
+                  setIsCameraReady(true);
+                }
+              }}
+              className={`w-full h-full object-cover ${!isCameraReady ? 'opacity-0' : 'opacity-100'} transition-opacity`}
             />
             <canvas ref={canvasRef} className="hidden" />
 
@@ -202,9 +309,6 @@ export const PhotoUploadPicker = ({
             <div className="absolute top-4 left-4 right-4 flex justify-between">
               <button onClick={cleanupAndClose} className="bg-black/50 p-3 rounded-full">
                 <X className="w-6 h-6 text-white" />
-              </button>
-              <button onClick={switchCamera} className="bg-black/50 p-3 rounded-full">
-                <RotateCw className="w-6 h-6 text-white" />
               </button>
             </div>
 
@@ -214,7 +318,7 @@ export const PhotoUploadPicker = ({
                 onClick={takePhoto}
                 className="bg-white rounded-full p-4 shadow-2xl active:scale-90 transition"
               >
-                <div className="w-16 h-16 bg-white rounded-full border-4 border-gray-300" />
+                <div className="w-16 h-16 bg-white rounded-full border-4 border-gray-300 hover:bg-red-500" />
               </button>
             </div>
           </div>
@@ -222,20 +326,20 @@ export const PhotoUploadPicker = ({
 
         {/* Preview */}
         {mode === 'preview' && capturedPhoto && (
-          <div className="bg-black h-screen flex flex-col" onClick={e => e.stopPropagation()}>
-            <img src={capturedPhoto} alt="Captured" className="flex-1 w-full object-contain" />
+          <div className="h-screen flex mx-auto flex-col items-center justify-center bg-black/80" onClick={e => e.stopPropagation()}>
+            <div className='flex flex-col gap-y-2 sm:gap-y-4 bg-white rounded-xl p-2 sm:p-6 w-full sm:w-[400px]'>
+              <img src={capturedPhoto} alt="Captured" className="w-full object-contain" />
 
-            <div className="p-6 bg-white space-y-4">
-              <div className="flex gap-4">
+              <div className="flex gap-2 sm:gap-4">
                 <button
-                  onClick={() => setMode('camera')}
-                  className="flex-1 h-12 border-2 border-gray-300 rounded-xl font-semibold"
+                  onClick={() => startCamera('environment')}
+                  className="flex-1 h-10 sm:h-12 border-2 border-gray-300 rounded-xl font-semibold"
                 >
                   Retake
                 </button>
                 <button
                   onClick={confirmPhoto}
-                  className="flex-1 h-12 bg-primary text-white rounded-xl font-semibold"
+                  className="flex-1 h-10 sm:h-12 bg-primary text-white rounded-xl font-semibold"
                 >
                   Use Photo
                 </button>
