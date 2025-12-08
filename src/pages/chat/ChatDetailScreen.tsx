@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { ArrowLeft, MoreVertical } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,13 @@ import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { DateSeparator } from '@/components/chat/DateSeparator';
-import { useChatSocket } from '@/hooks/useChatSocket';
+import { useConversationMessages, type ChatMessage } from '@/hooks/useConversationMessages';
 import { AudioRecordingResult } from '@/hooks/useAudioRecorder';
-import { useUnreadMessages } from '@/hooks/useUnreadMessages';
-import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
+import { groupMessagesByDate, formatDateLabel } from '@/utils/messageUtils';
 
+// Message interface for MessageBubble component
 interface Message {
   id: string;
   senderId: string;
@@ -40,63 +42,145 @@ interface Message {
 }
 
 export const ChatDetailScreen = () => {
-  const { matchId } = useParams();
+  const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { decrementUnreadCount } = useUnreadMessages();
+  const { userId: currentUserId } = useAuth();
   
-  // Decrease unread count when conversation is opened
+  // Get conversation messages from hook
+  const {
+    messages: chatMessages,
+    isLoading,
+    isSending,
+    sendTextMessage,
+    markAllAsRead,
+    reloadMessages
+  } = useConversationMessages({
+    otherUserClerkId: matchId || null
+  });
+
+  // Fetch other user's profile
+  const [otherUserProfile, setOtherUserProfile] = useState<{
+    name: string;
+    photo: string;
+  } | null>(null);
+
   useEffect(() => {
-    decrementUnreadCount();
+    if (!matchId || !supabase) return;
+
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, primary_photo_url')
+          .eq('clerk_user_id', matchId)
+          .maybeSingle();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching profile:', error);
+          return;
+        }
+
+        if (data) {
+          const firstName = data.first_name || '';
+          const lastName = data.last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim() || 'Unknown';
+          setOtherUserProfile({
+            name: fullName,
+            photo: data.primary_photo_url || ''
+          });
+        } else {
+          setOtherUserProfile({
+            name: 'Unknown',
+            photo: ''
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setOtherUserProfile({
+          name: 'Unknown',
+          photo: ''
+        });
+      }
+    };
+
+    void fetchProfile();
   }, [matchId]);
+
+  // Mark messages as read when screen opens
+  useEffect(() => {
+    if (matchId && currentUserId) {
+      markAllAsRead();
+    }
+  }, [matchId, currentUserId, markAllAsRead]);
   
   // Swipe gesture for back navigation
   const swipeHandlers = useSwipeable({
     onSwipedRight: () => navigate(-1),
     trackMouse: false,
-    delta: 50, // minimum swipe distance
+    delta: 50,
     preventScrollOnSwipe: false,
   });
-  
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      senderId: 'other',
-      recipientId: 'me',
-      content: 'As-salamu alaykum! How are you today?',
-      type: 'text',
-      timestamp: new Date(Date.now() - 3600000),
-      status: 'read'
-    },
-    {
-      id: '2',
-      senderId: 'me',
-      recipientId: 'other',
-      content: 'Wa alaykumu s-salam! Alhamdulillah, I\'m doing well. How about you?',
-      type: 'text',
-      timestamp: new Date(Date.now() - 3500000),
-      status: 'read'
-    }
-  ]);
-  
+
   const [isTyping, setIsTyping] = useState(false);
   
-  const currentUserId = 'me';
-  const matchName = 'Sarah Ahmed';
-  const matchPhoto = '/placeholder.svg';
-  
-  const { sendMessage: sendSocketMessage, sendTyping } = useChatSocket(matchId || '', {
-    onMessage: (message) => {
-      setMessages(prev => [...prev, message]);
-      scrollToBottom();
-    },
-    onTyping: (userId, typing) => setIsTyping(typing),
-    onStatusUpdate: (messageId, status) => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId ? { ...msg, status } : msg
-      ));
-    }
-  });
+  const matchName = otherUserProfile?.name || 'Loading...';
+  const matchPhoto = otherUserProfile?.photo || '';
+
+  // Map ChatMessage to Message format for MessageBubble
+  const messages = useMemo<Message[]>(() => {
+    return chatMessages.map((chatMsg: ChatMessage) => {
+      // Find reply-to message if exists
+      const replyToMessage = chatMsg.replyToMessageId
+        ? chatMessages.find(m => m.id === chatMsg.replyToMessageId)
+        : undefined;
+
+      // Extract voice note from attachments
+      const voiceAttachment = chatMsg.attachments.find(a => a.attachmentType === 'voice');
+      const voiceNote = voiceAttachment
+        ? {
+            duration: voiceAttachment.durationSeconds || 0,
+            waveform: voiceAttachment.waveform || [],
+            url: voiceAttachment.url
+          }
+        : undefined;
+
+      // Extract images from attachments
+      const imageAttachments = chatMsg.attachments.filter(a => a.attachmentType === 'image');
+      const images = imageAttachments.length > 0
+        ? imageAttachments.map(img => ({
+            url: img.url,
+            thumbnailUrl: img.thumbnailUrl || undefined,
+            width: img.width || undefined,
+            height: img.height || undefined
+          }))
+        : undefined;
+
+      return {
+        id: chatMsg.id,
+        senderId: chatMsg.senderId,
+        recipientId: chatMsg.recipientId,
+        content: chatMsg.content,
+        type: chatMsg.type === 'file' ? 'text' : chatMsg.type, // Map file to text for now
+        timestamp: new Date(chatMsg.sentAt),
+        status: chatMsg.status,
+        replyTo: replyToMessage
+          ? {
+              id: replyToMessage.id,
+              senderId: replyToMessage.senderId,
+              recipientId: replyToMessage.recipientId,
+              content: replyToMessage.content,
+              type: replyToMessage.type === 'file' ? 'text' : replyToMessage.type,
+              timestamp: new Date(replyToMessage.sentAt),
+              status: replyToMessage.status
+            }
+          : undefined,
+        edited: chatMsg.isEdited,
+        voiceNote,
+        images
+      };
+    });
+  }, [chatMessages]);
   
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -109,75 +193,54 @@ export const ChatDetailScreen = () => {
   }, [messages]);
   
   const handleSendMessage = async (content: string) => {
-    const optimisticMessage: Message = {
-      id: `temp-${Date.now()}`,
-      senderId: currentUserId,
-      recipientId: matchId || '',
-      content,
-      type: 'text',
-      timestamp: new Date(),
-      status: 'sending'
-    };
-    
-    setMessages(prev => [...prev, optimisticMessage]);
-    scrollToBottom();
-    
+    if (!content.trim()) return;
     try {
-      const sentMessage = await sendSocketMessage(content);
-      setMessages(prev => prev.map(msg => 
-        msg.id === optimisticMessage.id ? { ...sentMessage, status: 'sent' } : msg
-      ));
+      await sendTextMessage(content);
+      scrollToBottom();
     } catch (error) {
-      setMessages(prev => prev.map(msg => 
-        msg.id === optimisticMessage.id ? { ...msg, status: 'sent' } : msg
-      ));
+      toast({
+        title: "Failed to send message",
+        description: "Please try again",
+        variant: "destructive"
+      });
     }
   };
   
   const handleTyping = () => {
-    sendTyping(true);
+    setIsTyping(true);
+    // TODO: Implement typing indicator via Supabase Realtime or WebSocket
   };
   
   const handleStopTyping = () => {
-    sendTyping(false);
+    setIsTyping(false);
+    // TODO: Implement typing indicator via Supabase Realtime or WebSocket
   };
 
   const handleSendVoiceNote = async (result: AudioRecordingResult) => {
-    // Create a temporary URL for the audio blob
-    const audioUrl = URL.createObjectURL(result.blob);
-    
-    const optimisticMessage: Message = {
-      id: `temp-${Date.now()}`,
-      senderId: currentUserId,
-      recipientId: matchId || '',
-      content: 'Voice message',
-      type: 'voice',
-      timestamp: new Date(),
-      status: 'sending',
-      voiceNote: {
-        duration: result.duration,
-        waveform: result.waveform,
-        url: audioUrl
-      }
-    };
-    
-    setMessages(prev => [...prev, optimisticMessage]);
-    scrollToBottom();
-    
-    try {
-      // In a real app, you would upload the blob to your server here
-      // const uploadedUrl = await uploadVoiceNote(result.blob);
-      
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setMessages(prev => prev.map(msg => 
-        msg.id === optimisticMessage.id ? { ...msg, status: 'sent' } : msg
-      ));
-      
+    if (!matchId || !supabase || !currentUserId) {
       toast({
-        title: "Voice note sent",
-        description: "Your voice message has been delivered",
+        title: "Failed to send voice note",
+        description: "Please try again",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // TODO: Upload voice note to Supabase Storage
+      // For now, create a temporary URL
+      const audioUrl = URL.createObjectURL(result.blob);
+      
+      // TODO: Upload to storage and get permanent URL
+      // const { data: uploadData, error: uploadError } = await supabase.storage
+      //   .from('voice-notes')
+      //   .upload(`${conversationId}/${Date.now()}.webm`, result.blob);
+      
+      // For now, we'll need to implement voice note sending in the hook
+      // This is a placeholder - you'll need to extend useConversationMessages
+      toast({
+        title: "Voice note feature",
+        description: "Voice note upload will be implemented soon",
       });
     } catch (error) {
       toast({
@@ -185,46 +248,25 @@ export const ChatDetailScreen = () => {
         description: "Please try again",
         variant: "destructive"
       });
-      
-      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
     }
   };
 
   const handleSendImages = async (files: File[]) => {
-    // Create temporary URLs for the images
-    const imageData = files.map(file => ({
-      url: URL.createObjectURL(file),
-      thumbnailUrl: URL.createObjectURL(file)
-    }));
-    
-    const optimisticMessage: Message = {
-      id: `temp-${Date.now()}`,
-      senderId: currentUserId,
-      recipientId: matchId || '',
-      content: '',
-      type: 'image',
-      timestamp: new Date(),
-      status: 'sending',
-      images: imageData
-    };
-    
-    setMessages(prev => [...prev, optimisticMessage]);
-    scrollToBottom();
-    
-    try {
-      // In a real app, you would upload the images to your server here
-      // const uploadedUrls = await uploadImages(files);
-      
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setMessages(prev => prev.map(msg => 
-        msg.id === optimisticMessage.id ? { ...msg, status: 'sent' } : msg
-      ));
-      
+    if (!matchId || !supabase || !currentUserId) {
       toast({
-        title: `${files.length} image${files.length > 1 ? 's' : ''} sent`,
-        description: "Your images have been delivered",
+        title: "Failed to send images",
+        description: "Please try again",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // TODO: Upload images to Supabase Storage and create message with attachments
+      // This requires extending useConversationMessages hook to support image/file sending
+      toast({
+        title: "Image upload feature",
+        description: "Image upload will be implemented soon",
       });
     } catch (error) {
       toast({
@@ -232,38 +274,7 @@ export const ChatDetailScreen = () => {
         description: "Please try again",
         variant: "destructive"
       });
-      
-      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
     }
-  };
-  
-  
-  const groupMessagesByDate = (messages: Message[]) => {
-    const groups: { date: string; messages: Message[] }[] = [];
-    let currentDate = '';
-    
-    messages.forEach(message => {
-      const messageDate = new Date(message.timestamp).toDateString();
-      if (messageDate !== currentDate) {
-        currentDate = messageDate;
-        groups.push({ date: messageDate, messages: [message] });
-      } else {
-        groups[groups.length - 1].messages.push(message);
-      }
-    });
-    
-    return groups;
-  };
-  
-  const formatDateLabel = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
   
   const messageGroups = groupMessagesByDate(messages);
@@ -310,24 +321,36 @@ export const ChatDetailScreen = () => {
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div ref={scrollRef} className="px-4 py-4 space-y-4">
-            {messageGroups.map((group, groupIndex) => (
-              <div key={groupIndex}>
-                <DateSeparator label={formatDateLabel(group.date)} />
-                <div className="space-y-2 mt-4">
-                  {group.messages.map((message) => (
-                    <MessageBubble
-                      key={message.id}
-                      message={message}
-                      isOwn={message.senderId === currentUserId}
-                      showAvatar={message.senderId !== currentUserId}
-                      matchPhoto={matchPhoto}
-                    />
-                  ))}
-                </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">Loading messages...</p>
               </div>
-            ))}
-            
-            {isTyping && <TypingIndicator matchPhoto={matchPhoto} />}
+            ) : messageGroups.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
+              </div>
+            ) : (
+              <>
+                {messageGroups.map((group, groupIndex) => (
+                  <div key={groupIndex}>
+                    <DateSeparator label={formatDateLabel(group.date)} />
+                    <div className="space-y-2 mt-4">
+                      {group.messages.map((message) => (
+                        <MessageBubble
+                          key={message.id}
+                          message={message}
+                          isOwn={message.senderId === currentUserId}
+                          showAvatar={message.senderId !== currentUserId}
+                          matchPhoto={matchPhoto}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                
+                {isTyping && <TypingIndicator matchPhoto={matchPhoto} />}
+              </>
+            )}
           </div>
         </ScrollArea>
       </div>

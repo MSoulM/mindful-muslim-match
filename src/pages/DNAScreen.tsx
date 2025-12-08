@@ -118,7 +118,7 @@ export default function DNAScreen() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen flex flex-col">
+      <div className="h-screen flex flex-col">
         {/* TopBar */}
         <TopBar
           variant="logo"
