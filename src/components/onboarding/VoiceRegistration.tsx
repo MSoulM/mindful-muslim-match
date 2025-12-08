@@ -16,7 +16,7 @@ export const VoiceRegistration = ({
   const [useTextFallback, setUseTextFallback] = useState(false);
   const [manualText, setManualText] = useState('');
 
-  const { transcript, isListening, confidence, error: speechError, startListening, stopListening, pauseListening, resumeListening, undoLastSentence } = useSpeechToText('en-US');
+  const { transcript, isListening, confidence, error: speechError, startListening, stopListening, pauseListening, resumeListening, undoLastSentence, clearTranscript } = useSpeechToText('en-US');
 
   useEffect(() => {
     if (speechError) {
@@ -53,6 +53,10 @@ export const VoiceRegistration = ({
     }
 
     onComplete(finalText);
+    
+    // Reset transcript and manual text after completion
+    clearTranscript();
+    setManualText('');
   };
 
   const handleSwitchToText = () => {

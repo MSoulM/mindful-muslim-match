@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+import { UserPersonalityType } from '@/types/onboarding';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';

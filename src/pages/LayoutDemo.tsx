@@ -37,7 +37,6 @@ const LayoutDemo = () => {
         variant="logo"
         notificationCount={unreadCount}
         onNotificationClick={() => navigate('/notifications')}
-        onProfileClick={() => navigate('/profile')}
       />
 
       {/* Screen Content */}
