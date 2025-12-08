@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser as useClerkUser } from '@clerk/clerk-react';
 import { supabase } from '@/lib/supabase';
-import type { AssessmentProgress, UserPersonalityType } from '@/types/onboarding';
+import type { UserPersonalityType } from '@/types/onboarding';
 
 type Scores = Record<UserPersonalityType, number>;
 
@@ -30,9 +30,10 @@ export const usePersonalityAssessment = () => {
       if (!userId || !supabase) return null;
 
       const { data, error } = await supabase
-        .from('personality_assessment_progress')
+        .from('personality_assessments')
         .select('*')
         .eq('clerk_user_id', userId)
+        .is('completed_at', null)
         .maybeSingle();
 
       if (error) {
@@ -61,6 +62,7 @@ export const usePersonalityAssessment = () => {
         .from('personality_assessments')
         .select('*')
         .eq('clerk_user_id', userId)
+        .not('completed_at', 'is', null)
         .maybeSingle();
 
       if (error) {
@@ -68,7 +70,7 @@ export const usePersonalityAssessment = () => {
         throw error;
       }
 
-      if (!data) return null;
+      if (!data || !data.personality_type) return null;
 
       return {
         personalityType: data.personality_type as UserPersonalityType,
@@ -88,17 +90,15 @@ export const usePersonalityAssessment = () => {
     mutationFn: async (progress: PersonalityAssessmentProgressRecord) => {
       if (!userId || !supabase) throw new Error('User not authenticated');
 
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
       const { error } = await supabase
-        .from('personality_assessment_progress')
+        .from('personality_assessments')
         .upsert(
           {
             clerk_user_id: userId,
             current_step: progress.currentStep,
             answers: progress.answers,
             scores: progress.scores,
-            expires_at: expiresAt,
+            completed_at: null, // Ensure it's marked as incomplete
           },
           { onConflict: 'clerk_user_id' }
         );
@@ -114,10 +114,12 @@ export const usePersonalityAssessment = () => {
     mutationFn: async () => {
       if (!userId || !supabase) throw new Error('User not authenticated');
 
+      // Only delete if it's incomplete (no completed_at)
       const { error } = await supabase
-        .from('personality_assessment_progress')
+        .from('personality_assessments')
         .delete()
-        .eq('clerk_user_id', userId);
+        .eq('clerk_user_id', userId)
+        .is('completed_at', null);
 
       if (error) throw error;
     },
@@ -142,6 +144,9 @@ export const usePersonalityAssessment = () => {
             cultural_bridge_score: payload.scores.cultural_bridge ?? 0,
             answers: payload.answers,
             completed_at: payload.completedAt ?? new Date().toISOString(),
+            // Clear progress fields when completing
+            current_step: null,
+            scores: null,
           },
           { onConflict: 'clerk_user_id' }
         );

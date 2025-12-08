@@ -16,14 +16,6 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
   const IconComponent = config.icon as React.ComponentType<{ className?: string; color?: string }>;
   const [customName, setCustomName] = useState('');
 
-  // Load saved agent name if exists
-  useEffect(() => {
-    const savedName = localStorage.getItem('mmAgentCustomName');
-    if (savedName) {
-      setCustomName(savedName);
-    }
-  }, []);
-
   const getPlaceholderByPersonality = (personalityType: PersonalityRevealProps['personality']) => {
     switch(personalityType) {
       case 'wise_aunty': 

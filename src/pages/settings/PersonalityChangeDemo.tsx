@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { TopBar } from '@/components/layout/TopBar';
 import { PersonalityChange } from '@/components/settings/PersonalityChange';
-import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+import { UserPersonalityType } from '@/types/onboarding';
 import { toast } from 'sonner';
 
 export default function PersonalityChangeDemo() {

@@ -36,9 +36,7 @@ const LayoutDemo = () => {
       <TopBar
         variant="logo"
         notificationCount={unreadCount}
-        userInitials="AZ"
         onNotificationClick={() => navigate('/notifications')}
-        onProfileClick={() => navigate('/profile')}
       />
 
       {/* Screen Content */}

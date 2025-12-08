@@ -10,7 +10,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
-import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+import { UserPersonalityType } from '@/types/onboarding';
 
 type FilterType = 'all' | 'unread' | 'matches' | 'messages';
 
@@ -76,7 +76,6 @@ export const NotificationCenterScreen = () => {
       <TopBar 
         variant="logo"
         onNotificationClick={() => navigate('/notifications')}
-        onProfileClick={() => navigate('/profile')}
       />
       <ScreenContainer hasTopBar hasBottomNav>
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">

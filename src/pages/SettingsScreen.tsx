@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/CustomButton';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { MMAgentSettings } from '@/components/settings/MMAgentSettings';
-import { UserPersonalityType } from '@/components/onboarding/PersonalityAssessment';
+import { UserPersonalityType } from '@/types/onboarding';
 
 export default function SettingsScreen() {
   const navigate = useNavigate();

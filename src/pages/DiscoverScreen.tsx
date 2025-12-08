@@ -17,7 +17,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { listStagger, listItem, respectMotionPreference } from '@/utils/animations';
-import { haptics } from '@/utils/haptics';
+import { haptics, triggerHaptic } from '@/utils/haptics';
 
 interface Match {
   id: string;
@@ -136,24 +136,17 @@ export default function DiscoverScreen() {
     title: ''
   });
 
-  const hapticFeedback = (style: 'light' | 'medium' | 'heavy' = 'light') => {
-    if ('vibrate' in navigator) {
-      const patterns = { light: 5, medium: 10, heavy: 15 };
-      navigator.vibrate(patterns[style]);
-    }
-  };
-
   const showToast = (type: 'success' | 'error' | 'warning' | 'info', title: string) => {
     setToast({ isOpen: true, type, title });
   };
 
   const handleChaiChatClick = (matchId: string) => {
-    hapticFeedback('light');
+    triggerHaptic('light');
     navigate(`/chaichat/${matchId}`);
   };
 
   const handleSkip = (matchId: string) => {
-    hapticFeedback('medium');
+    triggerHaptic('medium');
     
     const match = matches.find(m => m.id === matchId);
     
@@ -166,13 +159,8 @@ export default function DiscoverScreen() {
   };
 
   const handleNotificationClick = () => {
-    hapticFeedback('light');
+    triggerHaptic('light');
     navigate('/notifications');
-  };
-
-  const handleProfileClick = () => {
-    hapticFeedback('light');
-    navigate('/profile');
   };
 
   const handleTabChange = (tabId: string) => {
@@ -223,9 +211,7 @@ export default function DiscoverScreen() {
           <TopBar
             variant="logo"
             notificationCount={unreadCount}
-            userInitials="AK"
-            onNotificationClick={handleNotificationClick}
-            onProfileClick={handleProfileClick}
+          onNotificationClick={handleNotificationClick}
           />
           
           <ScreenContainer
@@ -267,9 +253,7 @@ export default function DiscoverScreen() {
         <TopBar
           variant="logo"
           notificationCount={unreadCount}
-          userInitials="AK"
           onNotificationClick={handleNotificationClick}
-          onProfileClick={handleProfileClick}
         />
 
         {/* Main Content */}

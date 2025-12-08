@@ -103,9 +103,7 @@ const ProfileScreen = () => {
       <TopBar 
         variant="logo" 
         notificationCount={notificationCount}
-        userInitials={displayInitials}
         onNotificationClick={() => navigate('/notifications')}
-        onProfileClick={() => {}}
       />
       
       <ScreenContainer 
