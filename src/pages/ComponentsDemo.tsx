@@ -47,9 +47,7 @@ const ComponentsDemo = () => {
         title="Components Demo"
         onBackClick={() => window.history.back()}
         notificationCount={unreadCount}
-        userInitials="JD"
         onNotificationClick={() => navigate('/notifications')}
-        onProfileClick={() => navigate('/profile')}
       />
 
       <ScreenContainer hasTopBar hasBottomNav padding scrollable>

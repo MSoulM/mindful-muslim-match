@@ -1,16 +1,15 @@
 import { motion } from 'framer-motion';
 import { ChevronLeft, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '@/context/UserContext';
 import { MSMLogo } from '@/components/brand/MSMLogo';
-import { cn } from '@/lib/utils';
 
 interface TopBarProps {
   variant?: 'logo' | 'back';
   title?: string;
   onBackClick?: () => void;
   notificationCount?: number;
-  userInitials?: string;
   onNotificationClick?: () => void;
-  onProfileClick?: () => void;
   loading?: boolean;
 }
 
@@ -19,11 +18,18 @@ export const TopBar = ({
   title,
   onBackClick,
   notificationCount = 0,
-  userInitials,
   onNotificationClick,
-  onProfileClick,
   loading = false,
 }: TopBarProps) => {
+  const navigate = useNavigate();
+  const { user } = useUser();
+
+  const userInitials = [
+    user?.firstName?.[0] ?? '',
+    user?.lastName?.[0] ?? '',
+  ].join('').toUpperCase() || undefined;
+  const userImage = user?.primaryPhotoUrl;
+
   // Loading skeleton state
   if (loading) {
     return (
@@ -109,17 +115,25 @@ export const TopBar = ({
           )}
 
           {/* Profile Avatar */}
-          {userInitials && onProfileClick && (
+          {(userImage || userInitials) && (
             <motion.button
-              onClick={onProfileClick}
+              onClick={() => navigate('/profile')}
               className="p-xs touch-feedback focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
               whileTap={{ scale: 0.95 }}
-              aria-label={`Profile, ${userInitials}`}
+              aria-label={`Profile${userInitials ? `, ${userInitials}` : ''}`}
             >
-              <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center border-2 border-white shadow-lg">
-                <span className="text-sm font-bold text-white leading-none" aria-hidden="true">
-                  {userInitials}
-                </span>
+              <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-primary-forest to-primary-gold flex items-center justify-center border-2 border-white shadow-lg overflow-hidden">
+                {userImage ? (
+                  <img
+                    src={userImage}
+                    alt={userInitials ? `Profile of ${userInitials}` : 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm font-bold text-white leading-none" aria-hidden="true">
+                    {userInitials}
+                  </span>
+                )}
               </div>
             </motion.button>
           )}

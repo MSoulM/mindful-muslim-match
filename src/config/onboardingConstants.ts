@@ -1,4 +1,4 @@
-import type { UserPersonalityType, AssessmentQuestion, CulturalOption, PersonalityRevealConfig } from '@/types/onboarding';
+import type { AssessmentQuestion, CulturalOption, PersonalityRevealConfig } from '@/types/onboarding';
 import { Heart, Sparkles, BookOpen, Globe } from 'lucide-react';
 
 // Step constants

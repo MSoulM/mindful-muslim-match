@@ -13,6 +13,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useJourney, STAGE_INFO } from '@/hooks/useJourney';
+import { triggerHaptic } from '@/utils/haptics';
 import { cn } from '@/lib/utils';
 
 const categories = [
@@ -72,25 +73,13 @@ export default function DNAScreen() {
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
   const { journeyStatus, getProgressPercentage } = useJourney();
 
-  const hapticFeedback = (style: 'light' | 'medium' | 'heavy' = 'light') => {
-    if ('vibrate' in navigator) {
-      const patterns = { light: 5, medium: 10, heavy: 15 };
-      navigator.vibrate(patterns[style]);
-    }
-  };
-
   const handleNotificationClick = () => {
-    hapticFeedback('light');
+    triggerHaptic('light');
     navigate('/notifications');
   };
 
-  const handleProfileClick = () => {
-    hapticFeedback('light');
-    navigate('/profile');
-  };
-
   const handleTabChange = (tabId: string) => {
-    hapticFeedback('light');
+    triggerHaptic('light');
     setActiveTab(tabId);
     
     switch (tabId) {
@@ -113,17 +102,17 @@ export default function DNAScreen() {
   };
 
   const handleCategoryClick = (categoryId: string) => {
-    hapticFeedback('light');
+    triggerHaptic('light');
     navigate(`/dna/${categoryId}`);
   };
 
   const handleCreatePost = () => {
-    hapticFeedback('medium');
+    triggerHaptic('medium');
     navigate('/create-post');
   };
 
   const handlePostTypeClick = (typeId: string) => {
-    hapticFeedback('light');
+    triggerHaptic('light');
     navigate(`/dna/create/${typeId}`);
   };
 
@@ -134,9 +123,7 @@ export default function DNAScreen() {
         <TopBar
           variant="logo"
           notificationCount={unreadCount}
-          userInitials="AK"
           onNotificationClick={handleNotificationClick}
-          onProfileClick={handleProfileClick}
         />
 
         {/* Main Content */}

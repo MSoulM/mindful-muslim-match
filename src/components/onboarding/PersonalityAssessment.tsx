@@ -34,7 +34,6 @@ export const PersonalityAssessment = ({
   const [voiceError, setVoiceError] = useState(false);
   const [showAmbiguousPrompt, setShowAmbiguousPrompt] = useState(false);
 
-  const PROGRESS_STORAGE_KEY = 'personality_assessment_progress';
   const {
     progress: remoteProgress,
     saveProgress: saveProgressRemote,
@@ -43,33 +42,6 @@ export const PersonalityAssessment = ({
     saveAssessment,
     savingAssessment,
   } = usePersonalityAssessment();
-
-  // Load saved progress on mount
-  useEffect(() => {
-    const savedProgress = localStorage.getItem(PROGRESS_STORAGE_KEY);
-    if (savedProgress) {
-      try {
-        const progress: AssessmentProgress = JSON.parse(savedProgress);
-        
-        // Only restore if less than 7 days old
-        const daysSinceProgress = (Date.now() - progress.timestamp) / (1000 * 60 * 60 * 24);
-        if (daysSinceProgress < 7) {
-          setStep(progress.currentStep);
-          setAnswers(progress.answers);
-          setScores(progress.scores);
-          
-          toast.info('Resuming from where you left off', {
-            description: `Question ${progress.currentStep + 1} of ${ASSESSMENT_QUESTIONS.length}`
-          });
-        } else {
-          // Clear old progress
-          localStorage.removeItem(PROGRESS_STORAGE_KEY);
-        }
-      } catch (error) {
-        console.error('Failed to restore progress:', error);
-      }
-    }
-  }, []);
 
   // Load saved progress from Supabase
   useEffect(() => {
@@ -111,10 +83,14 @@ export const PersonalityAssessment = ({
         scores,
         timestamp: Date.now()
       };
-      localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress));
       onProgressSave?.(progress);
 
-      saveProgressRemote?.(progress).catch((error: unknown) => {
+      // Save to database with correct type (without timestamp)
+      saveProgressRemote?.({
+        currentStep: step,
+        answers,
+        scores,
+      }).catch((error: unknown) => {
         console.error('Failed to save assessment progress', error);
       });
     }
@@ -134,7 +110,6 @@ export const PersonalityAssessment = ({
     
     answers.forEach((answerIndex, questionIndex) => {
       const question = ASSESSMENT_QUESTIONS[questionIndex];
-      console.log(ASSESSMENT_QUESTIONS)
       const selectedAnswer = question.options[answerIndex];
       
       Object.entries(selectedAnswer.scores).forEach(([personality, score]) => {
@@ -145,28 +120,40 @@ export const PersonalityAssessment = ({
     setScores(newScores);
   }, [answers]);
 
-  const handleSelectOption = (optionIndex: number) => {
-    setSelectedOption(optionIndex);
-  };
-
-  const handleNext = () => {
+  const handleNext = async () => {
     if (selectedOption === null) return;
 
     const newAnswers = [...answers, selectedOption];
     setAnswers(newAnswers);
 
+    // Calculate updated scores with the new answer
+    const updatedScores = { ...scores };
+    const question = ASSESSMENT_QUESTIONS[step];
+    const selectedAnswer = question.options[selectedOption];
+    
+    Object.entries(selectedAnswer.scores).forEach(([personality, score]) => {
+      updatedScores[personality as UserPersonalityType] += score;
+    });
+    setScores(updatedScores);
+
     if (step < ASSESSMENT_QUESTIONS.length - 1) {
-      setStep(step + 1);
+      const nextStep = step + 1;
+      setStep(nextStep);
       setSelectedOption(null);
+
+      // Save progress to database after moving to next step
+      try {
+        await saveProgressRemote?.({
+          currentStep: nextStep,
+          answers: newAnswers,
+          scores: updatedScores,
+        });
+      } catch (error) {
+        console.error('Failed to save assessment progress', error);
+      }
     } else {
       // Calculate final result
-      const finalScores = { ...scores };
-      const question = ASSESSMENT_QUESTIONS[step];
-      const selectedAnswer = question.options[selectedOption];
-      
-      Object.entries(selectedAnswer.scores).forEach(([personality, score]) => {
-        finalScores[personality as UserPersonalityType] += score;
-      });
+      const finalScores = updatedScores;
 
       // Sort personalities by score
       const sortedPersonalities = (Object.entries(finalScores) as [UserPersonalityType, number][])
@@ -286,20 +273,43 @@ export const PersonalityAssessment = ({
     });
   };
 
-  const handleSkipQuestion = () => {
+  const handleSkipQuestion = async () => {
     // Use Modern Scholar as default for skipped questions (balanced, analytical default)
     const defaultAnswer = currentQuestion.options.findIndex(opt => 
       opt.scores.modern_scholar === 3
     );
     
-    const newAnswers = [...answers, defaultAnswer >= 0 ? defaultAnswer : 0];
+    const selectedAnswerIndex = defaultAnswer >= 0 ? defaultAnswer : 0;
+    const newAnswers = [...answers, selectedAnswerIndex];
     setAnswers(newAnswers);
 
+    // Calculate updated scores with the default answer
+    const updatedScores = { ...scores };
+    const question = ASSESSMENT_QUESTIONS[step];
+    const selectedAnswer = question.options[selectedAnswerIndex];
+    
+    Object.entries(selectedAnswer.scores).forEach(([personality, score]) => {
+      updatedScores[personality as UserPersonalityType] += score;
+    });
+    setScores(updatedScores);
+
     if (step < ASSESSMENT_QUESTIONS.length - 1) {
-      setStep(step + 1);
+      const nextStep = step + 1;
+      setStep(nextStep);
       setSelectedOption(null);
       setShowAmbiguousPrompt(false);
       setVoiceError(false);
+
+      // Save progress to database after skipping
+      try {
+        await saveProgressRemote?.({
+          currentStep: nextStep,
+          answers: newAnswers,
+          scores: updatedScores,
+        });
+      } catch (error) {
+        console.error('Failed to save assessment progress', error);
+      }
     } else {
       // Move to results
       handleNext();
@@ -319,7 +329,6 @@ export const PersonalityAssessment = ({
     });
 
     // Clear progress and complete with default
-    localStorage.removeItem(PROGRESS_STORAGE_KEY);
     onComplete(defaultPersonality, scores);
   };
 
@@ -343,7 +352,6 @@ export const PersonalityAssessment = ({
           answers,
         });
         await clearProgressRemote?.();
-        localStorage.removeItem(PROGRESS_STORAGE_KEY);
         toast.success('Assessment saved to your profile');
         onComplete(result, scores);
       } catch (error) {
@@ -611,7 +619,7 @@ export const PersonalityAssessment = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                onClick={() => handleSelectOption(index)}
+                onClick={() => setSelectedOption(index)}
                 className={cn(
                   "w-full p-5 text-left border-2 rounded-xl transition-all",
                   "hover:border-primary hover:bg-primary/5 hover:shadow-sm",
@@ -664,10 +672,41 @@ export const PersonalityAssessment = ({
         <div className="flex gap-2">
           {step > 0 && (
             <Button
-              onClick={() => {
-                setStep(step - 1);
-                setSelectedOption(answers[step - 1] ?? null);
-                setAnswers(answers.slice(0, -1));
+              onClick={async () => {
+                const prevStep = step - 1;
+                const prevAnswers = answers.slice(0, -1);
+                setStep(prevStep);
+                setSelectedOption(prevAnswers[prevStep] ?? null);
+                setAnswers(prevAnswers);
+
+                // Recalculate scores without the last answer
+                const recalculatedScores: Record<UserPersonalityType, number> = {
+                  wise_aunty: 0,
+                  modern_scholar: 0,
+                  spiritual_guide: 0,
+                  cultural_bridge: 0
+                };
+                
+                prevAnswers.forEach((answerIndex, questionIndex) => {
+                  const question = ASSESSMENT_QUESTIONS[questionIndex];
+                  const selectedAnswer = question.options[answerIndex];
+                  
+                  Object.entries(selectedAnswer.scores).forEach(([personality, score]) => {
+                    recalculatedScores[personality as UserPersonalityType] += score;
+                  });
+                });
+                setScores(recalculatedScores);
+
+                // Save progress after going back
+                try {
+                  await saveProgressRemote?.({
+                    currentStep: prevStep,
+                    answers: prevAnswers,
+                    scores: recalculatedScores,
+                  });
+                } catch (error) {
+                  console.error('Failed to save assessment progress', error);
+                }
               }}
               variant="ghost"
             >
