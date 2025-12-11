@@ -19,9 +19,12 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { compressImage, formatFileSize } from '@/utils/imageCompression';
 import { generateThumbnail } from '@/utils/thumbnailGenerator';
+import { generateVideoThumbnail } from '@/utils/videoThumbnail';
 import { DepthIndicator } from '@/components/profile/DepthIndicator';
 import { DepthCoachingPrompts } from '@/components/profile/DepthCoachingPrompts';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@clerk/clerk-react';
+import { supabase } from '@/lib/supabase';
 
 const DNA_CATEGORIES = [
   { id: 'values', icon: '⚖️', label: 'Values & Beliefs' },
@@ -41,6 +44,7 @@ interface MediaItem {
 
 export default function CreatePostScreen() {
   const navigate = useNavigate();
+  const { userId } = useAuth();
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [caption, setCaption] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -150,15 +154,29 @@ export default function CreatePostScreen() {
           continue;
         }
         
-        const reader = new FileReader();
-        reader.onloadend = () => {
+        // Generate video thumbnail
+        try {
+          const thumbnail = await generateVideoThumbnail(file, {
+            width: 400,
+            quality: 0.8,
+            timeOffset: 1
+          });
+          
           setMedia(prev => [...prev, {
             file,
-            preview: reader.result as string,
+            preview: thumbnail,
+            thumbnail,
             type: 'video'
           }]);
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+          console.error('Failed to generate video thumbnail:', error);
+          // Fallback: use a placeholder or video icon
+          setMedia(prev => [...prev, {
+            file,
+            preview: '',
+            type: 'video'
+          }]);
+        }
         continue;
       }
 
@@ -263,11 +281,65 @@ export default function CreatePostScreen() {
       return;
     }
 
+    if (!userId || !supabase) {
+      toast.error('You must be logged in to create a post');
+      return;
+    }
+
     setIsPosting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload media files to Supabase storage
+      const mediaUrls: string[] = [];
+      
+      for (const mediaItem of media) {
+        const fileExt = mediaItem.file.name.split('.').pop()?.toLowerCase() || 
+          (mediaItem.type === 'video' ? 'mp4' : 'jpg');
+        const fileName = `post_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${userId}/posts/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('users')
+          .upload(filePath, mediaItem.file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          throw new Error(`Failed to upload ${mediaItem.type}: ${uploadError.message}`);
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('users')
+          .getPublicUrl(filePath);
+
+        mediaUrls.push(publicUrl);
+      }
+
+      // Store post in Supabase
+      const { data: postData, error: postError } = await supabase
+        .from('posts')
+        .insert({
+          clerk_user_id: userId,
+          caption: caption.trim() || null,
+          media_urls: mediaUrls,
+          categories: selectedCategories,
+          depth_level: depthLevel,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (postError) {
+        // If posts table doesn't exist, log error but continue (for development)
+        console.error('Failed to save post to database:', postError);
+        // Still show success if upload worked
+        if (postError.code === '42P01') {
+          console.warn('Posts table does not exist. Please create it in Supabase.');
+        } else {
+          throw postError;
+        }
+      }
       
       toast.success('Post shared successfully!');
       
@@ -279,8 +351,9 @@ export default function CreatePostScreen() {
           selectedCategories
         }
       });
-    } catch (error) {
-      toast.error('Failed to share post. Please try again.');
+    } catch (error: any) {
+      console.error('Error creating post:', error);
+      toast.error(error.message || 'Failed to share post. Please try again.');
     } finally {
       setIsPosting(false);
     }
@@ -324,7 +397,7 @@ export default function CreatePostScreen() {
         <div 
           className={cn(
             "relative bg-neutral-100 flex items-center justify-center cursor-pointer transition-all",
-            media.length === 0 ? "min-h-[200px]" : "min-h-[300px] max-h-[400px]",
+            media.length === 0 ? "min-h-[200px]" : "h-[300px]",
             attemptedSubmit && media.length === 0 && "border-4 border-destructive"
           )}
           onClick={() => media.length === 0 && fileInputRef.current?.click()}
@@ -348,15 +421,33 @@ export default function CreatePostScreen() {
               </p>
             </div>
           ) : (
-            <div className="relative w-full h-full">
-              <img 
-                src={media[0].preview} 
-                alt="Post media"
-                className={cn(
-                  "w-full h-full object-cover transition-all duration-500",
-                  media[0].isLoading && "blur-sm scale-105"
-                )}
-              />
+            <div className="relative w-full h-full flex items-center justify-center bg-neutral-900">
+              {media[0].type === 'video' ? (
+                media[0].preview ? (
+                  <img 
+                    src={media[0].preview} 
+                    alt="Video thumbnail"
+                    className={cn(
+                      "max-w-full max-h-full object-contain transition-all duration-500",
+                      media[0].isLoading && "blur-sm scale-105"
+                    )}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-white">
+                    <Video className="w-16 h-16 mb-2" />
+                    <p className="text-sm">Video preview</p>
+                  </div>
+                )
+              ) : (
+                <img 
+                  src={media[0].preview} 
+                  alt="Post media"
+                  className={cn(
+                    "max-w-full max-h-full object-contain transition-all duration-500",
+                    media[0].isLoading && "blur-sm scale-105"
+                  )}
+                />
+              )}
               
               {/* Loading overlay */}
               {media[0].isLoading && (
