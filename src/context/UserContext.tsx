@@ -8,6 +8,7 @@ export type User = Profile;
 
 interface UserContextType {
   user: User | null;
+  profileFetched: boolean;
   loading: boolean;
   updateUser: (updates: Partial<User>) => Promise<void>;
   logout: () => void;
@@ -17,13 +18,20 @@ const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { user: ClerkUser, isSignedIn } = useClerkUser();
-  const { profile, isLoading: profileLoading, updateProfile } = useProfile();
+  const { profile, isLoading: profileLoading, isFetched: profileFetched, updateProfile } = useProfile();
   const [loading, setLoading] = useState(true);
 
   // Sync loading state with profile loading
+  // Keep loading true until the query has been fetched at least once
   useEffect(() => {
-    setLoading(profileLoading);
-  }, [profileLoading]);
+    // If query is enabled but not fetched yet, we're still loading
+    // If query is disabled (no authUserId), we're also still loading
+    if (isSignedIn && !profileFetched) {
+      setLoading(true);
+    } else {
+      setLoading(profileLoading);
+    }
+  }, [profileLoading, profileFetched, isSignedIn]);
 
   const updateUser = async (updates: Partial<User>) => {
     if (!profile) throw new Error('No user profile loaded');
@@ -46,7 +54,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const user = isSignedIn && profile ? profile : null;
 
   return (
-    <UserContext.Provider value={{ user, loading, updateUser, logout }}>
+    <UserContext.Provider value={{ user, profileFetched, loading, updateUser, logout }}>
       {children}
     </UserContext.Provider>
   );
