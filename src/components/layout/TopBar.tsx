@@ -3,6 +3,7 @@ import { ChevronLeft, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MSMLogo } from '@/components/brand/MSMLogo';
 import { useUser } from '@/context/UserContext';
+import { useEffect } from 'react';
 
 interface TopBarProps {
   variant?: 'logo' | 'back';
@@ -22,8 +23,15 @@ export const TopBar = ({
   loading = false,
 }: TopBarProps) => {
   // Get user data
-  const { user } = useUser();
+  const { user, profileFetched  } = useUser();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (profileFetched && user === null) {
+      navigate('/onboarding/welcome');
+    }
+  }, [profileFetched, user]);
+
   // Extract user image and initials
   const userImage = user?.primaryPhotoUrl;
   const userInitials = user?.firstName?.[0] && user?.lastName?.[0]

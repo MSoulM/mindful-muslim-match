@@ -107,6 +107,7 @@ export const useProfile = () => {
     isLoading: query.isLoading,
     isError: query.isError,
     error: query.error,
+    isFetched: query.isFetched,
     updateProfile: updateProfileMutation.mutateAsync,
     createProfile: createProfileMutation.mutateAsync,
     refetch: query.refetch,
