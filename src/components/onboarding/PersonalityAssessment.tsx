@@ -8,6 +8,7 @@ import { VoiceRegistration } from './VoiceRegistration';
 import { toast } from 'sonner';
 import { PersonalityTieBreaker } from './PersonalityTieBreaker';
 import type { UserPersonalityType, PersonalityAssessmentProps, AssessmentProgress } from '@/types/onboarding';
+export type { UserPersonalityType } from '@/types/onboarding';
 import { USER_PERSONALITIES, ASSESSMENT_QUESTIONS } from '@/config/onboardingConstants';
 import { usePersonalityAssessment } from '@/hooks/usePersonalityAssessment';
 
