@@ -12,7 +12,9 @@ import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
 import { toast } from 'sonner';
+import { Toast } from '@/components/ui/Feedback/Toast';
 import { compressImage } from '@/utils/imageCompression';
 import { CropModal } from '@/components/ui/CropModal';
 
@@ -21,6 +23,7 @@ const EditProfileScreen = () => {
   const { user } = useUser();
   const { getToken } = useAuth();
   const { updateProfile } = useProfile();
+  const { isGold } = useSubscriptionTier();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -45,6 +48,16 @@ const EditProfileScreen = () => {
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [paywallToast, setPaywallToast] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    description?: string;
+  }>({
+    isOpen: false,
+    type: 'warning',
+    title: ''
+  });
 
   // Sync form data when user profile loads
   useEffect(() => {
@@ -153,6 +166,15 @@ const EditProfileScreen = () => {
   };
 
   const handlePhotoEdit = () => {
+    if (!isGold) {
+      setPaywallToast({
+        isOpen: true,
+        type: 'warning',
+        title: 'Subscribe to Gold to add photos',
+        description: 'Upgrade to Gold to upload photos and enhance your profile.'
+      });
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -387,6 +409,17 @@ const EditProfileScreen = () => {
           </Button>
         </div>
       </ScreenContainer>
+
+      {/* Paywall Toast */}
+      <Toast
+        type={paywallToast.type}
+        title={paywallToast.title}
+        description={paywallToast.description}
+        isOpen={paywallToast.isOpen}
+        onClose={() => setPaywallToast(prev => ({ ...prev, isOpen: false }))}
+        duration={5000}
+        position="top-right"
+      />
     </>
   );
 };

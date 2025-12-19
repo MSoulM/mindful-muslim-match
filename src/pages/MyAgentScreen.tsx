@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { cn } from '@/lib/utils';
+import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
+import { Toast } from '@/components/ui/Feedback/Toast';
 
 const MyAgentScreen = () => {
   const navigate = useNavigate();
@@ -19,6 +21,17 @@ const MyAgentScreen = () => {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const { pendingCount } = useChaiChatPending();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
+  const { isGold } = useSubscriptionTier();
+  const [paywallToast, setPaywallToast] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    description?: string;
+  }>({
+    isOpen: false,
+    type: 'warning',
+    title: ''
+  });
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -109,7 +122,18 @@ const MyAgentScreen = () => {
             title="Talk to Me"
             description="Chat about anything"
             rightElement={<ChevronRight className="w-5 h-5 text-neutral-400 flex-shrink-0" />}
-            onClick={() => navigate('/agent-chat')}
+            onClick={() => {
+              if (!isGold) {
+                setPaywallToast({
+                  isOpen: true,
+                  type: 'warning',
+                  title: 'Subscribe to Gold to chat with your MyAgent',
+                  description: 'Upgrade to Gold to unlock AI-powered conversations with your personal agent.'
+                });
+                return;
+              }
+              navigate('/agent-chat');
+            }}
             className="min-h-[90px]"
           />
 
@@ -221,6 +245,17 @@ const MyAgentScreen = () => {
         else if (tabId === 'chaichat') navigate('/chaichat');
         else if (tabId === 'messages') navigate('/messages');
       }} />
+
+      {/* Paywall Toast */}
+      <Toast
+        type={paywallToast.type}
+        title={paywallToast.title}
+        description={paywallToast.description}
+        isOpen={paywallToast.isOpen}
+        onClose={() => setPaywallToast(prev => ({ ...prev, isOpen: false }))}
+        duration={5000}
+        position="top-right"
+      />
     </div>
   );
 };

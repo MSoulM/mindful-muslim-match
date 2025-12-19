@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import PhotoUploadPicker from '@/components/ui/PhotoUploadPicker';
 import { supabase } from '@/lib/supabase';
 import { useProfile } from '@/hooks/useProfile';
+import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
+import { Toast } from '@/components/ui/Feedback/Toast';
 import { cn } from '@/lib/utils';
 import { ONBOARDING_STEPS, PHOTO_GUIDELINES, PHOTO_UPLOAD, FILE_UPLOAD } from '@/config/onboardingConstants';
 import type { Photo, PhotoUploadScreenProps } from '@/types/onboarding';
@@ -22,10 +24,21 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
   const location = useLocation();
   const { user } = useUser();
   const { profile, isLoading: profileLoading, updateProfile } = useProfile();
+  const { isGold } = useSubscriptionTier();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [showGuidelines, setShowGuidelines] = useState(true);
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [paywallToast, setPaywallToast] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    description?: string;
+  }>({
+    isOpen: false,
+    type: 'warning',
+    title: ''
+  });
 
   useEffect(() => {
     if (profile?.photos && profile.photos.length > 0) {
@@ -40,6 +53,16 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
   }, [profile]);
 
   const handleFileSelect = async (file: File) => {
+    if (!isGold) {
+      setPaywallToast({
+        isOpen: true,
+        type: 'warning',
+        title: 'Subscribe to Gold to add photos',
+        description: 'Upgrade to Gold to upload photos and enhance your profile.'
+      });
+      return;
+    }
+
     if (!user.id) {
       toast.error('You must be logged in to upload photos.');
       return;
@@ -360,7 +383,20 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
               {/* Add Photo Button - Only show if photos are less than max */}
               {photos.length < MAX_PHOTOS && (
                 <button
-                  onClick={() => !isUploading && setShowPhotoOptions(true)}
+                  onClick={() => {
+                    if (!isGold) {
+                      setPaywallToast({
+                        isOpen: true,
+                        type: 'warning',
+                        title: 'Subscribe to Gold to add photos',
+                        description: 'Upgrade to Gold to upload photos and enhance your profile.'
+                      });
+                      return;
+                    }
+                    if (!isUploading) {
+                      setShowPhotoOptions(true);
+                    }
+                  }}
                   disabled={isUploading}
                   className={cn(
                     "relative aspect-[3/4] rounded-xl border-2 border-dashed transition-all",
@@ -388,6 +424,16 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
                 </button>
               )}
             </div>
+
+            {/* Paywall notice for free users */}
+            {!isGold && (
+              <div className="mt-2 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                <p className="font-semibold">Subscribe to Gold to add photos</p>
+                <p className="mt-1">
+                  You can continue without photos for now. Upgrade later to showcase your best pictures.
+                </p>
+              </div>
+            )}
 
             {/* Verification Card */}
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
@@ -442,6 +488,17 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
             onFileSelect: handleFileSelect,
             onError: (error) => toast.error(error)
           }}
+        />
+
+        {/* Paywall Toast */}
+        <Toast
+          type={paywallToast.type}
+          title={paywallToast.title}
+          description={paywallToast.description}
+          isOpen={paywallToast.isOpen}
+          onClose={() => setPaywallToast(prev => ({ ...prev, isOpen: false }))}
+          duration={5000}
+          position="top-right"
         />
       </SafeArea>
     </div>

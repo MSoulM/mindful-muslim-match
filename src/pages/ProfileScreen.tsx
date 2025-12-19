@@ -25,7 +25,8 @@ import {
   Pause,
   Camera,
   Crown,
-  ChevronRight
+  ChevronRight,
+  Mic
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
@@ -275,6 +276,14 @@ const ProfileScreen = () => {
             title="Edit Profile"
             description="Photos, bio, basics"
             onClick={() => navigate('/edit-profile')}
+            className="rounded-none"
+          />
+          
+          <FeatureCard
+            icon={<Mic className="w-6 h-6" />}
+            title="Voice Onboarding"
+            description="Record your voice introduction"
+            onClick={() => navigate('/onboarding/voice-demo')}
             className="rounded-none"
           />
           

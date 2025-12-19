@@ -7,16 +7,37 @@ import { UserPersonalityType } from '@/types/onboarding';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
+import { Toast } from '@/components/ui/Feedback/Toast';
 
 export default function DashboardHeaderDemo() {
   const navigate = useNavigate();
   const [hasNewInsights, setHasNewInsights] = useState(true);
+  const { isGold } = useSubscriptionTier();
+  const [paywallToast, setPaywallToast] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    description?: string;
+  }>({
+    isOpen: false,
+    type: 'warning',
+    title: ''
+  });
   
   // Mock personality type - in production this would come from user profile
   const personalityType: UserPersonalityType = 'wise_aunty';
 
   const handleChatClick = () => {
-    console.log('Starting conversation with agent...');
+    if (!isGold) {
+      setPaywallToast({
+        isOpen: true,
+        type: 'warning',
+        title: 'Subscribe to Gold to chat with your MyAgent',
+        description: 'Upgrade to Gold to unlock AI-powered conversations with your personal agent.'
+      });
+      return;
+    }
     navigate('/agent-chat');
   };
 
@@ -94,6 +115,17 @@ export default function DashboardHeaderDemo() {
           </div>
         </Card>
       </div>
+
+      {/* Paywall Toast */}
+      <Toast
+        type={paywallToast.type}
+        title={paywallToast.title}
+        description={paywallToast.description}
+        isOpen={paywallToast.isOpen}
+        onClose={() => setPaywallToast(prev => ({ ...prev, isOpen: false }))}
+        duration={5000}
+        position="top-right"
+      />
     </ScreenContainer>
   );
 }
