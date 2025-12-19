@@ -10,6 +10,7 @@ interface ToastProps {
   duration?: number;
   onClose?: () => void;
   isOpen: boolean;
+  position?: 'top-center' | 'top-right' | 'top-left' | 'bottom-center' | 'bottom-right' | 'bottom-left';
 }
 
 export const Toast = ({
@@ -19,6 +20,7 @@ export const Toast = ({
   duration = 5000,
   onClose,
   isOpen,
+  position = 'top-center',
 }: ToastProps) => {
   // Auto-dismiss timer
   useEffect(() => {
@@ -62,23 +64,53 @@ export const Toast = ({
   const config = typeConfig[type];
   const Icon = config.icon;
 
+  // Position classes
+  const positionClasses = {
+    'top-center': 'fixed top-0 left-0 right-0 z-[200] flex justify-center px-4',
+    'top-right': 'fixed top-0 right-0 z-[200] flex justify-end px-4',
+    'top-left': 'fixed top-0 left-0 z-[200] flex justify-start px-4',
+    'bottom-center': 'fixed bottom-0 left-0 right-0 z-[200] flex justify-center px-4',
+    'bottom-right': 'fixed bottom-0 right-0 z-[200] flex justify-end px-4',
+    'bottom-left': 'fixed bottom-0 left-0 z-[200] flex justify-start px-4',
+  };
+
+  const isTop = position.startsWith('top');
+  const isRight = position.endsWith('right');
+  const isLeft = position.endsWith('left');
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -100, opacity: 0 }}
+          initial={{ 
+            y: isTop ? -100 : 100, 
+            x: isRight ? 100 : isLeft ? -100 : 0,
+            opacity: 0 
+          }}
+          animate={{ 
+            y: 0, 
+            x: 0,
+            opacity: 1 
+          }}
+          exit={{ 
+            y: isTop ? -100 : 100, 
+            x: isRight ? 100 : isLeft ? -100 : 0,
+            opacity: 0 
+          }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="fixed top-0 left-0 right-0 z-[200] flex justify-center px-4"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }}
+          className={cn(positionClasses[position])}
+          style={{ 
+            paddingTop: isTop ? 'calc(env(safe-area-inset-top) + 16px)' : undefined,
+            paddingBottom: !isTop ? 'calc(env(safe-area-inset-bottom) + 16px)' : undefined,
+          }}
         >
           <div
             className={cn(
-              'w-full max-w-md p-4 rounded-xl border shadow-lg',
+              'p-4 rounded-xl border shadow-lg',
               'backdrop-blur-sm bg-white/95',
               config.bgColor,
-              config.borderColor
+              config.borderColor,
+              position === 'top-center' || position === 'bottom-center' ? 'w-full max-w-md' : 'max-w-md'
             )}
           >
             <div className="flex gap-3">

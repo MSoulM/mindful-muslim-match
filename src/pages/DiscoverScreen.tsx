@@ -16,6 +16,7 @@ import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
+import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
 import { listStagger, listItem, respectMotionPreference } from '@/utils/animations';
 import { haptics, triggerHaptic } from '@/utils/haptics';
 
@@ -126,19 +127,32 @@ export default function DiscoverScreen() {
   const { unreadCount } = useNotifications();
   const { pendingCount } = useChaiChatPending();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
+  const { isFree, isLoading: isSubscriptionLoading } = useSubscriptionTier();
   const [toast, setToast] = useState<{
     isOpen: boolean;
     type: 'success' | 'error' | 'warning' | 'info';
     title: string;
+    description?: string;
   }>({
     isOpen: false,
     type: 'info',
     title: ''
   });
 
-  const showToast = (type: 'success' | 'error' | 'warning' | 'info', title: string) => {
-    setToast({ isOpen: true, type, title });
+  const showToast = (type: 'success' | 'error' | 'warning' | 'info', title: string, description?: string) => {
+    setToast({ isOpen: true, type, title, description });
   };
+
+  // Show warning toast when free tier user accesses discover page
+  useEffect(() => {
+    if (!isSubscriptionLoading && isFree) {
+      showToast(
+        'warning',
+        'Profile Incomplete',
+        'Complete 70% of your profile to access the Discover page and find meaningful connections.'
+      );
+    }
+  }, [isFree, isSubscriptionLoading]);
 
   const handleChaiChatClick = (matchId: string) => {
     triggerHaptic('light');
@@ -203,6 +217,88 @@ export default function DiscoverScreen() {
     showToast('success', 'Matches refreshed!');
     setAnnouncement('Matches have been refreshed');
   };
+
+  // Show loading state while checking subscription
+  if (isSubscriptionLoading) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen flex flex-col">
+          <TopBar
+            variant="logo"
+            notificationCount={unreadCount}
+            onNotificationClick={handleNotificationClick}
+          />
+          
+          <ScreenContainer
+            hasTopBar
+            hasBottomNav
+            scrollable
+            padding
+          >
+            <div className="space-y-4">
+              <Skeleton variant="rect" height={400} className="rounded-2xl" />
+            </div>
+          </ScreenContainer>
+
+          <BottomNav
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // Show upgrade message for free tier users
+  if (isFree) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen flex flex-col">
+          <TopBar
+            variant="logo"
+            notificationCount={unreadCount}
+            onNotificationClick={handleNotificationClick}
+          />
+          
+          <ScreenContainer
+            hasTopBar
+            hasBottomNav
+            scrollable
+            padding
+          >
+            <EmptyState
+              icon="📋"
+              title="Complete 70% Profile"
+              description="Complete your profile to 70% to access the Discover page and start finding meaningful connections. Upload photos, voice introduction, and other content to build your profile."
+              action={{
+                label: "Complete Profile",
+                onClick: () => {
+                  triggerHaptic('light');
+                  navigate('/dna');
+                }
+              }}
+            />
+          </ScreenContainer>
+
+          <BottomNav
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+
+          {/* Toast Notifications */}
+          <Toast
+            type={toast.type}
+            title={toast.title}
+            description={toast.description}
+            isOpen={toast.isOpen}
+            onClose={() => setToast(prev => ({ ...prev, isOpen: false }))}
+            duration={5000}
+            position="top-right"
+          />
+        </div>
+      </PageTransition>
+    );
+  }
 
   if (error) {
     return (
@@ -399,9 +495,11 @@ export default function DiscoverScreen() {
         <Toast
           type={toast.type}
           title={toast.title}
+          description={toast.description}
           isOpen={toast.isOpen}
           onClose={() => setToast(prev => ({ ...prev, isOpen: false }))}
-          duration={3000}
+          duration={5000}
+          position={toast.type === 'warning' ? 'top-right' : 'top-center'}
         />
       </div>
     </PageTransition>

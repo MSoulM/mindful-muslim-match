@@ -11,6 +11,7 @@ import { checkAndNotifyMilestones } from '@/utils/milestoneDetection';
 import { notifyCustom } from '@/utils/notifications';
 import { ProfileUpdateToast } from '@/components/notifications/ProfileUpdateToast';
 import { useNavigate } from 'react-router-dom';
+import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
 
 interface ContentUploadModalProps {
   isOpen: boolean;
@@ -56,13 +57,14 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
 }) => {
   const navigate = useNavigate();
   const profileStore = useProfileStore();
-  
+  const { isGold } = useSubscriptionTier();
+
   const [activeTab, setActiveTab] = useState<ContentType>('text');
-  
+
   // Text post state
   const [textContent, setTextContent] = useState('');
   const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
-  
+
   // Photo upload state
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
@@ -72,7 +74,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Video upload state
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string>('');
@@ -82,7 +84,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
   const [isDraggingVideo, setIsDraggingVideo] = useState(false);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
@@ -91,7 +93,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
   const [audioUrl, setAudioUrl] = useState<string>('');
   const [voiceDescription, setVoiceDescription] = useState('');
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Category prediction state
   const [isAnalyzingCategory, setIsAnalyzingCategory] = useState(false);
   const [predictedCategory, setPredictedCategory] = useState<{
@@ -99,13 +101,13 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     secondary?: { name: string; confidence: number };
   } | null>(null);
   const [showCategoryOverride, setShowCategoryOverride] = useState(false);
-  
+
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
-  
+
   // Define category configuration
   const categoryConfig = {
     'Values & Beliefs': { icon: Heart, color: 'teal', colorCode: '#0D7377' },
@@ -114,11 +116,11 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     'Lifestyle & Personality': { icon: Home, color: 'blue', colorCode: '#0066CC' },
     'Family & Cultural': { icon: Users, color: 'purple', colorCode: '#8B7AB8' },
   };
-  
+
   // Calculate metrics
   const charCount = textContent.length;
   const wordCount = Math.ceil(charCount / 5);
-  
+
   // Determine quality state
   const getQualityState = (): QualityState | null => {
     if (charCount < 20) return null;
@@ -126,22 +128,22 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     if (charCount < 200) return 'GOOD';
     return 'EXCELLENT';
   };
-  
+
   const qualityState = getQualityState();
-  
+
   // Get character counter color
   const getCharCountColor = () => {
     if (charCount <= 800) return 'text-muted-foreground';
     if (charCount <= 950) return 'text-yellow-600';
     return 'text-red-600';
   };
-  
+
   // Get 3 random prompts
   useEffect(() => {
     const shuffled = [...HELPFUL_PROMPTS].sort(() => Math.random() - 0.5);
     setSelectedPrompts(shuffled.slice(0, 3));
   }, []);
-  
+
   // Auto-save draft
   useEffect(() => {
     if (textContent.length > 0) {
@@ -151,7 +153,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       return () => clearTimeout(timer);
     }
   }, [textContent]);
-  
+
   // Restore draft on mount
   useEffect(() => {
     if (isOpen) {
@@ -162,7 +164,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       }
     }
   }, [isOpen]);
-  
+
   // Handle text change
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -170,7 +172,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       setTextContent(value);
     }
   };
-  
+
   // Insert prompt into textarea
   const handlePromptClick = (prompt: string) => {
     setTextContent((prev) => {
@@ -180,34 +182,34 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       return prev + ' ' + prompt;
     });
   };
-  
+
   // Photo upload handlers
   const validateFile = (file: File): boolean => {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     const maxSize = 10 * 1024 * 1024; // 10MB
-    
+
     if (!validTypes.includes(file.type)) {
       toast.error('Please upload a JPG, PNG, or WEBP image');
       return false;
     }
-    
+
     if (file.size > maxSize) {
       toast.error('Photo is too large. Please choose a file under 10MB');
       return false;
     }
-    
+
     return true;
   };
-  
+
   const handleFileSelect = (file: File) => {
     if (!validateFile(file)) return;
-    
+
     // Create preview URL
     const reader = new FileReader();
     reader.onloadend = () => {
       setPhotoPreview(reader.result as string);
       setPhotoFile(file);
-      
+
       // Mock AI analysis after 2 seconds
       setIsAnalyzing(true);
       setAiAnalysis(null);
@@ -223,30 +225,30 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     };
     reader.readAsDataURL(file);
   };
-  
+
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFileSelect(file);
   };
-  
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
-  
+
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
   };
-  
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const file = e.dataTransfer.files?.[0];
     if (file) handleFileSelect(file);
   };
-  
+
   const handleRemovePhoto = () => {
     if (photoPreview) {
       URL.revokeObjectURL(photoPreview);
@@ -260,67 +262,67 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       fileInputRef.current.value = '';
     }
   };
-  
+
   const handleReplacePhoto = () => {
     handleRemovePhoto();
     fileInputRef.current?.click();
   };
-  
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
-  
+
   // Video upload handlers
   const validateVideoFile = (file: File): boolean => {
     const validTypes = ['video/mp4', 'video/quicktime', 'video/webm'];
     const maxSize = 50 * 1024 * 1024; // 50MB
-    
+
     if (!validTypes.includes(file.type)) {
       toast.error('Please upload an MP4, MOV, or WEBM video');
       return false;
     }
-    
+
     if (file.size > maxSize) {
       toast.error('Video is too large. Please choose a file under 50MB');
       return false;
     }
-    
+
     return true;
   };
-  
+
   const handleVideoSelect = (file: File) => {
     if (!validateVideoFile(file)) return;
-    
+
     const url = URL.createObjectURL(file);
     setVideoPreview(url);
     setVideoFile(file);
   };
-  
+
   const handleVideoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleVideoSelect(file);
   };
-  
+
   const handleVideoDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingVideo(true);
   };
-  
+
   const handleVideoDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingVideo(false);
   };
-  
+
   const handleVideoDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingVideo(false);
-    
+
     const file = e.dataTransfer.files?.[0];
     if (file) handleVideoSelect(file);
   };
-  
+
   const handleRemoveVideo = () => {
     if (videoPreview) {
       URL.revokeObjectURL(videoPreview);
@@ -334,38 +336,38 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       videoInputRef.current.value = '';
     }
   };
-  
+
   const handleReplaceVideo = () => {
     handleRemoveVideo();
     videoInputRef.current?.click();
   };
-  
+
   const handleVideoLoadedMetadata = () => {
     if (videoRef.current) {
       const duration = videoRef.current.duration;
       const width = videoRef.current.videoWidth;
       const height = videoRef.current.videoHeight;
-      
+
       setVideoDuration(duration);
       setVideoResolution({ width, height });
     }
   };
-  
+
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-  
+
   // Voice recording handlers (MOCK for MVP)
   // TODO: Implement actual MediaRecorder API
   // TODO: Handle browser permissions for microphone
   // TODO: Encode audio to MP3/WAV for upload
-  
+
   const startRecording = () => {
     setIsRecording(true);
     setRecordingTime(0);
-    
+
     recordingIntervalRef.current = setInterval(() => {
       setRecordingTime((prev) => {
         if (prev >= 120) {
@@ -376,22 +378,22 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       });
     }, 1000);
   };
-  
+
   const stopRecording = () => {
     setIsRecording(false);
     setHasRecorded(true);
-    
+
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
       recordingIntervalRef.current = null;
     }
-    
+
     // Mock audio blob creation
     const mockBlob = new Blob(['mock audio data'], { type: 'audio/webm' });
     setAudioBlob(mockBlob);
     setAudioUrl(URL.createObjectURL(mockBlob));
   };
-  
+
   const handleRecordButtonClick = () => {
     if (isRecording) {
       if (recordingTime < 30) {
@@ -403,7 +405,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       startRecording();
     }
   };
-  
+
   const handleReRecord = () => {
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
@@ -414,22 +416,22 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     setRecordingTime(0);
     setVoiceDescription('');
   };
-  
+
   const handleDeleteVoice = () => {
     handleReRecord();
   };
-  
+
   // Category prediction logic
   const predictCategory = (content: string, type: 'text' | 'photo' | 'video' | 'voice') => {
     setIsAnalyzingCategory(true);
     setPredictedCategory(null);
-    
+
     setTimeout(() => {
       let prediction: { primary: { name: string; confidence: number; icon: string }; secondary?: { name: string; confidence: number } };
-      
+
       if (type === 'text') {
         const lowerContent = content.toLowerCase();
-        
+
         if (lowerContent.match(/pray|prayer|salah|faith|allah|islam|quran|mosque/)) {
           prediction = {
             primary: { name: 'Values & Beliefs', confidence: 85, icon: 'Heart' },
@@ -470,41 +472,41 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
           primary: { name: 'Values & Beliefs', confidence: 70, icon: 'Heart' },
         };
       }
-      
+
       setPredictedCategory(prediction);
       setIsAnalyzingCategory(false);
     }, 2000);
   };
-  
+
   // Trigger category prediction based on content type
   useEffect(() => {
     if (activeTab === 'text' && textContent.length >= 50) {
       predictCategory(textContent, 'text');
     }
   }, [textContent, activeTab]);
-  
+
   useEffect(() => {
     if (activeTab === 'photo' && photoFile) {
       predictCategory('', 'photo');
     }
   }, [photoFile, activeTab]);
-  
+
   useEffect(() => {
     if (activeTab === 'video' && videoFile) {
       predictCategory('', 'video');
     }
   }, [videoFile, activeTab]);
-  
+
   useEffect(() => {
     if (activeTab === 'voice' && hasRecorded) {
       predictCategory('', 'voice');
     }
   }, [hasRecorded, activeTab]);
-  
+
   // Validation functions
   const validateContent = (): { isValid: boolean; error: string } => {
     setValidationError('');
-    
+
     switch (activeTab) {
       case 'text':
         if (textContent.length < MIN_CHARACTERS_SUBMIT) {
@@ -514,7 +516,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
           return { isValid: false, error: 'Please wait for category analysis to complete' };
         }
         return { isValid: true, error: '' };
-        
+
       case 'photo':
         if (!photoFile) {
           return { isValid: false, error: 'Please upload a photo' };
@@ -523,7 +525,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
           return { isValid: false, error: 'Please add a caption to your photo (minimum 10 characters)' };
         }
         return { isValid: true, error: '' };
-        
+
       case 'video':
         if (!videoFile) {
           return { isValid: false, error: 'Please upload a video' };
@@ -535,7 +537,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
           return { isValid: false, error: 'Please add a caption to your video (minimum 10 characters)' };
         }
         return { isValid: true, error: '' };
-        
+
       case 'voice':
         if (!hasRecorded) {
           return { isValid: false, error: 'Please record a voice note' };
@@ -544,16 +546,20 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
           return { isValid: false, error: 'Voice note is too short (minimum 30 seconds)' };
         }
         return { isValid: true, error: '' };
-        
+
       default:
         return { isValid: false, error: 'Invalid content type' };
     }
   };
-  
+
   const canSubmit = (): boolean => {
+    // Only Gold members can submit photo / video / voice content
+    if (!isGold && activeTab !== 'text') {
+      return false;
+    }
     return validateContent().isValid;
   };
-  
+
   // Draft management
   const saveDraft = () => {
     const draft = {
@@ -564,12 +570,12 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       category: predictedCategory?.primary.name || '',
       timestamp: Date.now(),
     };
-    
+
     localStorage.setItem('matchme_content_draft', JSON.stringify(draft));
     toast.success('Draft saved!');
     onClose();
   };
-  
+
   // Restore draft on modal open
   useEffect(() => {
     if (isOpen) {
@@ -578,7 +584,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
         try {
           const draft = JSON.parse(draftStr);
           const hoursSinceDraft = (Date.now() - draft.timestamp) / (1000 * 60 * 60);
-          
+
           if (hoursSinceDraft < 24) {
             // Draft is less than 24 hours old, show restoration option
             toast.info('Draft found!', {
@@ -605,7 +611,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       }
     }
   }, [isOpen]);
-  
+
   // Submit handlers
   const handleSubmit = async () => {
     const validation = validateContent();
@@ -613,7 +619,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       setValidationError(validation.error);
       return;
     }
-    
+
     // Get current profile state
     const oldOverallCompletion = profileStore.overallCompletion;
     const oldChaiChatEligible = profileStore.chaiChatEligible;
@@ -621,10 +627,10 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     const oldCategoryData = profileStore.categories[categoryId];
     const oldCategoryCompletion = oldCategoryData?.percentage || 0;
     const oldBalanceScore = profileStore.balanceScore;
-    
+
     setIsSubmitting(true);
     setValidationError('');
-    
+
     // Get content based on active tab
     let content = '';
     switch (activeTab) {
@@ -641,12 +647,12 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
         content = voiceDescription;
         break;
     }
-    
+
     // Detect topics from content
     const detectedTopics = detectTopicsInContent(content, categoryId);
     const previousTopics = oldCategoryData?.topicsCovered || [];
     const newTopicsCovered = detectedTopics.filter(t => !previousTopics.includes(t));
-    
+
     // Log analytics event
     console.log('content_posted', {
       type: activeTab,
@@ -655,20 +661,20 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       newTopicsCovered,
       timestamp: Date.now(),
     });
-    
+
     // Mock submission delay with progress
     setTimeout(() => {
       // Calculate new values
       const newContentCount = (oldCategoryData?.contentCount || 0) + 1;
       const newWordCount = (oldCategoryData?.wordCount || 0) + content.split(/\s+/).length;
       const allTopicsCovered = [...new Set([...previousTopics, ...detectedTopics])];
-      
+
       // Calculate new percentage (simple formula: content count * 10 + topics * 15, capped at 100)
       const contentBonus = Math.min(newContentCount * 10, 40);
       const topicBonus = Math.min((allTopicsCovered.length / (oldCategoryData?.requiredTopics || 4)) * 40, 40);
       const wordBonus = Math.min((newWordCount / 500) * 20, 20);
       const newCategoryCompletion = Math.min(contentBonus + topicBonus + wordBonus, 100);
-      
+
       // Update profile store
       profileStore.updateCategory(categoryId, {
         percentage: Math.round(newCategoryCompletion),
@@ -676,35 +682,35 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
         wordCount: newWordCount,
         topicsCovered: allTopicsCovered,
       });
-      
+
       // Add newly covered topics to store
       if (newTopicsCovered.length > 0) {
         profileStore.addNewlyCoveredTopics(newTopicsCovered);
       }
-      
+
       // Mark this category as recently updated
       profileStore.setRecentlyUpdatedCategory(categoryId);
       setTimeout(() => {
         profileStore.setRecentlyUpdatedCategory(null);
       }, 3000);
-      
+
       // Get new overall completion
       const newOverallCompletion = profileStore.overallCompletion;
       const newChaiChatEligible = profileStore.chaiChatEligible;
-      
+
       setIsSubmitting(false);
       setShowSuccess(true);
-      
+
       // Clear draft on successful submission
       localStorage.removeItem('matchme_content_draft');
-      
+
       // Trigger confetti
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
       });
-      
+
       // Show profile update toast after a brief delay
       setTimeout(() => {
         notifyCustom(
@@ -722,7 +728,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
           }
         );
       }, 1500);
-      
+
       // Check and notify milestones
       checkAndNotifyMilestones(
         {
@@ -742,7 +748,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       );
     }, 2500);
   };
-  
+
   // Helper functions for category mapping
   const getCategoryIcon = (categoryId: string): any => {
     const iconMap: Record<string, any> = {
@@ -754,7 +760,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     };
     return iconMap[categoryId] || 'Heart';
   };
-  
+
   const getCategoryColor = (categoryId: string): string => {
     const colorMap: Record<string, string> = {
       'values_beliefs': '#D4A574',
@@ -765,7 +771,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     };
     return colorMap[categoryId] || '#0A3A2E';
   };
-  
+
   const handleAddMore = () => {
     setShowSuccess(false);
     setShowError(false);
@@ -782,17 +788,17 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     setVoiceDescription('');
     setPredictedCategory(null);
   };
-  
+
   const handleViewProfile = () => {
     onClose();
     // Navigate to profile completion (would use router in real app)
     window.location.href = '/dev/profile-completion-test';
   };
-  
+
   const handleDone = () => {
     onClose();
   };
-  
+
   const handleClose = () => {
     // Cleanup photo preview URL
     if (photoPreview) {
@@ -814,7 +820,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
     // Reset to text tab on close
     setTimeout(() => setActiveTab('text'), 300);
   };
-  
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -838,17 +844,17 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       handleClose();
     }
   };
-  
+
   // Render category prediction section (shared across all tabs)
   const renderCategoryPrediction = () => {
-    const shouldShow = 
+    const shouldShow =
       (activeTab === 'text' && textContent.length >= 50) ||
       (activeTab === 'photo' && photoFile) ||
       (activeTab === 'video' && videoFile) ||
       (activeTab === 'voice' && hasRecorded);
-    
+
     if (!shouldShow) return null;
-    
+
     return (
       <div className="mt-6 pt-6 border-t-2 border-border bg-gradient-to-b from-background to-muted/30 -mx-6 px-6 pb-6">
         {isAnalyzingCategory ? (
@@ -865,7 +871,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
               <p className="text-sm font-medium text-muted-foreground mb-3">
                 This content will be added to:
               </p>
-              
+
               {/* Primary Category */}
               <div className="flex items-center gap-3 p-4 bg-opacity-20 border-2 rounded-lg"
                 style={{
@@ -884,7 +890,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                   {predictedCategory.primary.confidence}% confidence
                 </span>
               </div>
-              
+
               {/* Secondary Category */}
               {predictedCategory.secondary && (
                 <div className="mt-2 flex items-center gap-2 p-3 bg-opacity-10 border rounded-md"
@@ -898,7 +904,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                   </span>
                 </div>
               )}
-              
+
               {/* Category Override Button */}
               <button
                 onClick={() => setShowCategoryOverride(!showCategoryOverride)}
@@ -907,7 +913,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                 Wrong category?
               </button>
             </div>
-            
+
             {/* Impact Preview Card */}
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center gap-2 mb-3">
@@ -916,7 +922,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                   Impact on Your Profile
                 </span>
               </div>
-              
+
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-foreground">
                   <CheckCircle className="h-4 w-4 text-green-600" />
@@ -937,7 +943,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                 </div>
               </div>
             </div>
-            
+
             {/* Smart Suggestion */}
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
               <div className="flex items-start gap-2">
@@ -947,7 +953,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                 </p>
               </div>
             </div>
-            
+
             {/* Category Override Dropdown */}
             <AnimatePresence>
               {showCategoryOverride && (
@@ -989,11 +995,11 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       </div>
     );
   };
-  
+
   // Render submit button area
   const renderSubmitButtons = () => {
     if (showSuccess || showError) return null;
-    
+
     return (
       <div className="sticky bottom-0 bg-background border-t-2 border-border p-6 shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.1)] z-10">
         {/* Validation Error */}
@@ -1003,7 +1009,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
             <p className="text-sm text-red-800">{validationError}</p>
           </div>
         )}
-        
+
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
@@ -1013,7 +1019,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
             <Save className="h-5 w-5" />
             Save as Draft
           </button>
-          
+
           <button
             onClick={handleSubmit}
             disabled={!canSubmit() || isSubmitting}
@@ -1040,17 +1046,17 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       </div>
     );
   };
-  
+
   // Render success screen
   const renderSuccessScreen = () => {
     if (!showSuccess) return null;
-    
+
     const oldCompletion = 68;
     const newCompletion = 72;
     const completionIncrease = newCompletion - oldCompletion;
     const categoryName = predictedCategory?.primary.name || 'Unknown Category';
     const chaiChatUnlocked = newCompletion >= 70 && oldCompletion < 70;
-    
+
     return (
       <div className="flex flex-col items-center justify-center p-8 min-h-[60vh]">
         {/* Success Icon */}
@@ -1061,7 +1067,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
         >
           <CheckCircle className="h-24 w-24 text-green-600 mb-6" />
         </motion.div>
-        
+
         {/* Title */}
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
@@ -1071,7 +1077,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
         >
           Content Added Successfully!
         </motion.h2>
-        
+
         {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0 }}
@@ -1081,7 +1087,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
         >
           Added to {categoryName}
         </motion.p>
-        
+
         {/* Success Details Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1096,7 +1102,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
               ✓ Added to {categoryName}
             </h3>
           </div>
-          
+
           {/* Impact Summary */}
           <div className="space-y-2 mb-4">
             <motion.div
@@ -1107,13 +1113,13 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
             >
               <span className="text-muted-foreground">Category Completion: </span>
               <span className="font-semibold">
-                {oldCompletion}% → {newCompletion}% 
+                {oldCompletion}% → {newCompletion}%
               </span>
               <span className="text-green-600 font-semibold ml-2">
                 (+{completionIncrease}%) ⬆️
               </span>
             </motion.div>
-            
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1125,7 +1131,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
               <span className="text-green-600 font-semibold ml-2">(+2%)</span>
             </motion.div>
           </div>
-          
+
           {/* Next Suggestion */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -1151,7 +1157,7 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
             )}
           </motion.div>
         </motion.div>
-        
+
         {/* Action Buttons */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -1181,26 +1187,26 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       </div>
     );
   };
-  
+
   // Render error screen
   const renderErrorScreen = () => {
     if (!showError) return null;
-    
+
     return (
       <div className="flex flex-col items-center justify-center p-8 min-h-[60vh]">
         {/* Error Icon */}
         <XCircle className="h-24 w-24 text-red-600 mb-6" />
-        
+
         {/* Title */}
         <h2 className="text-2xl font-bold text-foreground mb-2">
           Something went wrong
         </h2>
-        
+
         {/* Message */}
         <p className="text-sm text-muted-foreground mb-8 text-center max-w-md">
           Your content couldn't be posted. Please try again.
         </p>
-        
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
@@ -1228,11 +1234,11 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       </div>
     );
   };
-  
+
   // Render loading overlay
   const renderLoadingOverlay = () => {
     if (!isSubmitting) return null;
-    
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -1261,13 +1267,13 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
       >
         {/* Loading Overlay */}
         {renderLoadingOverlay()}
-        
+
         {/* Success Screen */}
         {showSuccess && renderSuccessScreen()}
-        
+
         {/* Error Screen */}
         {showError && renderErrorScreen()}
-        
+
         {/* Normal Content */}
         {!showSuccess && !showError && (
           <>
@@ -1301,7 +1307,19 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
                 return (
                   <button
                     key={tab.type}
-                    onClick={() => setActiveTab(tab.type)}
+                    onClick={() => {
+                      if (!isGold && tab.type !== 'text') {
+                        toast.error(
+                          tab.type === 'photo'
+                            ? 'Subscribe to Gold to add photos'
+                            : tab.type === 'video'
+                              ? 'Subscribe to Gold to add videos'
+                              : 'Subscribe to Gold to record your voice'
+                        );
+                        return;
+                      }
+                      setActiveTab(tab.type);
+                    }}
                     className={cn(
                       'flex-1 flex flex-col items-center justify-center gap-2 py-4 px-2 transition-all duration-200',
                       'border-b-2 hover:bg-accent/50',
@@ -1325,563 +1343,623 @@ export const ContentUploadModal: React.FC<ContentUploadModalProps> = ({
 
         {/* Tab Content Area */}
         {!showSuccess && !showError && (
-        <div className="p-6 bg-muted/30 min-h-[400px] max-h-[50vh] overflow-y-auto">
-          {activeTab === 'text' && (
-            <div
-              id="text-panel"
-              role="tabpanel"
-              aria-labelledby="text-tab"
-              className="space-y-4"
-            >
-              {/* Main Textarea */}
-              <textarea
-                value={textContent}
-                onChange={handleTextChange}
-                placeholder="What's on your mind? Share your thoughts about your values, interests, goals, lifestyle, or family..."
-                className="w-full h-48 max-h-96 p-4 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary leading-relaxed"
-                aria-label="Text content"
-              />
-              
-              {/* Counters Row */}
-              <div className="flex justify-between items-center text-sm">
-                {/* Word Counter (Left) */}
-                <span className="text-muted-foreground">
-                  ~{wordCount} words
-                </span>
-                
-                {/* Character Counter (Right) */}
-                <span className={getCharCountColor()}>
-                  {charCount} / {MAX_CHARACTERS} characters
-                </span>
-              </div>
-              
-              {/* Validation Error */}
-              {charCount > 0 && charCount < MIN_CHARACTERS_SUBMIT && (
-                <div className="flex items-center gap-2 text-sm text-red-600">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Minimum {MIN_CHARACTERS_SUBMIT} characters required</span>
-                </div>
-              )}
-              
-              {/* Content Quality Indicator */}
-              <AnimatePresence>
-                {qualityState && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className={cn(
-                      'flex items-center gap-2 p-3 rounded-md text-sm border',
-                      qualityState === 'TOO_SHORT' && 'bg-orange-50 border-orange-200 text-orange-800',
-                      qualityState === 'GOOD' && 'bg-green-50 border-green-200 text-green-800',
-                      qualityState === 'EXCELLENT' && 'bg-blue-50 border-blue-200 text-blue-800'
-                    )}
-                  >
-                    {qualityState === 'TOO_SHORT' && (
-                      <>
-                        <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                        <span>Add more detail for better AI analysis</span>
-                      </>
-                    )}
-                    {qualityState === 'GOOD' && (
-                      <>
-                        <CheckCircle className="h-5 w-5 flex-shrink-0" />
-                        <span>Good detail level ✓</span>
-                      </>
-                    )}
-                    {qualityState === 'EXCELLENT' && (
-                      <>
-                        <Sparkles className="h-5 w-5 flex-shrink-0" />
-                        <span>Excellent detail! This will greatly improve your profile ✨</span>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              
-              {/* Helpful Prompts */}
-              {charCount === 0 && selectedPrompts.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    Need inspiration? Try writing about:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedPrompts.map((prompt, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handlePromptClick(prompt)}
-                        className="px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs text-foreground transition-colors cursor-pointer"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Category Prediction Section */}
-              {renderCategoryPrediction()}
-            </div>
-          )}
-
-          {activeTab === 'photo' && (
-            <div
-              id="photo-panel"
-              role="tabpanel"
-              aria-labelledby="photo-tab"
-              className="space-y-4"
-            >
-              {/* Hidden File Input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".jpg,.jpeg,.png,.webp"
-                onChange={handleFileInputChange}
-                className="hidden"
-              />
-              
-              {/* Upload Area or Preview */}
-              {!photoPreview ? (
-                <div
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    'h-75 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer',
-                    'flex flex-col items-center justify-center',
-                    isDragging
-                      ? 'border-primary bg-green-50'
-                      : 'border-border bg-muted hover:border-primary/50 hover:bg-green-50/50'
-                  )}
-                >
-                  <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg text-foreground font-medium">
-                    Drop your photo here
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    or click to browse
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    JPG, PNG, WEBP up to 10MB
-                  </p>
-                </div>
-              ) : (
-                <div className="relative h-75 rounded-lg overflow-hidden group">
-                  <img
-                    src={photoPreview}
-                    alt="Preview"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                  
-                  {/* Hover Overlay with Actions */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
-                    <button
-                      onClick={handleReplacePhoto}
-                      className="p-3 bg-background rounded-full hover:bg-background/90 transition-colors"
-                      aria-label="Replace photo"
-                    >
-                      <RefreshCw className="h-6 w-6 text-foreground" />
-                    </button>
-                    <button
-                      onClick={handleRemovePhoto}
-                      className="p-3 bg-background rounded-full hover:bg-background/90 transition-colors"
-                      aria-label="Remove photo"
-                    >
-                      <XCircle className="h-6 w-6 text-foreground" />
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Image Info */}
-              {photoFile && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground truncate max-w-[200px]">
-                    {photoFile.name}
-                  </span>
-                  <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>{formatFileSize(photoFile.size)}</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Caption Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground">
-                  Add a caption (optional but recommended)
-                </label>
+          <div className="p-6 bg-muted/30 min-h-[400px] max-h-[50vh] overflow-y-auto">
+            {activeTab === 'text' && (
+              <div
+                id="text-panel"
+                role="tabpanel"
+                aria-labelledby="text-tab"
+                className="space-y-4"
+              >
+                {/* Main Textarea */}
                 <textarea
-                  value={photoCaption}
-                  onChange={(e) => {
-                    if (e.target.value.length <= 500) {
-                      setPhotoCaption(e.target.value);
-                    }
-                  }}
-                  placeholder="Describe this photo... Where was it taken? What were you doing? What does it represent about you?"
-                  className="w-full h-25 max-h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
-                  aria-label="Photo caption"
+                  value={textContent}
+                  onChange={handleTextChange}
+                  placeholder="What's on your mind? Share your thoughts about your values, interests, goals, lifestyle, or family..."
+                  className="w-full h-48 max-h-96 p-4 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary leading-relaxed"
+                  aria-label="Text content"
                 />
-                <div className="flex justify-end text-xs text-muted-foreground">
-                  {photoCaption.length} / 500 characters
-                </div>
-              </div>
-              
-              {/* AI Vision Analysis */}
-              {photoPreview && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm font-semibold text-foreground">
-                      AI Vision Analysis
-                    </span>
-                  </div>
-                  
-                  {isAnalyzing ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                      <span>Analyzing image...</span>
-                    </div>
-                  ) : aiAnalysis ? (
-                    <ul className="space-y-1 text-sm text-foreground">
-                      {aiAnalysis.map((item, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-              )}
-              
-              {/* Content Suggestions */}
-              {photoPreview && aiAnalysis && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    💡 This photo could show:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-purple-100 border border-purple-300 rounded-full text-xs text-purple-800">
-                      Your interests
-                    </span>
-                    <span className="px-2 py-1 bg-blue-100 border border-blue-300 rounded-full text-xs text-blue-800">
-                      Your personality
-                    </span>
-                    <span className="px-2 py-1 bg-green-100 border border-green-300 rounded-full text-xs text-green-800">
-                      Your lifestyle
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Category Prediction Section */}
-              {renderCategoryPrediction()}
-            </div>
-          )}
 
-          {activeTab === 'video' && (
-            <div
-              id="video-panel"
-              role="tabpanel"
-              aria-labelledby="video-tab"
-              className="space-y-4"
-            >
-              {/* Hidden Video Input */}
-              <input
-                ref={videoInputRef}
-                type="file"
-                accept=".mp4,.mov,.webm"
-                onChange={handleVideoInputChange}
-                className="hidden"
-              />
-              
-              {/* Upload Area or Preview */}
-              {!videoPreview ? (
-                <div
-                  onDragOver={handleVideoDragOver}
-                  onDragLeave={handleVideoDragLeave}
-                  onDrop={handleVideoDrop}
-                  onClick={() => videoInputRef.current?.click()}
-                  className={cn(
-                    'h-75 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer',
-                    'flex flex-col items-center justify-center',
-                    isDraggingVideo
-                      ? 'border-primary bg-green-50'
-                      : 'border-border bg-muted hover:border-primary/50 hover:bg-green-50/50'
-                  )}
-                >
-                  <Video className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg text-foreground font-medium">
-                    Drop your video here
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    or click to browse
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    MP4, MOV, WEBM up to 50MB • Max 60 seconds
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative rounded-lg overflow-hidden bg-black">
-                    <video
-                      ref={videoRef}
-                      src={videoPreview}
-                      controls
-                      onLoadedMetadata={handleVideoLoadedMetadata}
-                      className="w-full max-h-75 object-contain"
-                    />
-                  </div>
-                  
-                  {/* Video Info */}
-                  {videoFile && (
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      {videoDuration > 0 && (
-                        <span>Duration: {formatDuration(videoDuration)}</span>
-                      )}
-                      <span>Size: {formatFileSize(videoFile.size)}</span>
-                      <span>Format: {videoFile.type.split('/')[1].toUpperCase()}</span>
-                      {videoResolution && (
-                        <span>Resolution: {videoResolution.width}x{videoResolution.height}</span>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Duration Validation */}
-                  {videoDuration > 0 && (
-                    <div>
-                      {videoDuration > 60 ? (
-                        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-md text-sm text-orange-800">
-                          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                          <span>Video is too long. Please upload a video under 60 seconds</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-800">
-                          <CheckCircle className="h-5 w-5 flex-shrink-0" />
-                          <span>Duration: Perfect! ✓</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleReplaceVideo}
-                      className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
-                    >
-                      Replace Video
-                    </button>
-                    <button
-                      onClick={handleRemoveVideo}
-                      className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
-                    >
-                      Remove Video
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Caption Input */}
-              {videoPreview && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">
-                    Describe your video
-                  </label>
-                  <textarea
-                    value={videoCaption}
-                    onChange={(e) => {
-                      if (e.target.value.length <= 500) {
-                        setVideoCaption(e.target.value);
-                      }
-                    }}
-                    placeholder="What's happening in this video? What does it say about you?"
-                    className="w-full h-25 max-h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
-                    aria-label="Video caption"
-                  />
-                  <div className="flex justify-end text-xs text-muted-foreground">
-                    {videoCaption.length} / 500 characters
-                  </div>
-                </div>
-              )}
-              
-              {/* Category Prediction Section */}
-              {renderCategoryPrediction()}
-            </div>
-          )}
+                {/* Counters Row */}
+                <div className="flex justify-between items-center text-sm">
+                  {/* Word Counter (Left) */}
+                  <span className="text-muted-foreground">
+                    ~{wordCount} words
+                  </span>
 
-          {activeTab === 'voice' && (
-            <div
-              id="voice-panel"
-              role="tabpanel"
-              aria-labelledby="voice-tab"
-              className="space-y-6"
-            >
-              {!hasRecorded ? (
-                <>
-                  {/* Recording Interface */}
-                  <div className="flex flex-col items-center justify-center py-12 bg-background rounded-lg border border-border">
-                    <button
-                      onClick={handleRecordButtonClick}
+                  {/* Character Counter (Right) */}
+                  <span className={getCharCountColor()}>
+                    {charCount} / {MAX_CHARACTERS} characters
+                  </span>
+                </div>
+
+                {/* Validation Error */}
+                {charCount > 0 && charCount < MIN_CHARACTERS_SUBMIT && (
+                  <div className="flex items-center gap-2 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Minimum {MIN_CHARACTERS_SUBMIT} characters required</span>
+                  </div>
+                )}
+
+                {/* Content Quality Indicator */}
+                <AnimatePresence>
+                  {qualityState && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
                       className={cn(
-                        'h-24 w-24 rounded-full flex items-center justify-center shadow-xl transition-all',
-                        'focus:outline-none focus:ring-2 focus:ring-offset-2',
-                        isRecording
-                          ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
-                          : 'bg-primary hover:bg-primary/90 focus:ring-primary hover:scale-105 active:scale-95'
+                        'flex items-center gap-2 p-3 rounded-md text-sm border',
+                        qualityState === 'TOO_SHORT' && 'bg-orange-50 border-orange-200 text-orange-800',
+                        qualityState === 'GOOD' && 'bg-green-50 border-green-200 text-green-800',
+                        qualityState === 'EXCELLENT' && 'bg-blue-50 border-blue-200 text-blue-800'
                       )}
-                      aria-label={isRecording ? 'Stop recording' : 'Start recording'}
                     >
-                      {isRecording ? (
-                        <Square className="h-10 w-10 text-white" />
-                      ) : (
-                        <Mic className="h-10 w-10 text-primary-foreground" />
+                      {qualityState === 'TOO_SHORT' && (
+                        <>
+                          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                          <span>Add more detail for better AI analysis</span>
+                        </>
                       )}
-                    </button>
-                    
-                    <p className="text-sm text-muted-foreground mt-6">
-                      {isRecording ? `Recording... ${formatDuration(recordingTime)}` : 'Tap to start recording'}
+                      {qualityState === 'GOOD' && (
+                        <>
+                          <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                          <span>Good detail level ✓</span>
+                        </>
+                      )}
+                      {qualityState === 'EXCELLENT' && (
+                        <>
+                          <Sparkles className="h-5 w-5 flex-shrink-0" />
+                          <span>Excellent detail! This will greatly improve your profile ✨</span>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Helpful Prompts */}
+                {charCount === 0 && selectedPrompts.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Need inspiration? Try writing about:
                     </p>
-                    
-                    {!isRecording && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Duration: 30-120 seconds
-                      </p>
-                    )}
-                    
-                    {isRecording && (
-                      <p className={cn(
-                        'text-xs mt-1',
-                        recordingTime < 30 ? 'text-orange-600' : recordingTime > 110 ? 'text-red-600' : 'text-muted-foreground'
-                      )}>
-                        {recordingTime < 30 && 'Minimum 30 seconds'}
-                        {recordingTime >= 30 && recordingTime <= 110 && `${formatDuration(recordingTime)} / 2:00`}
-                        {recordingTime > 110 && 'Reaching maximum duration!'}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Mock Waveform Visualization */}
-                  {isRecording && (
-                    <div className="flex items-end justify-center gap-0.5 h-25 bg-muted rounded-lg p-4">
-                      {Array.from({ length: 20 }).map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="w-1 bg-primary rounded-full"
-                          animate={{
-                            height: [
-                              `${Math.random() * 40 + 20}px`,
-                              `${Math.random() * 60 + 20}px`,
-                              `${Math.random() * 40 + 20}px`,
-                            ],
-                          }}
-                          transition={{
-                            duration: 0.5,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: i * 0.05,
-                          }}
-                        />
+                    <div className="flex flex-wrap gap-2">
+                      {selectedPrompts.map((prompt, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handlePromptClick(prompt)}
+                          className="px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs text-foreground transition-colors cursor-pointer"
+                        >
+                          {prompt}
+                        </button>
                       ))}
                     </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {/* Playback Interface */}
+                  </div>
+                )}
+
+                {/* Category Prediction Section */}
+                {renderCategoryPrediction()}
+              </div>
+            )}
+
+            {activeTab === 'photo' && (
+              <div
+                id="photo-panel"
+                role="tabpanel"
+                aria-labelledby="photo-tab"
+                className="space-y-4"
+              >
+                {!isGold && (
                   <div className="space-y-4">
-                    {/* Audio Player (Mock) */}
-                    <div className="p-6 bg-background rounded-lg border border-border">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="flex-1 flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
-                            <Mic className="h-6 w-6 text-primary-foreground" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">
-                              Voice Note
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Duration: {formatDuration(recordingTime)}
-                            </p>
-                          </div>
+                    <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                      <p className="font-semibold mb-1">Subscribe to Gold to add photos</p>
+                      <p className="mb-3">
+                        Photos help your MMAgent understand you visually and improve your matches.
+                      </p>
+                      <button
+                        onClick={() => navigate('/premium')}
+                        className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700"
+                      >
+                        Upgrade to Gold
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isGold && (
+                  <>
+                    {/* Hidden File Input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      onChange={handleFileInputChange}
+                      className="hidden"
+                    />
+
+                    {/* Upload Area or Preview */}
+                    {!photoPreview ? (
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={cn(
+                          'h-75 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer',
+                          'flex flex-col items-center justify-center',
+                          isDragging
+                            ? 'border-primary bg-green-50'
+                            : 'border-border bg-muted hover:border-primary/50 hover:bg-green-50/50'
+                        )}
+                      >
+                        <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+                        <p className="text-lg text-foreground font-medium">
+                          Drop your photo here
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          or click to browse
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          JPG, PNG, WEBP up to 10MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="relative h-75 rounded-lg overflow-hidden group">
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+
+                        {/* Hover Overlay with Actions */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
+                          <button
+                            onClick={handleReplacePhoto}
+                            className="p-3 bg-background rounded-full hover:bg-background/90 transition-colors"
+                            aria-label="Replace photo"
+                          >
+                            <RefreshCw className="h-6 w-6 text-foreground" />
+                          </button>
+                          <button
+                            onClick={handleRemovePhoto}
+                            className="p-3 bg-background rounded-full hover:bg-background/90 transition-colors"
+                            aria-label="Remove photo"
+                          >
+                            <XCircle className="h-6 w-6 text-foreground" />
+                          </button>
                         </div>
                       </div>
-                      
-                      {/* Static Waveform */}
-                      <div className="flex items-end justify-center gap-0.5 h-16 bg-muted rounded p-2 mb-4">
-                        {Array.from({ length: 40 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-1 bg-primary/60 rounded-full"
-                            style={{ height: `${Math.random() * 80 + 20}%` }}
-                          />
-                        ))}
+                    )}
+
+                    {/* Image Info */}
+                    {photoFile && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-foreground truncate max-w-[200px]">
+                          {photoFile.name}
+                        </span>
+                        <div className="flex gap-3 text-xs text-muted-foreground">
+                          <span>{formatFileSize(photoFile.size)}</span>
+                        </div>
                       </div>
-                      
-                      <div className="text-xs text-muted-foreground">
-                        ~2.1 MB
-                      </div>
-                    </div>
-                    
-                    {/* Audio Quality Indicator */}
-                    <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
-                      <Info className="h-5 w-5 flex-shrink-0" />
-                      <span>Clear audio ✓</span>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleReRecord}
-                        className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
-                      >
-                        Re-record
-                      </button>
-                      <button
-                        onClick={handleDeleteVoice}
-                        className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                    
-                    {/* Text Description Field */}
+                    )}
+
+                    {/* Caption Input */}
                     <div className="space-y-2">
                       <label className="text-sm font-semibold text-foreground">
-                        What did you talk about? (optional)
+                        Add a caption (optional but recommended)
                       </label>
                       <textarea
-                        value={voiceDescription}
+                        value={photoCaption}
                         onChange={(e) => {
-                          if (e.target.value.length <= 300) {
-                            setVoiceDescription(e.target.value);
+                          if (e.target.value.length <= 500) {
+                            setPhotoCaption(e.target.value);
                           }
                         }}
-                        placeholder="Briefly describe what you shared in this voice note..."
-                        className="w-full h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
-                        aria-label="Voice note description"
+                        placeholder="Describe this photo... Where was it taken? What were you doing? What does it represent about you?"
+                        className="w-full h-25 max-h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                        aria-label="Photo caption"
                       />
                       <div className="flex justify-end text-xs text-muted-foreground">
-                        {voiceDescription.length} / 300 characters
+                        {photoCaption.length} / 500 characters
                       </div>
                     </div>
+
+                    {/* AI Vision Analysis */}
+                    {photoPreview && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-md space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-semibold text-foreground">
+                            AI Vision Analysis
+                          </span>
+                        </div>
+
+                        {isAnalyzing ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                            <span>Analyzing image...</span>
+                          </div>
+                        ) : aiAnalysis ? (
+                          <ul className="space-y-1 text-sm text-foreground">
+                            {aiAnalysis.map((item, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    )}
+
+                    {/* Content Suggestions */}
+                    {photoPreview && aiAnalysis && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          💡 This photo could show:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-2 py-1 bg-purple-100 border border-purple-300 rounded-full text-xs text-purple-800">
+                            Your interests
+                          </span>
+                          <span className="px-2 py-1 bg-blue-100 border border-blue-300 rounded-full text-xs text-blue-800">
+                            Your personality
+                          </span>
+                          <span className="px-2 py-1 bg-green-100 border border-green-300 rounded-full text-xs text-green-800">
+                            Your lifestyle
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Category Prediction Section */}
+                    {renderCategoryPrediction()}
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'video' && (
+              <div
+                id="video-panel"
+                role="tabpanel"
+                aria-labelledby="video-tab"
+                className="space-y-4"
+              >
+                {!isGold && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                      <p className="font-semibold mb-1">Subscribe to Gold to add videos</p>
+                      <p className="mb-3">
+                        Video introductions give a deeper feel for your personality and presence.
+                      </p>
+                      <button
+                        onClick={() => navigate('/premium')}
+                        className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700"
+                      >
+                        Upgrade to Gold
+                      </button>
+                    </div>
                   </div>
-                </>
-              )}
-              
-              {/* Category Prediction Section */}
-              {renderCategoryPrediction()}
-            </div>
-          )}
-        </div>
+                )}
+
+                {isGold && (
+                  <>
+                    {/* Hidden Video Input */}
+                    < input
+                      ref={videoInputRef}
+                      type="file"
+                      accept=".mp4,.mov,.webm"
+                      onChange={handleVideoInputChange}
+                      className="hidden"
+                    />
+
+                    {/* Upload Area or Preview */}
+                    {!videoPreview ? (
+                      <div
+                        onDragOver={handleVideoDragOver}
+                        onDragLeave={handleVideoDragLeave}
+                        onDrop={handleVideoDrop}
+                        onClick={() => videoInputRef.current?.click()}
+                        className={cn(
+                          'h-75 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer',
+                          'flex flex-col items-center justify-center',
+                          isDraggingVideo
+                            ? 'border-primary bg-green-50'
+                            : 'border-border bg-muted hover:border-primary/50 hover:bg-green-50/50'
+                        )}
+                      >
+                        <Video className="h-12 w-12 text-muted-foreground mb-4" />
+                        <p className="text-lg text-foreground font-medium">
+                          Drop your video here
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          or click to browse
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          MP4, MOV, WEBM up to 50MB • Max 60 seconds
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="relative rounded-lg overflow-hidden bg-black">
+                          <video
+                            ref={videoRef}
+                            src={videoPreview}
+                            controls
+                            onLoadedMetadata={handleVideoLoadedMetadata}
+                            className="w-full max-h-75 object-contain"
+                          />
+                        </div>
+
+                        {/* Video Info */}
+                        {videoFile && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            {videoDuration > 0 && (
+                              <span>Duration: {formatDuration(videoDuration)}</span>
+                            )}
+                            <span>Size: {formatFileSize(videoFile.size)}</span>
+                            <span>Format: {videoFile.type.split('/')[1].toUpperCase()}</span>
+                            {videoResolution && (
+                              <span>Resolution: {videoResolution.width}x{videoResolution.height}</span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Duration Validation */}
+                        {videoDuration > 0 && (
+                          <div>
+                            {videoDuration > 60 ? (
+                              <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-md text-sm text-orange-800">
+                                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                                <span>Video is too long. Please upload a video under 60 seconds</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-800">
+                                <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                                <span>Duration: Perfect! ✓</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleReplaceVideo}
+                            className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                          >
+                            Replace Video
+                          </button>
+                          <button
+                            onClick={handleRemoveVideo}
+                            className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                          >
+                            Remove Video
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Caption Input */}
+                    {videoPreview && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground">
+                          Describe your video
+                        </label>
+                        <textarea
+                          value={videoCaption}
+                          onChange={(e) => {
+                            if (e.target.value.length <= 500) {
+                              setVideoCaption(e.target.value);
+                            }
+                          }}
+                          placeholder="What's happening in this video? What does it say about you?"
+                          className="w-full h-25 max-h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                          aria-label="Video caption"
+                        />
+                        <div className="flex justify-end text-xs text-muted-foreground">
+                          {videoCaption.length} / 500 characters
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Category Prediction Section */}
+                    {renderCategoryPrediction()}
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'voice' && (
+              <div
+                id="voice-panel"
+                role="tabpanel"
+                aria-labelledby="voice-tab"
+                className="space-y-6"
+              >
+                {!isGold && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                      <p className="font-semibold mb-1">Subscribe to Gold to record your voice</p>
+                      <p className="mb-3">
+                        A short voice introduction lets serious matches hear your warmth and sincerity.
+                      </p>
+                      <button
+                        onClick={() => navigate('/premium')}
+                        className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-700"
+                      >
+                        Upgrade to Gold
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isGold && (
+                  <>
+                    {!hasRecorded ? (
+                      <>
+                        {/* Recording Interface */}
+                        <div className="flex flex-col items-center justify-center py-12 bg-background rounded-lg border border-border">
+                          <button
+                            onClick={handleRecordButtonClick}
+                            className={cn(
+                              'h-24 w-24 rounded-full flex items-center justify-center shadow-xl transition-all',
+                              'focus:outline-none focus:ring-2 focus:ring-offset-2',
+                              isRecording
+                                ? 'bg-red-500 hover:bg-red-600 focus:ring-red-500 animate-pulse'
+                                : 'bg-primary hover:bg-primary/90 focus:ring-primary hover:scale-105 active:scale-95'
+                            )}
+                            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                          >
+                            {isRecording ? (
+                              <Square className="h-10 w-10 text-white" />
+                            ) : (
+                              <Mic className="h-10 w-10 text-primary-foreground" />
+                            )}
+                          </button>
+
+                          <p className="text-sm text-muted-foreground mt-6">
+                            {isRecording ? `Recording... ${formatDuration(recordingTime)}` : 'Tap to start recording'}
+                          </p>
+
+                          {!isRecording && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Duration: 30-120 seconds
+                            </p>
+                          )}
+
+                          {isRecording && (
+                            <p className={cn(
+                              'text-xs mt-1',
+                              recordingTime < 30 ? 'text-orange-600' : recordingTime > 110 ? 'text-red-600' : 'text-muted-foreground'
+                            )}>
+                              {recordingTime < 30 && 'Minimum 30 seconds'}
+                              {recordingTime >= 30 && recordingTime <= 110 && `${formatDuration(recordingTime)} / 2:00`}
+                              {recordingTime > 110 && 'Reaching maximum duration!'}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Mock Waveform Visualization */}
+                        {isRecording && (
+                          <div className="flex items-end justify-center gap-0.5 h-25 bg-muted rounded-lg p-4">
+                            {Array.from({ length: 20 }).map((_, i) => (
+                              <motion.div
+                                key={i}
+                                className="w-1 bg-primary rounded-full"
+                                animate={{
+                                  height: [
+                                    `${Math.random() * 40 + 20}px`,
+                                    `${Math.random() * 60 + 20}px`,
+                                    `${Math.random() * 40 + 20}px`,
+                                  ],
+                                }}
+                                transition={{
+                                  duration: 0.5,
+                                  repeat: Infinity,
+                                  ease: 'easeInOut',
+                                  delay: i * 0.05,
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* Playback Interface */}
+                        <div className="space-y-4">
+                          {/* Audio Player (Mock) */}
+                          <div className="p-6 bg-background rounded-lg border border-border">
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="flex-1 flex items-center gap-3">
+                                <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
+                                  <Mic className="h-6 w-6 text-primary-foreground" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">
+                                    Voice Note
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Duration: {formatDuration(recordingTime)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Static Waveform */}
+                            <div className="flex items-end justify-center gap-0.5 h-16 bg-muted rounded p-2 mb-4">
+                              {Array.from({ length: 40 }).map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="w-1 bg-primary/60 rounded-full"
+                                  style={{ height: `${Math.random() * 80 + 20}%` }}
+                                />
+                              ))}
+                            </div>
+
+                            <div className="text-xs text-muted-foreground">
+                              ~2.1 MB
+                            </div>
+                          </div>
+
+                          {/* Audio Quality Indicator */}
+                          <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+                            <Info className="h-5 w-5 flex-shrink-0" />
+                            <span>Clear audio ✓</span>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleReRecord}
+                              className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                            >
+                              Re-record
+                            </button>
+                            <button
+                              onClick={handleDeleteVoice}
+                              className="flex-1 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+
+                          {/* Text Description Field */}
+                          <div className="space-y-2">
+                            <label className="text-sm font-semibold text-foreground">
+                              What did you talk about? (optional)
+                            </label>
+                            <textarea
+                              value={voiceDescription}
+                              onChange={(e) => {
+                                if (e.target.value.length <= 300) {
+                                  setVoiceDescription(e.target.value);
+                                }
+                              }}
+                              placeholder="Briefly describe what you shared in this voice note..."
+                              className="w-full h-50 p-3 rounded-lg border-2 border-border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                              aria-label="Voice note description"
+                            />
+                            <div className="flex justify-end text-xs text-muted-foreground">
+                              {voiceDescription.length} / 300 characters
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Category Prediction Section */}
+                    {renderCategoryPrediction()}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         )}
-          
-        {/* Submit Button Area */}
-        {!showSuccess && !showError && renderSubmitButtons()}
       </DialogContent>
     </Dialog>
   );
-};
+}
