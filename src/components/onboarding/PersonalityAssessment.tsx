@@ -11,6 +11,9 @@ import type { UserPersonalityType, PersonalityAssessmentProps, AssessmentProgres
 export type { UserPersonalityType } from '@/types/onboarding';
 import { USER_PERSONALITIES, ASSESSMENT_QUESTIONS } from '@/config/onboardingConstants';
 import { usePersonalityAssessment } from '@/hooks/usePersonalityAssessment';
+import { useCulturalProfile } from '@/hooks/useCulturalProfile';
+import { useProfile } from '@/hooks/useProfile';
+import { applyCulturalAndAgeModifiers, calculateAgeFromBirthdate } from '@/utils/personalityScoring';
 
 export const PersonalityAssessment = ({ 
   onComplete, 
@@ -34,6 +37,9 @@ export const PersonalityAssessment = ({
   const [topPersonalities, setTopPersonalities] = useState<Array<{ type: UserPersonalityType; score: number }>>([]);
   const [voiceError, setVoiceError] = useState(false);
   const [showAmbiguousPrompt, setShowAmbiguousPrompt] = useState(false);
+
+  const { profile } = useProfile();
+  const { profile: culturalProfile } = useCulturalProfile();
 
   const {
     progress: remoteProgress,
@@ -153,30 +159,37 @@ export const PersonalityAssessment = ({
         console.error('Failed to save assessment progress', error);
       }
     } else {
-      // Calculate final result
-      const finalScores = updatedScores;
+      // Calculate final result with cultural & age modifiers
+      const ageYears = calculateAgeFromBirthdate(profile?.birthdate);
+      const primaryBackground = culturalProfile?.primaryBackground ?? null;
 
-      // Sort personalities by score
-      const sortedPersonalities = (Object.entries(finalScores) as [UserPersonalityType, number][])
+      const adjustedScores = applyCulturalAndAgeModifiers(updatedScores, {
+        primaryBackground,
+        ageYears,
+      });
+
+      // Sort personalities by adjusted score
+      const sortedPersonalities = (Object.entries(adjustedScores) as [UserPersonalityType, number][])
         .sort((a, b) => b[1] - a[1])
         .map(([type, score]) => ({ type, score }));
-      
-      // Check for tie (within 2 points)
+
+      // Check for tie (within 2 points) on adjusted scores
       const topScore = sortedPersonalities[0].score;
       const tiedPersonalities = sortedPersonalities.filter(p => topScore - p.score <= 2);
-      
+
       if (tiedPersonalities.length > 1) {
-        // Show tie-breaker UI
+        // Show tie-breaker UI (use adjusted scores)
         setTopPersonalities(tiedPersonalities);
         setShowTieBreaker(true);
       } else {
         // Clear winner
         const resultPersonality = sortedPersonalities[0].type;
         setResult(resultPersonality);
+        setScores(adjustedScores);
         setShowResult(true);
-        
+
         toast.success('Assessment complete!', {
-          description: 'We\'ve identified your personality type'
+          description: 'We\'ve identified your personality type',
         });
       }
     }
