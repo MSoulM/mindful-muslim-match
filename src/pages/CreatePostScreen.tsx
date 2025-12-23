@@ -25,6 +25,7 @@ import { DepthCoachingPrompts } from '@/components/profile/DepthCoachingPrompts'
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from '@clerk/clerk-react';
 import { supabase } from '@/lib/supabase';
+import { useDNAScore } from '@/hooks/useDNAScore';
 
 const DNA_CATEGORIES = [
   { id: 'values', icon: '⚖️', label: 'Values & Beliefs' },
@@ -45,6 +46,7 @@ interface MediaItem {
 export default function CreatePostScreen() {
   const navigate = useNavigate();
   const { userId } = useAuth();
+  const { recalculateScore } = useDNAScore();
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [caption, setCaption] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -342,6 +344,11 @@ export default function CreatePostScreen() {
       }
       
       toast.success('Post shared successfully!');
+      
+      // Trigger DNA score recalculation after successful post
+      recalculateScore().catch(err => {
+        console.error('Failed to recalculate DNA score:', err);
+      });
       
       // Navigate with depth data
       navigate('/post-success', {
