@@ -58,3 +58,9 @@ verify_jwt = false
 
 [functions.realtime-chat]
 verify_jwt = false
+
+[functions.photo-upload]
+verify_jwt = false
+
+[functions.voice-upload]
+verify_jwt = false
