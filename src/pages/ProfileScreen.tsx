@@ -9,9 +9,7 @@ import { Button } from '@/components/ui/CustomButton';
 import { Badge } from '@/components/ui/badge';
 import { BaseCard } from '@/components/ui/Cards/BaseCard';
 import { DepthProgress } from '@/components/profile/DepthProgress';
-import { SemanticProfileCompletion } from '@/components/profile/SemanticProfileCompletion';
-import { ChaiChatEligibilityTracker } from '@/components/profile/ChaiChatEligibilityTracker';
-import { CategoryBalancePentagon } from '@/components/profile/CategoryBalancePentagon';
+import { MySoulDNA } from '@/components/profile/MySoulDNA';
 import { ContentTypeDistribution } from '@/components/profile/ContentTypeDistribution';
 import { ErrorBoundary } from '@/components/utils/ErrorBoundary';
 import { ProfileErrorFallback } from '@/components/errors/ProfileErrorFallback';
@@ -30,17 +28,18 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
-import { useDNA } from '@/context/DNAContext';
+
 import { useApp } from '@/context/AppContext';
+import { useDNAScore } from '@/hooks/useDNAScore';
 import { usePremium } from '@/hooks/usePremium';
 
 const ProfileScreen = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const { user, logout } = useUser();
-  const { overallScore } = useDNA();
   const { notificationCount } = useApp();
   const { premiumState } = usePremium();
+  const { dnaScore, rarityConfig } = useDNAScore();
   const { signOut } = useClerk();
   
   
@@ -48,14 +47,6 @@ const ProfileScreen = () => {
   const isPremium = premiumState.isSubscribed;
 
 
-  // Category completion data (defaults are set in useProfile hook)
-  const categoryProgress = user?.categoryProgress || {
-    values: user?.valuesCompletion ?? 0,
-    interests: user?.interestsCompletion ?? 0,
-    goals: user?.goalsCompletion ?? 0,
-    lifestyle: user?.lifestyleCompletion ?? 0,
-    family: user?.familyCompletion ?? 0,
-  };
 
   // Content type data (defaults are set in useProfile hook)
   const contentTypeData = user?.contentTypeData || {
@@ -154,11 +145,14 @@ const ProfileScreen = () => {
 
         {/* Quick Stats Card */}
         <div className="mx-5 mb-5 -mt-2">
-          <div className="bg-gradient-to-br from-primary/80 to-primary rounded-2xl p-4 shadow-lg">
+          <div 
+            className={`bg-gradient-to-br ${rarityConfig?.bgGradient || 'from-primary/80 to-primary'} rounded-2xl p-4 shadow-lg`}
+            style={rarityConfig ? { boxShadow: `0 8px 32px ${rarityConfig.glowColor}` } : undefined}
+          >
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-white">{overallScore}%</div>
-                <div className="text-xs text-white/80">DNA</div>
+                <div className="text-2xl font-bold text-white">{dnaScore?.score ?? 0}</div>
+                <div className="text-xs text-white/80">{rarityConfig?.tier || 'DNA'}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-white">{user.matchCount ?? 0}</div>
@@ -220,35 +214,12 @@ const ProfileScreen = () => {
           )}
         </div>
 
-        {/* ChaiChat Eligibility Tracker (shows when <70%) */}
-        <ErrorBoundary>
-          <div className="mx-5">
-            <ChaiChatEligibilityTracker 
-              currentCompletion={67}
-              onCompleteProfile={() => navigate('/edit-profile')}
-            />
-          </div>
-        </ErrorBoundary>
-
-        {/* Profile Completion */}
+        {/* MySoul DNA™ Score */}
         <ErrorBoundary fallback={<ProfileErrorFallback />}>
           <div className="mx-5 mb-5">
-            <SemanticProfileCompletion 
-              onCompleteProfile={() => navigate('/edit-profile')}
-            />
+            <MySoulDNA variant="full" />
           </div>
         </ErrorBoundary>
-
-        {/* Pentagon Visualization */}
-        <div className="mx-5 mb-5">
-          <CategoryBalancePentagon
-            valuesCompletion={categoryProgress.values}
-            interestsCompletion={categoryProgress.interests}
-            goalsCompletion={categoryProgress.goals}
-            lifestyleCompletion={categoryProgress.lifestyle}
-            familyCompletion={categoryProgress.family}
-          />
-        </div>
 
         {/* Content Type Distribution */}
         <ErrorBoundary>
