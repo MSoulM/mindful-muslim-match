@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
-import { useAuth } from '@clerk/clerk-react';
 
+// Use VITE_SUPABASE_PUBLISHABLE_KEY for consistency with the auto-generated client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase environment variables are not configured. Profile fetching will not work. Check your .env file for VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  console.warn('Supabase environment variables are not configured. Profile fetching will not work.');
 }
 
 const baseClient = supabaseUrl && supabaseKey 
