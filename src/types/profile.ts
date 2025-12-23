@@ -3,8 +3,10 @@ export interface ProfilePhoto {
   url: string;
   storagePath?: string;
   isPrimary?: boolean;
-  uploadedAt?: string;
   approved?: boolean;
+  moderationStatus?: string;
+  rejectionReason?: string;
+  uploadedAt?: string;
 }
 
 export interface Profile {

@@ -15,6 +15,17 @@ const MAX_PHOTOS = 6;
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
+interface ProfilePhoto {
+  id: string;
+  url: string;
+  storagePath: string;
+  isPrimary: boolean;
+  approved: boolean;
+  moderationStatus: string;
+  rejectionReason?: string;
+  uploadedAt: string;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -30,7 +41,7 @@ serve(async (req) => {
       });
     }
 
-    // Extract user ID from JWT
+    // Extract user ID from JWT (Clerk token)
     const token = authHeader.replace('Bearer ', '');
     let userId: string;
     
@@ -45,8 +56,7 @@ serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const pathParts = url.pathname.split('/').filter(Boolean);
-    const action = pathParts[pathParts.length - 1];
+    const action = url.searchParams.get('action');
 
     // Handle different actions
     if (req.method === 'POST' && action === 'upload') {
@@ -91,6 +101,37 @@ serve(async (req) => {
   }
 });
 
+async function getProfile(userId: string) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('photos, primary_photo_url')
+    .eq('clerk_user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching profile:', error);
+    throw new Error('Failed to fetch profile');
+  }
+
+  return data;
+}
+
+async function updateProfilePhotos(userId: string, photos: ProfilePhoto[], primaryPhotoUrl: string | null) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ 
+      photos, 
+      primary_photo_url: primaryPhotoUrl,
+      updated_at: new Date().toISOString()
+    })
+    .eq('clerk_user_id', userId);
+
+  if (error) {
+    console.error('Error updating profile photos:', error);
+    throw new Error('Failed to update profile photos');
+  }
+}
+
 async function handleUpload(req: Request, userId: string) {
   const formData = await req.formData();
   const file = formData.get('file') as File;
@@ -119,22 +160,14 @@ async function handleUpload(req: Request, userId: string) {
     });
   }
 
-  // Check current photo count (excluding rejected)
-  const { count, error: countError } = await supabase
-    .from('profile_photos')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .neq('moderation_status', 'rejected');
+  // Get current profile photos
+  const profile = await getProfile(userId);
+  const currentPhotos: ProfilePhoto[] = profile?.photos || [];
+  
+  // Count non-rejected photos
+  const approvedCount = currentPhotos.filter(p => p.moderationStatus !== 'rejected').length;
 
-  if (countError) {
-    console.error('Count error:', countError);
-    return new Response(JSON.stringify({ error: 'Failed to check photo count' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
-  if ((count || 0) >= MAX_PHOTOS) {
+  if (approvedCount >= MAX_PHOTOS) {
     return new Response(JSON.stringify({ error: `Maximum ${MAX_PHOTOS} photos allowed` }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -168,72 +201,46 @@ async function handleUpload(req: Request, userId: string) {
     .getPublicUrl(storagePath);
 
   // Simple AI moderation simulation (in production, use actual AI service)
-  const moderationStatus = 'approved'; // Default to approved for now
+  const moderationStatus = 'approved';
   const approved = true;
 
+  // Create new photo object
+  const newPhoto: ProfilePhoto = {
+    id: crypto.randomUUID(),
+    url: publicUrl,
+    storagePath,
+    isPrimary: isPrimary || currentPhotos.length === 0,
+    approved,
+    moderationStatus,
+    uploadedAt: new Date().toISOString()
+  };
+
   // If setting as primary, unset existing primary
-  if (isPrimary) {
-    await supabase
-      .from('profile_photos')
-      .update({ is_primary: false })
-      .eq('user_id', userId)
-      .eq('is_primary', true);
+  let updatedPhotos = currentPhotos;
+  if (newPhoto.isPrimary) {
+    updatedPhotos = currentPhotos.map(p => ({ ...p, isPrimary: false }));
   }
 
-  // Get next display order
-  const { data: lastPhoto } = await supabase
-    .from('profile_photos')
-    .select('display_order')
-    .eq('user_id', userId)
-    .order('display_order', { ascending: false })
-    .limit(1)
-    .single();
+  // Add new photo
+  updatedPhotos = [...updatedPhotos, newPhoto];
 
-  const displayOrder = (lastPhoto?.display_order || 0) + 1;
+  // Determine primary photo URL
+  const primaryPhoto = updatedPhotos.find(p => p.isPrimary && p.approved);
+  const primaryPhotoUrl = primaryPhoto?.url || null;
 
-  // Insert photo record
-  const { data: photo, error: insertError } = await supabase
-    .from('profile_photos')
-    .insert({
-      user_id: userId,
-      url: publicUrl,
-      storage_path: storagePath,
-      is_primary: isPrimary || (count === 0), // First photo is always primary
-      approved,
-      moderation_status: moderationStatus,
-      display_order: displayOrder
-    })
-    .select()
-    .single();
+  // Update profile
+  await updateProfilePhotos(userId, updatedPhotos, primaryPhotoUrl);
 
-  if (insertError) {
-    console.error('Insert error:', insertError);
-    // Clean up uploaded file
-    await supabase.storage.from('profile-photos').remove([storagePath]);
-    return new Response(JSON.stringify({ error: 'Failed to save photo record' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
-  // Update profiles.primary_photo_url if this is the primary photo
-  if (photo.is_primary && photo.approved) {
-    await supabase
-      .from('profiles')
-      .update({ primary_photo_url: publicUrl })
-      .eq('clerk_user_id', userId);
-  }
-
-  console.log(`Photo uploaded for user ${userId}: ${photo.id}`);
+  console.log(`Photo uploaded for user ${userId}: ${newPhoto.id}`);
 
   return new Response(JSON.stringify({ 
     success: true, 
     photo: {
-      id: photo.id,
-      url: photo.url,
-      isPrimary: photo.is_primary,
-      approved: photo.approved,
-      moderationStatus: photo.moderation_status
+      id: newPhoto.id,
+      url: newPhoto.url,
+      isPrimary: newPhoto.isPrimary,
+      approved: newPhoto.approved,
+      moderationStatus: newPhoto.moderationStatus
     }
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -241,15 +248,13 @@ async function handleUpload(req: Request, userId: string) {
 }
 
 async function handleDelete(photoId: string, userId: string) {
-  // Get photo to delete
-  const { data: photo, error: fetchError } = await supabase
-    .from('profile_photos')
-    .select('*')
-    .eq('id', photoId)
-    .eq('user_id', userId)
-    .single();
+  // Get current profile photos
+  const profile = await getProfile(userId);
+  const currentPhotos: ProfilePhoto[] = profile?.photos || [];
 
-  if (fetchError || !photo) {
+  // Find photo to delete
+  const photoToDelete = currentPhotos.find(p => p.id === photoId);
+  if (!photoToDelete) {
     return new Response(JSON.stringify({ error: 'Photo not found' }), {
       status: 404,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -257,50 +262,28 @@ async function handleDelete(photoId: string, userId: string) {
   }
 
   // Delete from storage
-  await supabase.storage.from('profile-photos').remove([photo.storage_path]);
+  await supabase.storage.from('profile-photos').remove([photoToDelete.storagePath]);
 
-  // Delete record
-  const { error: deleteError } = await supabase
-    .from('profile_photos')
-    .delete()
-    .eq('id', photoId);
-
-  if (deleteError) {
-    console.error('Delete error:', deleteError);
-    return new Response(JSON.stringify({ error: 'Failed to delete photo' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
+  // Remove photo from array
+  let updatedPhotos = currentPhotos.filter(p => p.id !== photoId);
 
   // If deleted photo was primary, set another approved photo as primary
-  if (photo.is_primary) {
-    const { data: nextPhoto } = await supabase
-      .from('profile_photos')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('approved', true)
-      .order('display_order', { ascending: true })
-      .limit(1)
-      .single();
-
-    if (nextPhoto) {
-      await supabase
-        .from('profile_photos')
-        .update({ is_primary: true })
-        .eq('id', nextPhoto.id);
-
-      await supabase
-        .from('profiles')
-        .update({ primary_photo_url: nextPhoto.url })
-        .eq('clerk_user_id', userId);
-    } else {
-      await supabase
-        .from('profiles')
-        .update({ primary_photo_url: null })
-        .eq('clerk_user_id', userId);
+  if (photoToDelete.isPrimary && updatedPhotos.length > 0) {
+    const nextApproved = updatedPhotos.find(p => p.approved);
+    if (nextApproved) {
+      updatedPhotos = updatedPhotos.map(p => ({
+        ...p,
+        isPrimary: p.id === nextApproved.id
+      }));
     }
   }
+
+  // Determine primary photo URL
+  const primaryPhoto = updatedPhotos.find(p => p.isPrimary && p.approved);
+  const primaryPhotoUrl = primaryPhoto?.url || null;
+
+  // Update profile
+  await updateProfilePhotos(userId, updatedPhotos, primaryPhotoUrl);
 
   console.log(`Photo deleted for user ${userId}: ${photoId}`);
 
@@ -310,15 +293,13 @@ async function handleDelete(photoId: string, userId: string) {
 }
 
 async function handleSetPrimary(photoId: string, userId: string) {
-  // Verify photo exists and belongs to user
-  const { data: photo, error: fetchError } = await supabase
-    .from('profile_photos')
-    .select('*')
-    .eq('id', photoId)
-    .eq('user_id', userId)
-    .single();
+  // Get current profile photos
+  const profile = await getProfile(userId);
+  const currentPhotos: ProfilePhoto[] = profile?.photos || [];
 
-  if (fetchError || !photo) {
+  // Find photo
+  const photo = currentPhotos.find(p => p.id === photoId);
+  if (!photo) {
     return new Response(JSON.stringify({ error: 'Photo not found' }), {
       status: 404,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -332,32 +313,14 @@ async function handleSetPrimary(photoId: string, userId: string) {
     });
   }
 
-  // Unset existing primary
-  await supabase
-    .from('profile_photos')
-    .update({ is_primary: false })
-    .eq('user_id', userId)
-    .eq('is_primary', true);
+  // Update primary status
+  const updatedPhotos = currentPhotos.map(p => ({
+    ...p,
+    isPrimary: p.id === photoId
+  }));
 
-  // Set new primary
-  const { error: updateError } = await supabase
-    .from('profile_photos')
-    .update({ is_primary: true })
-    .eq('id', photoId);
-
-  if (updateError) {
-    console.error('Update error:', updateError);
-    return new Response(JSON.stringify({ error: 'Failed to set primary photo' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
-  // Update profiles.primary_photo_url
-  await supabase
-    .from('profiles')
-    .update({ primary_photo_url: photo.url })
-    .eq('clerk_user_id', userId);
+  // Update profile
+  await updateProfilePhotos(userId, updatedPhotos, photo.url);
 
   console.log(`Primary photo set for user ${userId}: ${photoId}`);
 
@@ -374,14 +337,32 @@ async function handleReorder(photoIds: string[], userId: string) {
     });
   }
 
-  // Update display order for each photo
-  for (let i = 0; i < photoIds.length; i++) {
-    await supabase
-      .from('profile_photos')
-      .update({ display_order: i + 1 })
-      .eq('id', photoIds[i])
-      .eq('user_id', userId);
+  // Get current profile photos
+  const profile = await getProfile(userId);
+  const currentPhotos: ProfilePhoto[] = profile?.photos || [];
+
+  // Reorder photos based on new order
+  const reorderedPhotos: ProfilePhoto[] = [];
+  for (const id of photoIds) {
+    const photo = currentPhotos.find(p => p.id === id);
+    if (photo) {
+      reorderedPhotos.push(photo);
+    }
   }
+
+  // Add any photos not in the reorder list (shouldn't happen, but just in case)
+  for (const photo of currentPhotos) {
+    if (!reorderedPhotos.find(p => p.id === photo.id)) {
+      reorderedPhotos.push(photo);
+    }
+  }
+
+  // Determine primary photo URL
+  const primaryPhoto = reorderedPhotos.find(p => p.isPrimary && p.approved);
+  const primaryPhotoUrl = primaryPhoto?.url || null;
+
+  // Update profile
+  await updateProfilePhotos(userId, reorderedPhotos, primaryPhotoUrl);
 
   console.log(`Photos reordered for user ${userId}`);
 
@@ -391,29 +372,18 @@ async function handleReorder(photoIds: string[], userId: string) {
 }
 
 async function handleList(userId: string) {
-  const { data: photos, error } = await supabase
-    .from('profile_photos')
-    .select('*')
-    .eq('user_id', userId)
-    .order('display_order', { ascending: true });
-
-  if (error) {
-    console.error('List error:', error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch photos' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
+  const profile = await getProfile(userId);
+  const photos: ProfilePhoto[] = profile?.photos || [];
 
   return new Response(JSON.stringify({ 
-    photos: photos.map(p => ({
+    photos: photos.map((p, index) => ({
       id: p.id,
       url: p.url,
-      isPrimary: p.is_primary,
+      isPrimary: p.isPrimary,
       approved: p.approved,
-      moderationStatus: p.moderation_status,
-      rejectionReason: p.rejection_reason,
-      displayOrder: p.display_order
+      moderationStatus: p.moderationStatus,
+      rejectionReason: p.rejectionReason,
+      displayOrder: index + 1
     }))
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
