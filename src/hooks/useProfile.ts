@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser as useClerkUser } from '@clerk/clerk-react';
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types/profile';
+import { useDNAScore } from '@/hooks/useDNAScore';
 
 /**
  * Hook to fetch profile from Supabase using Clerk user ID
@@ -11,6 +12,7 @@ export const useProfile = () => {
   const queryClient = useQueryClient();
   const { user: clerkUser } = useClerkUser();
   const authUserId = clerkUser?.id;
+  const { recalculateScore } = useDNAScore();
 
   // Fetch profile query
   const query = useQuery({
@@ -72,6 +74,8 @@ export const useProfile = () => {
     onSuccess: (updatedProfile) => {
       // Update cache with new profile
       queryClient.setQueryData(['profile', authUserId], updatedProfile);
+      // Trigger DNA score recalculation after profile update
+      recalculateScore();
     },
   });
 
@@ -99,6 +103,8 @@ export const useProfile = () => {
     },
     onSuccess: (newProfile) => {
       queryClient.setQueryData(['profile', authUserId], newProfile);
+      // Trigger DNA score recalculation after profile creation
+      recalculateScore();
     },
   });
 
