@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_dna_scores: {
+        Row: {
+          behavior_score: number
+          created_at: string
+          id: string
+          last_calculated_at: string
+          profile_completeness_score: number
+          rarity_tier: string
+          score: number
+          trait_uniqueness_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          behavior_score?: number
+          created_at?: string
+          id?: string
+          last_calculated_at?: string
+          profile_completeness_score?: number
+          rarity_tier?: string
+          score?: number
+          trait_uniqueness_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          behavior_score?: number
+          created_at?: string
+          id?: string
+          last_calculated_at?: string
+          profile_completeness_score?: number
+          rarity_tier?: string
+          score?: number
+          trait_uniqueness_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
