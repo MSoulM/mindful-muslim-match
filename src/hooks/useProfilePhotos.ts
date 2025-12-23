@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@clerk/clerk-react';
+import { useProfile } from '@/hooks/useProfile';
 import { toast } from '@/hooks/use-toast';
 
 export interface ProfilePhoto {
@@ -27,6 +28,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export function useProfilePhotos(): UseProfilePhotosReturn {
   const { getToken } = useAuth();
+  const { profile, refetch: refetchProfile } = useProfile();
   const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,37 +40,30 @@ export function useProfilePhotos(): UseProfilePhotosReturn {
     };
   }, [getToken]);
 
-  const fetchPhotos = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const headers = await getAuthHeaders();
-      
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/photo-upload`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch photos');
-      }
-
-      const data = await response.json();
-      setPhotos(data.photos || []);
-    } catch (error) {
-      console.error('Error fetching photos:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load photos',
-        variant: 'destructive',
-      });
-    } finally {
+  // Sync photos from profile
+  useEffect(() => {
+    if (profile?.photos) {
+      const convertedPhotos: ProfilePhoto[] = (profile.photos as any[]).map((p, index) => ({
+        id: p.id,
+        url: p.url,
+        isPrimary: p.isPrimary || false,
+        approved: p.approved ?? true,
+        moderationStatus: p.moderationStatus || 'approved',
+        rejectionReason: p.rejectionReason,
+        displayOrder: index + 1
+      }));
+      setPhotos(convertedPhotos);
+      setIsLoading(false);
+    } else {
+      setPhotos([]);
       setIsLoading(false);
     }
-  }, [getAuthHeaders]);
+  }, [profile?.photos]);
 
-  useEffect(() => {
-    fetchPhotos();
-  }, [fetchPhotos]);
+  const fetchPhotos = useCallback(async () => {
+    // Refetch profile to get latest photos
+    await refetchProfile();
+  }, [refetchProfile]);
 
   const uploadPhoto = useCallback(async (file: File, isPrimary = false): Promise<ProfilePhoto | null> => {
     try {
