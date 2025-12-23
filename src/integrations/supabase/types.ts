@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      mysoul_dna_scores: {
+        Row: {
+          behavior_score: number
+          created_at: string
+          id: string
+          last_calculated_at: string
+          profile_completeness_score: number
+          rarity_tier: string
+          score: number
+          trait_uniqueness_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          behavior_score?: number
+          created_at?: string
+          id?: string
+          last_calculated_at?: string
+          profile_completeness_score?: number
+          rarity_tier?: string
+          score?: number
+          trait_uniqueness_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          behavior_score?: number
+          created_at?: string
+          id?: string
+          last_calculated_at?: string
+          profile_completeness_score?: number
+          rarity_tier?: string
+          score?: number
+          trait_uniqueness_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           caption: string | null
@@ -88,45 +127,6 @@ export type Database = {
           storage_path?: string
           updated_at?: string
           url?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_dna_scores: {
-        Row: {
-          behavior_score: number
-          created_at: string
-          id: string
-          last_calculated_at: string
-          profile_completeness_score: number
-          rarity_tier: string
-          score: number
-          trait_uniqueness_score: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          behavior_score?: number
-          created_at?: string
-          id?: string
-          last_calculated_at?: string
-          profile_completeness_score?: number
-          rarity_tier?: string
-          score?: number
-          trait_uniqueness_score?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          behavior_score?: number
-          created_at?: string
-          id?: string
-          last_calculated_at?: string
-          profile_completeness_score?: number
-          rarity_tier?: string
-          score?: number
-          trait_uniqueness_score?: number
-          updated_at?: string
           user_id?: string
         }
         Relationships: []

@@ -100,7 +100,7 @@ export function useDNAScore() {
     
     try {
       const { data, error: fetchError } = await supabase
-        .from('user_dna_scores')
+        .from('mysoul_dna_scores')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
@@ -198,7 +198,7 @@ export function useDNAScore() {
 
       // Upsert the score
       const { error: upsertError } = await supabase
-        .from('user_dna_scores')
+        .from('mysoul_dna_scores')
         .upsert({
           user_id: userId,
           score,
