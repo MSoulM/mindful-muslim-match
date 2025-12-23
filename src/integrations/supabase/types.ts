@@ -24,7 +24,7 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           updated_at: string
-          clerk_user_id: string
+          user_id: string
         }
         Insert: {
           caption?: string | null
@@ -35,7 +35,7 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           updated_at?: string
-          clerk_user_id: string
+          user_id: string
         }
         Update: {
           caption?: string | null
@@ -46,11 +46,11 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           updated_at?: string
-          clerk_user_id?: string
+          user_id?: string
         }
         Relationships: []
       }
-      mysoul_dna_scores: {
+      user_dna_scores: {
         Row: {
           behavior_score: number
           created_at: string
