@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_photos: {
+        Row: {
+          approved: boolean | null
+          created_at: string
+          display_order: number
+          id: string
+          is_primary: boolean
+          moderation_status: string
+          rejection_reason: string | null
+          storage_path: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_primary?: boolean
+          moderation_status?: string
+          rejection_reason?: string | null
+          storage_path: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          approved?: boolean | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_primary?: boolean
+          moderation_status?: string
+          rejection_reason?: string | null
+          storage_path?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_dna_scores: {
         Row: {
           behavior_score: number
@@ -85,6 +127,51 @@ export type Database = {
           score?: number
           trait_uniqueness_score?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      voice_introductions: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          file_type: string
+          id: string
+          is_active: boolean
+          personality_markers: Json | null
+          processing_status: string
+          storage_path: string
+          transcription: string | null
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds: number
+          file_type: string
+          id?: string
+          is_active?: boolean
+          personality_markers?: Json | null
+          processing_status?: string
+          storage_path: string
+          transcription?: string | null
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          file_type?: string
+          id?: string
+          is_active?: boolean
+          personality_markers?: Json | null
+          processing_status?: string
+          storage_path?: string
+          transcription?: string | null
+          updated_at?: string
+          url?: string
           user_id?: string
         }
         Relationships: []
