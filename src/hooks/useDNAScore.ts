@@ -100,7 +100,7 @@ export function useDNAScore() {
     
     try {
       const { data, error: fetchError } = await supabase
-        .from('user_dna_scores')
+        .from('mysoul_dna_scores')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
@@ -145,7 +145,7 @@ export function useDNAScore() {
       const { count: postsCount } = await supabase
         .from('posts')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
+        .eq('clerk_user_id', userId);
 
       // Calculate profile completeness (0-40 points)
       // More posts = more complete profile
@@ -156,7 +156,7 @@ export function useDNAScore() {
       const { data: posts } = await supabase
         .from('posts')
         .select('depth_level, categories')
-        .eq('user_id', userId);
+        .eq('clerk_user_id', userId);
 
       let uniquenessScore = 0;
       if (posts && posts.length > 0) {
@@ -198,7 +198,7 @@ export function useDNAScore() {
 
       // Upsert the score
       const { error: upsertError } = await supabase
-        .from('user_dna_scores')
+        .from('mysoul_dna_scores')
         .upsert({
           user_id: userId,
           score,
