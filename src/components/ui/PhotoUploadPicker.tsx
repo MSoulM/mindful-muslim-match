@@ -31,7 +31,7 @@ export const PhotoUploadPicker = ({
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const {
-    maxSize = (options?.maxSize | 10) * 1024 * 1024,
+    maxSize = (options?.maxSize ?? 10) * 1024 * 1024,
     onFileSelect,
     onError
   } = options;
