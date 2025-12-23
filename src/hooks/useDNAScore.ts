@@ -6,7 +6,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { supabase } from '@/integrations/supabase/client';
-import { supabase as originalSupabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export type RarityTier = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
@@ -86,20 +85,6 @@ export const getRarityConfig = (score: number) => {
   return { tier, ...RARITY_CONFIG[tier] };
 };
 
-// DNA Score row type for database
-interface DNAScoreRow {
-  id: string;
-  user_id: string;
-  score: number;
-  rarity_tier: string;
-  trait_uniqueness_score: number;
-  profile_completeness_score: number;
-  behavior_score: number;
-  last_calculated_at: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export function useDNAScore() {
   const { userId, isLoaded } = useAuth();
   const [dnaScore, setDnaScore] = useState<DNAScore | null>(null);
@@ -114,7 +99,6 @@ export function useDNAScore() {
     setError(null);
     
     try {
-      // Use the Cloud Supabase client with the correct table name
       const { data, error: fetchError } = await supabase
         .from('user_dna_scores')
         .select('*')
@@ -124,14 +108,13 @@ export function useDNAScore() {
       if (fetchError) throw fetchError;
       
       if (data) {
-        const row = data as DNAScoreRow;
         setDnaScore({
-          score: row.score,
-          rarityTier: row.rarity_tier as RarityTier,
-          traitUniquenessScore: row.trait_uniqueness_score,
-          profileCompletenessScore: row.profile_completeness_score,
-          behaviorScore: row.behavior_score,
-          lastCalculatedAt: new Date(row.last_calculated_at)
+          score: data.score,
+          rarityTier: data.rarity_tier as RarityTier,
+          traitUniquenessScore: data.trait_uniqueness_score,
+          profileCompletenessScore: data.profile_completeness_score,
+          behaviorScore: data.behavior_score,
+          lastCalculatedAt: new Date(data.last_calculated_at)
         });
       } else {
         // No score exists yet, calculate and create one
@@ -158,17 +141,11 @@ export function useDNAScore() {
     }
 
     try {
-      // Use the original Supabase client to query posts (which has the posts table)
-      if (!originalSupabase) {
-        console.warn('Original Supabase client not available');
-        return { score: 0, traitUniqueness: 0, profileCompleteness: 0, behavior: 0 };
-      }
-
       // Get user's posts count for profile completeness
-      const { count: postsCount } = await originalSupabase
+      const { count: postsCount } = await supabase
         .from('posts')
         .select('*', { count: 'exact', head: true })
-        .eq('clerk_user_id', userId);
+        .eq('user_id', userId);
 
       // Calculate profile completeness (0-40 points)
       // More posts = more complete profile
@@ -176,15 +153,15 @@ export function useDNAScore() {
 
       // Calculate trait uniqueness (0-35 points)
       // Based on depth levels and variety of categories
-      const { data: posts } = await originalSupabase
+      const { data: posts } = await supabase
         .from('posts')
         .select('depth_level, categories')
-        .eq('clerk_user_id', userId);
+        .eq('user_id', userId);
 
       let uniquenessScore = 0;
       if (posts && posts.length > 0) {
-        const avgDepth = posts.reduce((sum: number, p: any) => sum + (p.depth_level || 0), 0) / posts.length;
-        const uniqueCategories = new Set(posts.flatMap((p: any) => p.categories || [])).size;
+        const avgDepth = posts.reduce((sum, p) => sum + p.depth_level, 0) / posts.length;
+        const uniqueCategories = new Set(posts.flatMap(p => p.categories || [])).size;
         
         uniquenessScore = Math.min(
           (avgDepth * 5) + (uniqueCategories * 5),
@@ -219,7 +196,7 @@ export function useDNAScore() {
       const { score, traitUniqueness, profileCompleteness, behavior } = await calculateScore();
       const rarityTier = getRarityTier(score);
 
-      // Upsert the score using Cloud Supabase
+      // Upsert the score
       const { error: upsertError } = await supabase
         .from('user_dna_scores')
         .upsert({

@@ -13,7 +13,6 @@ import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
-import { useDNAScore } from '@/hooks/useDNAScore';
 import { toast } from 'sonner';
 import { Toast } from '@/components/ui/Feedback/Toast';
 import { compressImage } from '@/utils/imageCompression';
@@ -25,7 +24,6 @@ const EditProfileScreen = () => {
   const { getToken } = useAuth();
   const { updateProfile } = useProfile();
   const { isGold } = useSubscriptionTier();
-  const { recalculateScore } = useDNAScore();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -158,12 +156,6 @@ const EditProfileScreen = () => {
       });
 
       toast.success('Profile updated successfully!');
-      
-      // Trigger DNA score recalculation after profile update
-      recalculateScore().catch(err => {
-        console.error('Failed to recalculate DNA score:', err);
-      });
-      
       navigate('/profile');
     } catch (error) {
       console.error('Failed to save profile:', error);
