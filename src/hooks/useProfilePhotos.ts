@@ -69,6 +69,8 @@ export function useProfilePhotos(): UseProfilePhotosReturn {
     try {
       setIsUploading(true);
       const headers = await getAuthHeaders();
+
+      console.log('Headers:', headers);
       
       const formData = new FormData();
       formData.append('file', file);

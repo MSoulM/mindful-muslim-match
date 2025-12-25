@@ -149,25 +149,42 @@ export const MySoulDNA = memo(({ variant = 'full', className }: MySoulDNAProps) 
           </motion.p>
         </div>
 
-        {/* Score Breakdown */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
+        {/* Score Breakdown - Five DNA Strands */}
+        <div className="grid grid-cols-5 gap-2 mt-4">
           <ScoreBreakdownItem
-            label="Uniqueness"
-            value={dnaScore.traitUniquenessScore}
+            label="Trait Rarity"
+            value={dnaScore.traitRarityScore}
             maxValue={35}
             delay={0.6}
+            weight="35%"
           />
           <ScoreBreakdownItem
-            label="Profile"
-            value={dnaScore.profileCompletenessScore}
-            maxValue={40}
-            delay={0.7}
-          />
-          <ScoreBreakdownItem
-            label="Activity"
-            value={dnaScore.behaviorScore}
+            label="Profile Depth"
+            value={dnaScore.profileDepthScore}
             maxValue={25}
+            delay={0.65}
+            weight="25%"
+          />
+          <ScoreBreakdownItem
+            label="Behavioral"
+            value={dnaScore.behavioralScore}
+            maxValue={20}
+            delay={0.7}
+            weight="20%"
+          />
+          <ScoreBreakdownItem
+            label="Content"
+            value={dnaScore.contentScore}
+            maxValue={15}
+            delay={0.75}
+            weight="15%"
+          />
+          <ScoreBreakdownItem
+            label="Cultural"
+            value={dnaScore.culturalScore}
+            maxValue={5}
             delay={0.8}
+            weight="5%"
           />
         </div>
       </div>
@@ -182,21 +199,26 @@ const ScoreBreakdownItem = memo(({
   label, 
   value, 
   maxValue, 
-  delay 
+  delay,
+  weight
 }: { 
   label: string; 
   value: number; 
   maxValue: number; 
-  delay: number; 
+  delay: number;
+  weight?: string;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
-    className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center"
+    className="bg-white/10 backdrop-blur-sm rounded-xl p-2 text-center"
   >
-    <div className="text-lg font-bold">{value}</div>
-    <div className="text-xs opacity-75">{label}</div>
+    <div className="text-sm font-bold">{value}</div>
+    <div className="text-xs opacity-75 leading-tight">{label}</div>
+    {weight && (
+      <div className="text-xs opacity-60 mt-0.5">{weight}</div>
+    )}
     <div className="mt-1 h-1 bg-white/20 rounded-full overflow-hidden">
       <motion.div
         initial={{ width: 0 }}

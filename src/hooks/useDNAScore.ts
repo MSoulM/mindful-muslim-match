@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export type RarityTier = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
@@ -13,10 +13,18 @@ export type RarityTier = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
 export interface DNAScore {
   score: number;
   rarityTier: RarityTier;
-  traitUniquenessScore: number;
-  profileCompletenessScore: number;
-  behaviorScore: number;
+  // Five DNA Strands with their weights:
+  traitRarityScore: number;      // 35% weight - Trait Rarity
+  profileDepthScore: number;     // 25% weight - Profile Depth
+  behavioralScore: number;       // 20% weight - Behavioral
+  contentScore: number;           // 15% weight - Content Originality
+  culturalScore: number;          // 5% weight - Cultural Variance
   lastCalculatedAt: Date;
+  // Business rule tracking
+  approvedInsightsCount?: number;
+  daysActive?: number;
+  previousTier?: RarityTier;
+  tierChangedAt?: Date;
 }
 
 // Rarity tier configuration
@@ -111,10 +119,16 @@ export function useDNAScore() {
         setDnaScore({
           score: data.score,
           rarityTier: data.rarity_tier as RarityTier,
-          traitUniquenessScore: data.trait_uniqueness_score,
-          profileCompletenessScore: data.profile_completeness_score,
-          behaviorScore: data.behavior_score,
-          lastCalculatedAt: new Date(data.last_calculated_at)
+          traitRarityScore: data.trait_uniqueness_score || 0,
+          profileDepthScore: data.profile_completeness_score || 0,
+          behavioralScore: data.behavior_score || 0,
+          contentScore: data.content_score || 0,
+          culturalScore: data.cultural_score || 0,
+          lastCalculatedAt: new Date(data.last_calculated_at),
+          approvedInsightsCount: data.approved_insights_count || 0,
+          daysActive: data.days_active || 0,
+          previousTier: data.previous_tier as RarityTier | undefined,
+          tierChangedAt: data.tier_changed_at ? new Date(data.tier_changed_at) : undefined
         });
       } else {
         // No score exists yet, calculate and create one
@@ -129,62 +143,177 @@ export function useDNAScore() {
     }
   }, [userId, isLoaded]);
 
-  // Calculate DNA score based on various factors
+  // Calculate DNA score based on 5-strand weighted system
+  // Spec: Trait Rarity (35%), Profile Depth (25%), Behavioral (20%), Content (15%), Cultural (5%)
   const calculateScore = useCallback(async (): Promise<{
     score: number;
-    traitUniqueness: number;
-    profileCompleteness: number;
-    behavior: number;
+    traitRarity: number;      // 35% weight (0-35 points)
+    profileDepth: number;     // 25% weight (0-25 points)
+    behavioral: number;       // 20% weight (0-20 points)
+    content: number;          // 15% weight (0-15 points)
+    cultural: number;         // 5% weight (0-5 points)
+    approvedInsightsCount: number;
+    daysActive: number;
   }> => {
     if (!userId) {
-      return { score: 0, traitUniqueness: 0, profileCompleteness: 0, behavior: 0 };
+      return { 
+        score: 0, 
+        traitRarity: 0, 
+        profileDepth: 0, 
+        behavioral: 0, 
+        content: 0, 
+        cultural: 0,
+        approvedInsightsCount: 0,
+        daysActive: 0
+      };
     }
 
     try {
-      // Get user's posts count for profile completeness
-      const { count: postsCount } = await supabase
-        .from('posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
+      // Get user profile for location and other data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('location, lat, lng, created_at')
+        .eq('clerk_user_id', userId)
+        .maybeSingle();
 
-      // Calculate profile completeness (0-40 points)
-      // More posts = more complete profile
-      const postScore = Math.min((postsCount || 0) * 8, 40);
-
-      // Calculate trait uniqueness (0-35 points)
-      // Based on depth levels and variety of categories
+      // Get user's posts
       const { data: posts } = await supabase
         .from('posts')
-        .select('depth_level, categories')
-        .eq('user_id', userId);
+        .select('depth_level, categories, content, created_at, is_shared_content')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
 
-      let uniquenessScore = 0;
-      if (posts && posts.length > 0) {
-        const avgDepth = posts.reduce((sum, p) => sum + p.depth_level, 0) / posts.length;
-        const uniqueCategories = new Set(posts.flatMap(p => p.categories || [])).size;
-        
-        uniquenessScore = Math.min(
-          (avgDepth * 5) + (uniqueCategories * 5),
-          35
-        );
+      // Get approved insights count (business rule: minimum 5 required)
+      // Note: This should query from insights table where status = 'approved'
+      // For now, using posts count as proxy
+      const approvedInsightsCount = posts?.length || 0;
+
+      // Calculate days active (business rule: 7+ days required for behavioral)
+      const accountCreatedAt = profile?.created_at ? new Date(profile.created_at) : new Date();
+      const daysActive = Math.floor((Date.now() - accountCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
+
+      // BUSINESS RULE: Minimum 5 approved insights required to generate DNA score
+      if (approvedInsightsCount < 5) {
+        return {
+          score: 0,
+          traitRarity: 0,
+          profileDepth: 0,
+          behavioral: 0,
+          content: 0,
+          cultural: 0,
+          approvedInsightsCount,
+          daysActive
+        };
       }
 
-      // Calculate behavior score (0-25 points)
-      // Based on engagement patterns (simplified for MVP)
-      const daysSinceFirstPost = posts && posts.length > 0 ? 7 : 0; // Placeholder
-      const behaviorScore = Math.min(daysSinceFirstPost * 3, 25);
+      // 1. TRAIT RARITY (35% weight, 0-35 points)
+      // Measures how unique traits are vs population
+      let traitRarity = 0;
+      if (posts && posts.length > 0) {
+        const avgDepth = posts.reduce((sum, p) => sum + (p.depth_level || 1), 0) / posts.length;
+        const uniqueCategories = new Set(posts.flatMap(p => p.categories || [])).size;
+        
+        // Depth contributes to rarity (deeper = rarer)
+        const depthScore = Math.min(avgDepth * 7, 20); // Max 20 points from depth
+        
+        // Category variety contributes to rarity
+        const varietyScore = Math.min(uniqueCategories * 3, 15); // Max 15 points from variety
+        
+        traitRarity = Math.round(depthScore + varietyScore);
+      }
 
-      const totalScore = Math.round(postScore + uniquenessScore + behaviorScore);
+      // 2. PROFILE DEPTH (25% weight, 0-25 points)
+      // Measures completeness across life dimensions
+      const postsCount = posts?.length || 0;
+      const profileDepth = Math.min(Math.floor(postsCount * 1.5), 25);
+
+      // 3. BEHAVIORAL (20% weight, 0-20 points)
+      // Measures interaction patterns & authenticity
+      // BUSINESS RULE: Requires 7+ days of activity
+      let behavioral = 0;
+      if (daysActive >= 7 && posts && posts.length > 0) {
+        const firstPostDate = new Date(posts[0].created_at);
+        const lastPostDate = new Date(posts[posts.length - 1].created_at);
+        const postingSpanDays = Math.max(1, Math.floor((lastPostDate.getTime() - firstPostDate.getTime()) / (1000 * 60 * 60 * 24)));
+        
+        // Consistency score (regular posting)
+        const consistencyScore = Math.min(postingSpanDays / 7, 10); // Max 10 points
+        
+        // Engagement score (number of posts)
+        const engagementScore = Math.min(postsCount / 2, 10); // Max 10 points
+        
+        behavioral = Math.round(consistencyScore + engagementScore);
+      }
+
+      // 4. CONTENT (15% weight, 0-15 points)
+      // Measures originality of shared content
+      let content = 0;
+      if (posts && posts.length > 0) {
+        const originalPosts = posts.filter(p => !p.is_shared_content).length;
+        const totalPosts = posts.length;
+        const originalityRatio = originalPosts / totalPosts;
+        
+        // Originality score (higher ratio = more original)
+        const originalityScore = originalityRatio * 10; // Max 10 points
+        
+        // Content depth score (deeper content = more original)
+        const avgContentDepth = posts.reduce((sum, p) => sum + (p.depth_level || 1), 0) / posts.length;
+        const depthScore = Math.min((avgContentDepth - 1) * 1.67, 5); // Max 5 points
+        
+        content = Math.round(originalityScore + depthScore);
+      }
+
+      // 5. CULTURAL (5% weight, 0-5 points)
+      // Measures uniqueness within city cluster
+      let cultural = 0;
+      if (profile?.location && posts && posts.length > 0) {
+        // Get users in same city cluster (simplified: same city name)
+        const { count: cityUsersCount } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('location', profile.location);
+        
+        if (cityUsersCount && cityUsersCount > 1) {
+          // Calculate uniqueness: fewer users in city = more unique
+          // Inverse relationship: more users = less unique
+          const uniquenessFactor = Math.max(0, 1 - (cityUsersCount / 1000)); // Normalize to 0-1
+          cultural = Math.round(uniquenessFactor * 5); // Max 5 points
+        } else {
+          cultural = 5; // Very unique if no other users in city
+        }
+      }
+
+      // Calculate weighted total score
+      const totalScore = Math.round(
+        traitRarity +      // 35% (already scaled to 0-35)
+        profileDepth +     // 25% (already scaled to 0-25)
+        behavioral +       // 20% (already scaled to 0-20)
+        content +          // 15% (already scaled to 0-15)
+        cultural           // 5% (already scaled to 0-5)
+      );
 
       return {
         score: Math.min(totalScore, 100),
-        traitUniqueness: Math.round(uniquenessScore),
-        profileCompleteness: Math.round(postScore),
-        behavior: Math.round(behaviorScore)
+        traitRarity: Math.round(traitRarity),
+        profileDepth: Math.round(profileDepth),
+        behavioral: Math.round(behavioral),
+        content: Math.round(content),
+        cultural: Math.round(cultural),
+        approvedInsightsCount,
+        daysActive
       };
     } catch (err) {
       console.error('Error calculating DNA score:', err);
-      return { score: 0, traitUniqueness: 0, profileCompleteness: 0, behavior: 0 };
+      return { 
+        score: 0, 
+        traitRarity: 0, 
+        profileDepth: 0, 
+        behavioral: 0, 
+        content: 0, 
+        cultural: 0,
+        approvedInsightsCount: 0,
+        daysActive: 0
+      };
     }
   }, [userId]);
 
@@ -193,8 +322,27 @@ export function useDNAScore() {
     if (!userId) return;
 
     try {
-      const { score, traitUniqueness, profileCompleteness, behavior } = await calculateScore();
-      const rarityTier = getRarityTier(score);
+      const { 
+        score, 
+        traitRarity, 
+        profileDepth, 
+        behavioral, 
+        content, 
+        cultural,
+        approvedInsightsCount,
+        daysActive
+      } = await calculateScore();
+      
+      // Get current score to detect tier changes
+      const { data: currentData } = await supabase
+        .from('mysoul_dna_scores')
+        .select('rarity_tier')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      const currentTier = currentData?.rarity_tier as RarityTier | undefined;
+      const newTier = getRarityTier(score);
+      const tierChanged = currentTier && currentTier !== newTier;
 
       // Upsert the score
       const { error: upsertError } = await supabase
@@ -202,10 +350,16 @@ export function useDNAScore() {
         .upsert({
           user_id: userId,
           score,
-          rarity_tier: rarityTier,
-          trait_uniqueness_score: traitUniqueness,
-          profile_completeness_score: profileCompleteness,
-          behavior_score: behavior,
+          rarity_tier: newTier,
+          trait_uniqueness_score: traitRarity,  // Keep old column name for backward compatibility
+          profile_completeness_score: profileDepth,  // Keep old column name
+          behavior_score: behavioral,  // Keep old column name
+          content_score: content,
+          cultural_score: cultural,
+          approved_insights_count: approvedInsightsCount,
+          days_active: daysActive,
+          previous_tier: tierChanged ? currentTier : null,
+          tier_changed_at: tierChanged ? new Date().toISOString() : null,
           last_calculated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
@@ -213,13 +367,26 @@ export function useDNAScore() {
 
       if (upsertError) throw upsertError;
 
+      // Show notification if tier changed
+      if (tierChanged) {
+        toast.success(`DNA Tier Upgraded!`, {
+          description: `You've reached ${newTier} tier! 🎉`
+        });
+      }
+
       setDnaScore({
         score,
-        rarityTier,
-        traitUniquenessScore: traitUniqueness,
-        profileCompletenessScore: profileCompleteness,
-        behaviorScore: behavior,
-        lastCalculatedAt: new Date()
+        rarityTier: newTier,
+        traitRarityScore: traitRarity,
+        profileDepthScore: profileDepth,
+        behavioralScore: behavioral,
+        contentScore: content,
+        culturalScore: cultural,
+        lastCalculatedAt: new Date(),
+        approvedInsightsCount,
+        daysActive,
+        previousTier: tierChanged ? currentTier : undefined,
+        tierChangedAt: tierChanged ? new Date() : undefined
       });
     } catch (err) {
       console.error('Error saving DNA score:', err);

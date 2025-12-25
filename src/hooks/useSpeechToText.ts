@@ -14,6 +14,9 @@ export const useSpeechToText = (language: string = 'en-US') => {
   const audioConfigRef = useRef<sdk.AudioConfig | null>(null);
   const finalTranscriptRef = useRef<string>('');
 
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
   useEffect(() => {
     if (!SPEECH_KEY || !SPEECH_REGION) {
       setError('Azure Speech key or region not configured');
@@ -37,7 +40,7 @@ export const useSpeechToText = (language: string = 'en-US') => {
       const interim = event.result.text || '';
       setTranscript(finalTranscriptRef.current + interim);
     };
-    
+
     recognizer.recognized = (_, event) => {
       if (event.result.reason === sdk.ResultReason.RecognizedSpeech) {
         const text = event.result.text.trim();
@@ -48,7 +51,7 @@ export const useSpeechToText = (language: string = 'en-US') => {
             const jsonResult = event.result.properties?.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult);
             if (jsonResult) {
               const json = JSON.parse(jsonResult);
-              
+
               if (json.NBest && Array.isArray(json.NBest) && json.NBest.length > 0) {
                 confScore = json.NBest[0].Confidence || json.NBest[0].confidence || 0;
               } else if (json.Confidence !== undefined) {
@@ -56,7 +59,7 @@ export const useSpeechToText = (language: string = 'en-US') => {
               } else if (json.confidence !== undefined) {
                 confScore = json.confidence;
               }
-              
+
               if (confScore === 0) {
                 console.log('JSON result structure:', JSON.stringify(json, null, 2));
               }
@@ -67,7 +70,7 @@ export const useSpeechToText = (language: string = 'en-US') => {
             console.warn('Error parsing confidence:', err);
             confScore = 0;
           }
-          
+
           // Set confidence (convert to percentage if needed, or keep as 0-1)
           setConfidence(confScore);
           finalTranscriptRef.current = finalTranscriptRef.current + (finalTranscriptRef.current && !finalTranscriptRef.current.endsWith(' ') ? ' ' : '') + text + ' ';

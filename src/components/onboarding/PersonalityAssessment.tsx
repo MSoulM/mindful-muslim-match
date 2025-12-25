@@ -11,6 +11,10 @@ import type { UserPersonalityType, PersonalityAssessmentProps, AssessmentProgres
 export type { UserPersonalityType } from '@/types/onboarding';
 import { USER_PERSONALITIES, ASSESSMENT_QUESTIONS } from '@/config/onboardingConstants';
 import { usePersonalityAssessment } from '@/hooks/usePersonalityAssessment';
+import { calculateFinalPersonalityScores, checkForTie } from '@/utils/personalityScoring';
+import { useProfile } from '@/hooks/useProfile';
+import { useCulturalProfile } from '@/hooks/useCulturalProfile';
+import { setDefaultPersonalityNameIfNeeded } from '@/utils/personalityDefaults';
 
 export const PersonalityAssessment = ({ 
   onComplete, 
@@ -43,6 +47,27 @@ export const PersonalityAssessment = ({
     saveAssessment,
     savingAssessment,
   } = usePersonalityAssessment();
+
+  // Get user profile data for modifiers
+  const { profile } = useProfile();
+  const { profile: culturalProfile } = useCulturalProfile();
+
+  // Calculate age from birthdate
+  const calculateAge = (birthdate?: string): number | null => {
+    if (!birthdate) return null;
+    try {
+      const birthDate = new Date(birthdate);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    } catch {
+      return null;
+    }
+  };
 
   // Load saved progress from Supabase
   useEffect(() => {
@@ -153,17 +178,19 @@ export const PersonalityAssessment = ({
         console.error('Failed to save assessment progress', error);
       }
     } else {
-      // Calculate final result
-      const finalScores = updatedScores;
-
-      // Sort personalities by score
-      const sortedPersonalities = (Object.entries(finalScores) as [UserPersonalityType, number][])
-        .sort((a, b) => b[1] - a[1])
-        .map(([type, score]) => ({ type, score }));
+      // Calculate final result with modifiers
+      const age = calculateAge(profile?.birthdate);
+      const culturalBackground = culturalProfile?.primaryBackground;
       
+      // Apply cultural and age modifiers
+      const finalScores = calculateFinalPersonalityScores(
+        updatedScores,
+        culturalBackground,
+        age
+      );
+
       // Check for tie (within 2 points)
-      const topScore = sortedPersonalities[0].score;
-      const tiedPersonalities = sortedPersonalities.filter(p => topScore - p.score <= 2);
+      const tiedPersonalities = checkForTie(finalScores);
       
       if (tiedPersonalities.length > 1) {
         // Show tie-breaker UI
@@ -171,8 +198,9 @@ export const PersonalityAssessment = ({
         setShowTieBreaker(true);
       } else {
         // Clear winner
-        const resultPersonality = sortedPersonalities[0].type;
+        const resultPersonality = tiedPersonalities[0].type;
         setResult(resultPersonality);
+        setScores(finalScores); // Update scores with modifiers applied
         setShowResult(true);
         
         toast.success('Assessment complete!', {
@@ -345,6 +373,12 @@ export const PersonalityAssessment = ({
 
   const handleSaveAndContinue = async () => {
     if (result) {
+      // Set default name for the personality if needed
+      setDefaultPersonalityNameIfNeeded(result);
+      
+      // Store personality assignment timestamp for 24-hour cooldown check
+      localStorage.setItem('personalityAssignedAt', new Date().toISOString());
+      
       // Clear saved progress on completion
       try {
         await saveAssessment?.({
