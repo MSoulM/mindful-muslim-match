@@ -93,16 +93,14 @@ const EditProfileScreen = () => {
       
       <ScreenContainer hasTopBar className="px-5">
         {/* Photo Gallery Section */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Your Photos</h2>
+        <div className="my-8">
           <PhotoGallery />
         </div>
 
         {/* Voice Introduction Section */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Voice Introduction</h2>
+        {/* <div className="mb-8">
           <VoiceIntroRecorder />
-        </div>
+        </div> */}
 
         {/* Form Fields */}
         <div className="space-y-6">

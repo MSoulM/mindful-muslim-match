@@ -9,12 +9,25 @@ import { AgentMessage } from '@/components/chat/AgentMessage';
 import { updateAgentName } from '@/hooks/useAgentName';
 import { usePersonalityAssessment } from '@/hooks/usePersonalityAssessment';
 import { PERSONALITY_REVEAL_CONFIG } from '@/config/onboardingConstants';
+import { setDefaultPersonalityNameIfNeeded, getDefaultPersonalityName } from '@/utils/personalityDefaults';
 
 export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: PersonalityRevealProps) => {
   const { assessment, isLoadingAssessment } = usePersonalityAssessment();
   const config = PERSONALITY_REVEAL_CONFIG[personality];
   const IconComponent = config.icon as React.ComponentType<{ className?: string; color?: string }>;
   const [customName, setCustomName] = useState('');
+
+  // Set default name when component mounts if no custom name exists
+  useEffect(() => {
+    setDefaultPersonalityNameIfNeeded(personality);
+    // Pre-fill the input with default name
+    const existingName = localStorage.getItem('mmAgentCustomName');
+    if (existingName) {
+      setCustomName(existingName);
+    } else {
+      setCustomName(getDefaultPersonalityName(personality));
+    }
+  }, [personality]);
 
   const getPlaceholderByPersonality = (personalityType: PersonalityRevealProps['personality']) => {
     switch(personalityType) {
@@ -217,13 +230,18 @@ export const PersonalityReveal = ({ personality, onContinue, onTryDifferent }: P
           onClick={() => {
             if (customName.trim()) {
               updateAgentName(customName.trim());
+            } else {
+              // Ensure default name is set if user didn't enter one
+              setDefaultPersonalityNameIfNeeded(personality);
             }
+            // Store personality assignment timestamp for 24-hour cooldown check
+            localStorage.setItem('personalityAssignedAt', new Date().toISOString());
             onContinue();
           }}
           className="w-full h-12 text-base"
           size="lg"
         >
-          Continue with {customName || config.name}
+          Continue with {customName || getDefaultPersonalityName(personality)}
         </Button>
         <Button
           onClick={onTryDifferent}

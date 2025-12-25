@@ -36,7 +36,27 @@ export const PersonalityChange = ({
   const [recommendedPersonality, setRecommendedPersonality] = useState<UserPersonalityType | null>(null);
 
   const REQUIRED_DAYS = 7;
-  const canChange = daysActive >= REQUIRED_DAYS && !hasChangedPersonality;
+  const COOLDOWN_HOURS = 24; // 24-hour cooldown after initial assignment
+
+  // Check if 24-hour cooldown has passed
+  const checkCooldown = (): boolean => {
+    const assignedAtStr = localStorage.getItem('personalityAssignedAt');
+    if (!assignedAtStr) {
+      // If no timestamp, use account creation date as fallback
+      return true; // Allow change if no timestamp exists
+    }
+
+    try {
+      const assignedAt = new Date(assignedAtStr);
+      const now = new Date();
+      const hoursSinceAssignment = (now.getTime() - assignedAt.getTime()) / (1000 * 60 * 60);
+      return hoursSinceAssignment >= COOLDOWN_HOURS;
+    } catch {
+      return true; // Allow change if timestamp is invalid
+    }
+  };
+
+  const canChange = daysActive >= REQUIRED_DAYS && !hasChangedPersonality && checkCooldown();
 
   // Calculate days active
   useEffect(() => {
@@ -49,10 +69,10 @@ export const PersonalityChange = ({
     // Set initial step based on eligibility
     if (hasChangedPersonality) {
       setStep('complete'); // Already changed
-    } else if (diffDays >= REQUIRED_DAYS) {
+    } else if (diffDays >= REQUIRED_DAYS && checkCooldown()) {
       setStep('overview'); // Eligible to change
     } else {
-      setStep('locked'); // Still in trial period
+      setStep('locked'); // Still in trial period or cooldown
     }
   }, [accountCreatedDate, hasChangedPersonality]);
 
@@ -130,6 +150,18 @@ export const PersonalityChange = ({
                   <p className="text-sm text-muted-foreground text-center">
                     {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} until you can change personalities
                   </p>
+                  
+                  {/* 24-hour cooldown check */}
+                  {!checkCooldown() && (
+                    <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="text-xs text-amber-800 dark:text-amber-200 font-medium mb-1">
+                        24-Hour Cooldown Active
+                      </p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        You can change your personality 24 hours after your initial assignment. This helps ensure you've had time to experience your MMAgent.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Why wait? */}

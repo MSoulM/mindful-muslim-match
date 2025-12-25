@@ -232,7 +232,7 @@ export function PhotoGallery() {
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
         options={{
-          maxSize: 5,
+          maxSize: 5 * 1024 * 1024,
           onFileSelect: handleFileSelect,
           onError: (error) => console.error('Photo picker error:', error),
         }}
