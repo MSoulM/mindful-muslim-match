@@ -13,6 +13,7 @@ import { MatchesProvider } from "@/context/MatchesContext";
 import { DNAProvider } from "@/context/DNAContext";
 import { LoadingSpinner } from "@/components/utils/LoadingSpinner";
 import { ErrorBoundary } from "@/components/utils/ErrorBoundary";
+import { StreakManager } from "@/components/streaks/StreakManager";
 // import { MicroMomentTracker } from "@/services/MicroMomentTracker";
 // import { useSessionTracker } from "@/hooks/useSessionTracker";
 // import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -780,6 +781,7 @@ const App = () => (
                     }}
                   >
                     {/* <TrackingInitializer> */}
+                      <StreakManager />
                       <AnimatedRoutes />
                     {/* </TrackingInitializer> */}
                  <AdminModeToggle />

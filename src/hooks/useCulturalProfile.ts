@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import type { CulturalBackground, CulturalProfile, CulturalStrength } from '@/types/onboarding';
 import { toast } from 'sonner';
 
@@ -54,7 +54,7 @@ const buildProfileFromRows = (
 };
 
 export const useCulturalProfile = (): UseCulturalProfileReturn => {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [profile, setProfile] = useState<CulturalProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,14 +66,17 @@ export const useCulturalProfile = (): UseCulturalProfileReturn => {
       setError('User not authenticated');
       return;
     }
-    if (!supabase) {
-      setError('Supabase client not configured');
-      return;
-    }
 
     try {
       setIsLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
 
       const [{ data: profileRow, error: profileError }, { data: backgroundRows, error: backgroundsError }] =
         await Promise.all([
@@ -110,7 +113,7 @@ export const useCulturalProfile = (): UseCulturalProfileReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, getToken]);
 
   const saveProfile = useCallback(
     async (profileToSave: CulturalProfile) => {
@@ -118,14 +121,17 @@ export const useCulturalProfile = (): UseCulturalProfileReturn => {
         setError('User not authenticated');
         return;
       }
-      if (!supabase) {
-        setError('Supabase client not configured');
-        return;
-      }
 
       try {
         setIsSaving(true);
         setError(null);
+
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
 
         // 1) Upsert main cultural_profiles row
         const { error: upsertProfileError } = await supabase
@@ -184,7 +190,7 @@ export const useCulturalProfile = (): UseCulturalProfileReturn => {
         setIsSaving(false);
       }
     },
-    [userId]
+    [userId, getToken]
   );
 
   const clearProfile = useCallback(async () => {
@@ -192,14 +198,17 @@ export const useCulturalProfile = (): UseCulturalProfileReturn => {
       setError('User not authenticated');
       return;
     }
-    if (!supabase) {
-      setError('Supabase client not configured');
-      return;
-    }
 
     try {
       setIsLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
 
       const [{ error: deleteProfileError }, { error: deleteBackgroundsError }] =
         await Promise.all([
@@ -231,7 +240,7 @@ export const useCulturalProfile = (): UseCulturalProfileReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, getToken]);
 
   useEffect(() => {
     if (userId) {

@@ -115,6 +115,25 @@ export const notificationTemplates = {
     title: "DNA Balance Improved",
     body: "{agent} noticed your profile balance has improved significantly",
     type: 'achievement' as const
+  },
+  
+  // Streak notifications (Task 6A)
+  streakWarning: {
+    title: "Don't break your streak!",
+    body: "You haven't logged in for 24 hours. Keep your streak alive!",
+    type: 'system' as const
+  },
+  
+  streakMilestone: {
+    title: "Streak Milestone Reached!",
+    body: "Congratulations! You've reached a {milestone}-day streak and earned {reward}!",
+    type: 'achievement' as const
+  },
+  
+  streakGraceUsed: {
+    title: "Grace Period Used",
+    body: "Your grace period has been used. Don't miss tomorrow to keep your streak!",
+    type: 'system' as const
   }
 };
 

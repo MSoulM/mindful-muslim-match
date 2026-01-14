@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { ArrowLeft, Star, X, Info, ChevronDown, ChevronUp, ShieldCheck, Image as ImageIcon, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 import { SafeArea } from '@/components/utils/SafeArea';
 import { Button } from '@/components/ui/button';
 import PhotoUploadPicker from '@/components/ui/PhotoUploadPicker';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
 import { Toast } from '@/components/ui/Feedback/Toast';
@@ -23,6 +23,7 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { profile, isLoading: profileLoading, updateProfile } = useProfile();
   const { isGold } = useSubscriptionTier();
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -70,6 +71,12 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
 
     setIsUploading(true);
     try {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
+
       const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `photo_${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/images/${fileName}`;
@@ -147,7 +154,7 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
     });
   };
 
-  const confirmDeletePhoto = (id: string) => {
+  const confirmDeletePhoto = async (id: string) => {
     setPhotos(prev => {
       const filtered = prev.filter(p => p.id !== id);
       const photoToDelete = prev.find(p => p.id === id);
@@ -155,12 +162,17 @@ export const PhotoUploadScreen = ({ onNext, onBack, onSkip }: PhotoUploadScreenP
       if (photoToDelete && user?.id) {
         const filePath = `${user.id}/images/${photoToDelete.url.split('/').slice(-1)[0]}`;
 
-        supabase.storage
-          .from('users')
-          .remove([filePath])
-          .catch(err => {
-            console.error('Failed to delete photo from storage:', err);
-          });
+        getToken().then(token => {
+          const supabase = createSupabaseClient(token || undefined);
+          if (supabase) {
+            supabase.storage
+              .from('users')
+              .remove([filePath])
+              .catch(err => {
+                console.error('Failed to delete photo from storage:', err);
+              });
+          }
+        });
       }
       
       if (filtered.length > 0 && !filtered.some(p => p.isMain)) {

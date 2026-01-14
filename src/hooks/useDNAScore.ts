@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export type RarityTier = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
@@ -94,7 +94,7 @@ export const getRarityConfig = (score: number) => {
 };
 
 export function useDNAScore() {
-  const { userId, isLoaded } = useAuth();
+  const { userId, isLoaded, getToken } = useAuth();
   const [dnaScore, setDnaScore] = useState<DNAScore | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +107,13 @@ export function useDNAScore() {
     setError(null);
     
     try {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
+
       const { data, error: fetchError } = await supabase
         .from('mysoul_dna_scores')
         .select('*')
@@ -141,7 +148,7 @@ export function useDNAScore() {
     } finally {
       setLoading(false);
     }
-  }, [userId, isLoaded]);
+  }, [userId, isLoaded, getToken]);
 
   // Calculate DNA score based on 5-strand weighted system
   // Spec: Trait Rarity (35%), Profile Depth (25%), Behavioral (20%), Content (15%), Cultural (5%)
@@ -169,6 +176,21 @@ export function useDNAScore() {
     }
 
     try {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        return { 
+          score: 0, 
+          traitRarity: 0, 
+          profileDepth: 0, 
+          behavioral: 0, 
+          content: 0, 
+          cultural: 0,
+          approvedInsightsCount: 0,
+          daysActive: 0
+        };
+      }
+
       // Get user profile for location and other data
       const { data: profile } = await supabase
         .from('profiles')
@@ -315,13 +337,20 @@ export function useDNAScore() {
         daysActive: 0
       };
     }
-  }, [userId]);
+  }, [userId, getToken]);
 
   // Calculate and save score to database
   const calculateAndSaveScore = useCallback(async () => {
     if (!userId) return;
 
     try {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        console.error('Supabase client not configured');
+        return;
+      }
+
       const { 
         score, 
         traitRarity, 
@@ -391,7 +420,7 @@ export function useDNAScore() {
     } catch (err) {
       console.error('Error saving DNA score:', err);
     }
-  }, [userId, calculateScore]);
+  }, [userId, calculateScore, getToken]);
 
   // Recalculate score (call this after profile updates)
   const recalculateScore = useCallback(async () => {

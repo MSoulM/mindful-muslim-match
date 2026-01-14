@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 
 export type MessageType = 'text' | 'emoji' | 'image' | 'file' | 'voice';
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
@@ -55,7 +55,7 @@ export const useConversationMessages = (
   options: UseConversationMessagesOptions
 ): UseConversationMessagesReturn => {
   const { otherUserClerkId } = options;
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -64,7 +64,11 @@ export const useConversationMessages = (
   const [error, setError] = useState<string | null>(null);
 
   const ensureConversation = useCallback(async () => {
-    if (!userId || !otherUserClerkId || !supabase) return null;
+    if (!userId || !otherUserClerkId) return null;
+
+    const token = await getToken();
+    const supabase = createSupabaseClient(token || undefined);
+    if (!supabase) return null;
 
     const { data, error: rpcError } = await supabase.rpc('get_or_create_conversation', {
       p_user1_clerk_id: userId,
@@ -79,7 +83,7 @@ export const useConversationMessages = (
     const id = data as string;
     setConversationId(id);
     return id;
-  }, [userId, otherUserClerkId]);
+  }, [userId, otherUserClerkId, getToken]);
 
   const reloadMessages = useCallback(async () => {
     if (!userId) {
@@ -89,14 +93,17 @@ export const useConversationMessages = (
     if (!otherUserClerkId) {
       return;
     }
-    if (!supabase) {
-      setError('Supabase client not configured');
-      return;
-    }
 
     try {
       setIsLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
 
       const convId = conversationId ?? (await ensureConversation());
       if (!convId) return;
@@ -153,7 +160,7 @@ export const useConversationMessages = (
     } finally {
       setIsLoading(false);
     }
-  }, [userId, otherUserClerkId, conversationId, ensureConversation]);
+  }, [userId, otherUserClerkId, conversationId, ensureConversation, getToken]);
 
   const sendTextMessage = useCallback(
     async (content: string, replyToMessageId?: string) => {
@@ -165,15 +172,18 @@ export const useConversationMessages = (
         setError('Other user not specified');
         return;
       }
-      if (!supabase) {
-        setError('Supabase client not configured');
-        return;
-      }
       if (!content.trim()) return;
 
       try {
         setIsSending(true);
         setError(null);
+
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
 
         const convId = conversationId ?? (await ensureConversation());
         if (!convId) return;
@@ -245,13 +255,17 @@ export const useConversationMessages = (
         setIsSending(false);
       }
     },
-    [userId, otherUserClerkId, conversationId, ensureConversation]
+    [userId, otherUserClerkId, conversationId, ensureConversation, getToken]
   );
 
   const markAllAsRead = useCallback(async () => {
-    if (!userId || !conversationId || !supabase) return;
+    if (!userId || !conversationId) return;
 
     try {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) return;
+
       const { error: updateError } = await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString(), status: 'read' })
@@ -273,17 +287,20 @@ export const useConversationMessages = (
     } catch (err) {
       console.error('Error marking messages as read:', err);
     }
-  }, [userId, conversationId]);
+  }, [userId, conversationId, getToken]);
 
   useEffect(() => {
     if (!userId || !otherUserClerkId) return;
 
-    void reloadMessages();
+    const setupRealtime = async () => {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase || !conversationId) return;
 
-    // Once we know the conversation id, subscribe to realtime changes
-    if (!supabase || !conversationId) return;
+      void reloadMessages();
 
-    const channel = supabase
+      // Once we know the conversation id, subscribe to realtime changes
+      const channel = supabase
       .channel(`messages:conversation:${conversationId}`)
       .on(
         'postgres_changes',
@@ -301,10 +318,13 @@ export const useConversationMessages = (
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
-  }, [userId, otherUserClerkId, conversationId, reloadMessages]);
+
+    setupRealtime();
+  }, [userId, otherUserClerkId, conversationId, reloadMessages, getToken]);
 
   return {
     conversationId,

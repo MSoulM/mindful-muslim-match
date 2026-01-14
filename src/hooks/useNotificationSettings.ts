@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { CommunicationPrefs } from '@/types/onboarding';
 import { toast } from 'sonner';
 
@@ -75,21 +75,15 @@ interface UseNotificationSettingsReturn {
 }
 
 export const useNotificationSettings = (): UseNotificationSettingsReturn => {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canUseSupabase = useMemo(() => Boolean(supabase), []);
-
   const refreshSettings = useCallback(async () => {
     if (!userId) {
       setError('User not authenticated');
-      return;
-    }
-    if (!canUseSupabase) {
-      setError('Supabase client not configured');
       return;
     }
 
@@ -97,7 +91,14 @@ export const useNotificationSettings = (): UseNotificationSettingsReturn => {
       setIsLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase!
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
+
+      const { data, error: fetchError } = await supabase
         .from('notification_settings')
         .select('*')
         .eq('clerk_user_id', userId)
@@ -119,7 +120,7 @@ export const useNotificationSettings = (): UseNotificationSettingsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, canUseSupabase]);
+  }, [userId, getToken]);
 
   const persistSettings = useCallback(
     async (nextSettings: NotificationSettings) => {
@@ -127,17 +128,20 @@ export const useNotificationSettings = (): UseNotificationSettingsReturn => {
         setError('User not authenticated');
         return;
       }
-      if (!canUseSupabase) {
-        setError('Supabase client not configured');
-        return;
-      }
 
       try {
         setIsSaving(true);
         setError(null);
 
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
+
         const payload = buildDbPayload(userId, nextSettings);
-        const { error: upsertError } = await supabase!
+        const { error: upsertError } = await supabase
           .from('notification_settings')
           .upsert(payload, {
             onConflict: 'clerk_user_id'
@@ -158,7 +162,7 @@ export const useNotificationSettings = (): UseNotificationSettingsReturn => {
         setIsSaving(false);
       }
     },
-    [userId, canUseSupabase]
+    [userId, getToken]
   );
 
   const saveCommunicationPrefs = useCallback(

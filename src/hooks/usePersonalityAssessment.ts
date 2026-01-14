@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useUser as useClerkUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { useUser as useClerkUser, useAuth } from '@clerk/clerk-react';
+import { createSupabaseClient } from '@/lib/supabase';
 import type { UserPersonalityType } from '@/types/onboarding';
 
 type Scores = Record<UserPersonalityType, number>;
@@ -21,13 +21,18 @@ export interface PersonalityAssessmentProgressRecord {
 export const usePersonalityAssessment = () => {
   const queryClient = useQueryClient();
   const { user: clerkUser } = useClerkUser();
+  const { getToken } = useAuth();
   const userId = clerkUser?.id;
 
   const progressQuery = useQuery({
     queryKey: ['personalityAssessmentProgress', userId],
-    enabled: !!userId && !!supabase,
+    enabled: !!userId,
     queryFn: async (): Promise<PersonalityAssessmentProgressRecord | null> => {
-      if (!userId || !supabase) return null;
+      if (!userId) return null;
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) return null;
 
       const { data, error } = await supabase
         .from('personality_assessments')
@@ -54,9 +59,13 @@ export const usePersonalityAssessment = () => {
 
   const assessmentQuery = useQuery({
     queryKey: ['personalityAssessment', userId],
-    enabled: !!userId && !!supabase,
+    enabled: !!userId,
     queryFn: async (): Promise<PersonalityAssessmentRecord | null> => {
-      if (!userId || !supabase) return null;
+      if (!userId) return null;
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) return null;
 
       const { data, error } = await supabase
         .from('personality_assessments')
@@ -88,7 +97,11 @@ export const usePersonalityAssessment = () => {
 
   const saveProgressMutation = useMutation({
     mutationFn: async (progress: PersonalityAssessmentProgressRecord) => {
-      if (!userId || !supabase) throw new Error('User not authenticated');
+      if (!userId) throw new Error('User not authenticated');
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) throw new Error('Supabase not available');
 
       const { error } = await supabase
         .from('personality_assessments')
@@ -112,9 +125,12 @@ export const usePersonalityAssessment = () => {
 
   const clearProgressMutation = useMutation({
     mutationFn: async () => {
-      if (!userId || !supabase) throw new Error('User not authenticated');
+      if (!userId) throw new Error('User not authenticated');
 
-      // Only delete if it's incomplete (no completed_at)
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) throw new Error('Supabase not available');
+
       const { error } = await supabase
         .from('personality_assessments')
         .delete()
@@ -130,7 +146,11 @@ export const usePersonalityAssessment = () => {
 
   const saveAssessmentMutation = useMutation({
     mutationFn: async (payload: PersonalityAssessmentRecord) => {
-      if (!userId || !supabase) throw new Error('User not authenticated');
+      if (!userId) throw new Error('User not authenticated');
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) throw new Error('Supabase not available');
 
       const { error } = await supabase
         .from('personality_assessments')

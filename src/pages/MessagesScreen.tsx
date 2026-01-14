@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useConversations } from '@/hooks/useConversations';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { formatMessageTime } from '@/utils/dateUtils';
 import type { ConversationWithProfile } from '@/types/messages';
 
