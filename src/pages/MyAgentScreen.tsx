@@ -14,6 +14,7 @@ import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { cn } from '@/lib/utils';
 import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
 import { Toast } from '@/components/ui/Feedback/Toast';
+import { useInsights } from '@/hooks/useInsights';
 
 const MyAgentScreen = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const MyAgentScreen = () => {
   const { pendingCount } = useChaiChatPending();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
   const { isGold } = useSubscriptionTier();
+  const { pendingInsights, approvedInsights } = useInsights();
   const [paywallToast, setPaywallToast] = useState<{
     isOpen: boolean;
     type: 'success' | 'error' | 'warning' | 'info';
@@ -105,15 +107,20 @@ const MyAgentScreen = () => {
             <FeatureCard
               icon={<Zap className="w-6 h-6" />}
               title="My Insights About You"
-              description="8 pending • 142 confirmed"
+              description={`${pendingInsights.length} pending • ${approvedInsights.length} confirmed`}
               rightElement={<ChevronRight className="w-5 h-5 text-neutral-400 flex-shrink-0" />}
               onClick={() => navigate('/insights')}
               className="min-h-[90px]"
             />
             {/* Notification Badge */}
-            <div className="absolute top-3 right-3 bg-semantic-error text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md">
-              8
-            </div>
+            {pendingInsights.length > 0 && (
+              <div className={cn(
+                "absolute top-3 right-3 bg-semantic-error text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md",
+                pendingInsights.length > 99 ? "px-2 py-1 min-w-[2.5rem]" : "w-6 h-6"
+              )}>
+                {pendingInsights.length > 99 ? '99+' : pendingInsights.length}
+              </div>
+            )}
           </div>
 
           {/* Talk to Me */}
