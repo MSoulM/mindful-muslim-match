@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@clerk/clerk-react';
+import { createSupabaseClient } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export interface DNAQuestion {
@@ -23,6 +24,7 @@ interface UseDNAQuestionsReturn {
 }
 
 export const useDNAQuestions = (): UseDNAQuestionsReturn => {
+  const { getToken } = useAuth();
   const [questions, setQuestions] = useState<DNAQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,13 @@ export const useDNAQuestions = (): UseDNAQuestionsReturn => {
     try {
       setIsLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
 
       const { data, error: fetchError } = await supabase
         .from('dna_questionnaires')
@@ -58,7 +67,7 @@ export const useDNAQuestions = (): UseDNAQuestionsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getToken]);
 
   // Get questions by category
   const getQuestionsByCategory = useCallback((category: string): DNAQuestion[] => {

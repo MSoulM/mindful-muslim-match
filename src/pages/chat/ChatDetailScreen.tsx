@@ -12,7 +12,7 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { DateSeparator } from '@/components/chat/DateSeparator';
 import { useConversationMessages, type ChatMessage } from '@/hooks/useConversationMessages';
 import { AudioRecordingResult } from '@/hooks/useAudioRecorder';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { groupMessagesByDate, formatDateLabel } from '@/utils/messageUtils';
 

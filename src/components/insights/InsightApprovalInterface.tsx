@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, forwardRef } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'framer-motion';
 import { ThumbsUp, ThumbsDown, RotateCcw, Info, Trophy, Zap, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { UserInsight } from '@/services/api/insights';
+import { useInsights } from '@/hooks/useInsights';
+import { LoadingSpinner } from '@/components/utils/LoadingSpinner';
 
 export interface Insight {
   id: string;
@@ -18,95 +21,170 @@ export interface Insight {
 }
 
 interface InsightApprovalInterfaceProps {
-  insights: Insight[];
-  onApprove: (insightId: string) => void;
-  onReject: (insightId: string) => void;
+  insights?: UserInsight[];
+  onApprove?: (insightId: string) => void;
+  onReject?: (insightId: string) => void;
   onComplete?: () => void;
   className?: string;
+  useApi?: boolean;
+  pendingInsights?: UserInsight[];
+  progress?: any;
+  loading?: boolean;
+  approveInsight?: (insightId: string) => Promise<any>;
+  rejectInsight?: (insightId: string) => Promise<any>;
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  values: 'bg-teal-600 text-teal-600',
+  personality: 'bg-purple-600 text-purple-600',
+  lifestyle: 'bg-blue-600 text-blue-600',
+  interests: 'bg-red-600 text-red-600',
+  family: 'bg-green-600 text-green-600',
+};
+
+function convertUserInsightToInsight(ui: UserInsight): Insight {
+  return {
+    id: ui.id,
+    category: ui.insight_category.charAt(0).toUpperCase() + ui.insight_category.slice(1),
+    categoryColor: CATEGORY_COLORS[ui.insight_category] || 'bg-gray-600 text-gray-600',
+    confidence: ui.confidence_score,
+    title: ui.title,
+    description: ui.description,
+    sourceQuote: ui.source_quote || '',
+  };
 }
 
 export const InsightApprovalInterface = ({
-  insights,
-  onApprove,
-  onReject,
+  insights: propInsights,
+  onApprove: propOnApprove,
+  onReject: propOnReject,
   onComplete,
-  className
+  className,
+  useApi = true,
+  pendingInsights: propPendingInsights,
+  progress: propProgress,
+  loading: propLoading,
+  approveInsight: propApproveInsight,
+  rejectInsight: propRejectInsight,
 }: InsightApprovalInterfaceProps) => {
+  const apiInsights = useApi && !propPendingInsights ? useInsights() : null;
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [reviewedCount, setReviewedCount] = useState(0);
-  const [points, setPoints] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  const currentInsight = insights[currentIndex];
-  const progress = ((reviewedCount / insights.length) * 100) || 0;
-  const remaining = insights.length - reviewedCount;
+  const pendingInsightsToUse = useApi 
+    ? (propPendingInsights || apiInsights?.pendingInsights || [])
+    : [];
+  const progressToUse = useApi 
+    ? (propProgress || apiInsights?.progress)
+    : null;
+  const loadingToUse = useApi 
+    ? (propLoading !== undefined ? propLoading : (apiInsights?.loading || false))
+    : false;
+  const approveInsightFn = useApi 
+    ? (propApproveInsight || apiInsights?.approveInsight)
+    : propOnApprove;
+  const rejectInsightFn = useApi 
+    ? (propRejectInsight || apiInsights?.rejectInsight)
+    : propOnReject;
+
+  const insights = useMemo(() => {
+    if (useApi && pendingInsightsToUse.length > 0) {
+      return pendingInsightsToUse.map(convertUserInsightToInsight);
+    }
+    if (propInsights) {
+      return propInsights.map(convertUserInsightToInsight);
+    }
+    return [];
+  }, [useApi, pendingInsightsToUse, propInsights]);
 
   useEffect(() => {
-    // Load points from localStorage
-    const savedPoints = localStorage.getItem('insight_approval_points');
-    if (savedPoints) setPoints(parseInt(savedPoints, 10));
-  }, []);
+    if (insights.length === 0) {
+      setCurrentIndex(0);
+    } else if (currentIndex >= insights.length) {
+      setCurrentIndex(0);
+    }
+  }, [insights.length, currentIndex]);
 
-  const savePoints = (newPoints: number) => {
-    setPoints(newPoints);
-    localStorage.setItem('insight_approval_points', newPoints.toString());
+  useEffect(() => {
+    const insightIds = insights.map(i => i.id);
+    if (insightIds.length > 0) {
+      const currentInsightId = insights[currentIndex]?.id;
+      if (!currentInsightId || !insightIds.includes(currentInsightId)) {
+        setCurrentIndex(0);
+      }
+    }
+  }, [insights.map(i => i.id).join(','), currentIndex, insights]);
+
+  const progress = progressToUse;
+  const points = progress?.total_points || 0;
+  const reviewedCount = progress?.insights_reviewed || 0;
+  const totalInsights = insights.length;
+  const progressPercentage = totalInsights > 0 ? ((reviewedCount / (reviewedCount + totalInsights)) * 100) : 0;
+  const remaining = Math.max(0, totalInsights - currentIndex - 1);
+
+  const currentInsight = insights[currentIndex];
+  const isLoading = loadingToUse;
+
+  const handleApprove = async (insightId: string) => {
+    try {
+      if (useApi && approveInsightFn) {
+        await approveInsightFn(insightId);
+      } else {
+        propOnApprove?.(insightId);
+      }
+      
+      if ('vibrate' in navigator) navigator.vibrate(10);
+      
+      const updatedProgress = useApi ? (propProgress || apiInsights?.progress) : progress;
+      const newProgress = updatedProgress ? ((updatedProgress.insights_reviewed + 1) / (updatedProgress.insights_reviewed + totalInsights)) * 100 : 0;
+      if (newProgress >= 25 && !updatedProgress?.milestone_25 ||
+          newProgress >= 50 && !updatedProgress?.milestone_50 ||
+          newProgress >= 75 && !updatedProgress?.milestone_75 ||
+          newProgress >= 100 && !updatedProgress?.milestone_100) {
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 2000);
+      }
+
+      setCurrentIndex(0);
+    } catch (error) {
+      console.error('Error approving insight:', error);
+    }
   };
 
-  const handleApprove = (insightId: string) => {
-    onApprove(insightId);
-    const newPoints = points + 10;
-    savePoints(newPoints);
-    setReviewedCount(prev => prev + 1);
-    
-    if ('vibrate' in navigator) navigator.vibrate(10);
-    
-    // Check milestones
-    const newProgress = ((reviewedCount + 1) / insights.length) * 100;
-    if (newProgress === 25 || newProgress === 50 || newProgress === 75 || newProgress === 100) {
-      setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 2000);
+  const handleReject = async (insightId: string) => {
+    try {
+      if (useApi && rejectInsightFn) {
+        await rejectInsightFn(insightId);
+      } else {
+        propOnReject?.(insightId);
+      }
+      
+      if ('vibrate' in navigator) navigator.vibrate([10, 5, 10]);
+
+      setCurrentIndex(0);
+    } catch (error) {
+      console.error('Error rejecting insight:', error);
     }
-
-    if (currentIndex < insights.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    } else if (onComplete) {
-      onComplete();
-    }
-
-    toast({
-      title: "Insight Approved! +10 points",
-      description: "This helps improve your matching accuracy",
-    });
-  };
-
-  const handleReject = (insightId: string) => {
-    onReject(insightId);
-    const newPoints = points + 5;
-    savePoints(newPoints);
-    setReviewedCount(prev => prev + 1);
-    
-    if ('vibrate' in navigator) navigator.vibrate([10, 5, 10]);
-
-    if (currentIndex < insights.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    } else if (onComplete) {
-      onComplete();
-    }
-
-    toast({
-      title: "Feedback Received! +5 points",
-      description: "Your feedback helps us learn better",
-    });
   };
 
   const handleUndo = () => {
     if (currentIndex > 0) {
       setCurrentIndex(prev => prev - 1);
-      setReviewedCount(prev => Math.max(0, prev - 1));
     }
   };
 
-  if (!currentInsight) {
+  console.log('currentInsight', currentInsight);
+  console.log('insights', insights);
+
+  if (isLoading) {
+    return (
+      <div className={cn("flex items-center justify-center h-[500px] bg-white rounded-xl", className)}>
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!currentInsight && insights.length === 0) {
     return (
       <div className={cn("bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 text-center", className)}>
         <motion.div
@@ -121,7 +199,7 @@ export const InsightApprovalInterface = ({
           You've reviewed all {insights.length} insights
         </p>
         <div className="text-4xl font-bold text-green-600 mb-2">
-          {points} Points
+          {points || 0} Points
         </div>
         <p className="text-sm text-muted-foreground">Total earned</p>
       </div>
@@ -138,13 +216,13 @@ export const InsightApprovalInterface = ({
             <span className="text-lg font-bold text-foreground">{points} Points</span>
           </div>
           <div className="text-sm text-muted-foreground">
-            {reviewedCount} / {insights.length} reviewed
+            {reviewedCount} / {reviewedCount + totalInsights} reviewed
           </div>
         </div>
-        <Progress value={progress} className="h-2" />
+        <Progress value={progressPercentage} className="h-2" />
         <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
           <span>{remaining} remaining</span>
-          <span>{Math.round(progress)}% complete</span>
+          <span>{Math.round(progressPercentage)}% complete</span>
         </div>
       </div>
 
@@ -173,20 +251,23 @@ export const InsightApprovalInterface = ({
 
       {/* Card Stack */}
       <div className="relative h-[500px]">
-        <AnimatePresence mode="popLayout">
-          <SwipeableInsightCard
-            key={currentInsight.id}
-            insight={currentInsight}
-            onApprove={() => handleApprove(currentInsight.id)}
-            onReject={() => handleReject(currentInsight.id)}
-            stackPosition={0}
-          />
+        <AnimatePresence mode="wait">
+          {currentInsight && (
+            <SwipeableInsightCard
+              key={`${currentInsight.id}-${currentIndex}`}
+              insight={currentInsight}
+              onApprove={() => handleApprove(currentInsight.id)}
+              onReject={() => handleReject(currentInsight.id)}
+              stackPosition={0}
+            />
+          )}
           
           {/* Preview next card */}
           {insights[currentIndex + 1] && (
             <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 0.95, y: 10 }}
+              key={`preview-${insights[currentIndex + 1].id}`}
+              initial={{ scale: 0.95, y: 10, opacity: 0.5 }}
+              animate={{ scale: 0.95, y: 10, opacity: 0.5 }}
               className="absolute inset-0 pointer-events-none"
               style={{ zIndex: -1 }}
             >
@@ -211,7 +292,8 @@ export const InsightApprovalInterface = ({
         <Button
           variant="outline"
           size="lg"
-          onClick={() => handleReject(currentInsight.id)}
+          onClick={() => currentInsight && handleReject(currentInsight.id)}
+          disabled={!currentInsight}
           className="min-h-[72px] min-w-[72px] rounded-full border-4 border-red-300 hover:bg-red-50 hover:border-red-400"
         >
           <ThumbsDown className="w-8 h-8 text-red-600" />
@@ -220,7 +302,8 @@ export const InsightApprovalInterface = ({
         <Button
           variant="outline"
           size="lg"
-          onClick={() => handleApprove(currentInsight.id)}
+          onClick={() => currentInsight && handleApprove(currentInsight.id)}
+          disabled={!currentInsight}
           className="min-h-[72px] min-w-[72px] rounded-full border-4 border-green-300 hover:bg-green-50 hover:border-green-400"
         >
           <ThumbsUp className="w-8 h-8 text-green-600" />
@@ -253,38 +336,42 @@ interface SwipeableInsightCardProps {
   stackPosition: number;
 }
 
-const SwipeableInsightCard = ({
+const SwipeableInsightCard = forwardRef<HTMLDivElement, SwipeableInsightCardProps>(({
   insight,
   onApprove,
   onReject,
   stackPosition
-}: SwipeableInsightCardProps) => {
+}, ref) => {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 100;
+    const swipeThreshold = 120;
     
     if (info.offset.x > swipeThreshold) {
       onApprove();
     } else if (info.offset.x < -swipeThreshold) {
       onReject();
+    } else {
+      x.set(0);
     }
   };
 
   return (
     <motion.div
+      ref={ref}
       drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.7}
+      dragConstraints={{ left: -300, right: 300 }}
+      dragElastic={0.2}
       onDragEnd={handleDragEnd}
       style={{ x, rotate, opacity }}
-      initial={{ scale: 1, y: 0 }}
-      animate={{ scale: 1 - stackPosition * 0.05, y: stackPosition * 10 }}
+      initial={{ scale: 1, y: 0, opacity: 1 }}
+      animate={{ scale: 1 - stackPosition * 0.05, y: stackPosition * 10, opacity: 1 }}
       exit={{ 
-        x: x.get() > 0 ? 300 : -300,
+        x: x.get() > 0 ? 500 : -500,
         opacity: 0,
+        scale: 0.8,
         transition: { duration: 0.3 }
       }}
       className="absolute inset-0 cursor-grab active:cursor-grabbing"
@@ -292,7 +379,9 @@ const SwipeableInsightCard = ({
       <InsightCardContent insight={insight} swipeX={x} />
     </motion.div>
   );
-};
+});
+
+SwipeableInsightCard.displayName = 'SwipeableInsightCard';
 
 // ==================== CARD CONTENT ====================
 

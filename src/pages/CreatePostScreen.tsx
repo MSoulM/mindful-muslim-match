@@ -24,7 +24,7 @@ import { DepthIndicator } from '@/components/profile/DepthIndicator';
 import { DepthCoachingPrompts } from '@/components/profile/DepthCoachingPrompts';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { useDNAScore } from '@/hooks/useDNAScore';
 
 const DNA_CATEGORIES = [
@@ -45,7 +45,7 @@ interface MediaItem {
 
 export default function CreatePostScreen() {
   const navigate = useNavigate();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const { recalculateScore } = useDNAScore();
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [caption, setCaption] = useState('');
@@ -292,6 +292,12 @@ export default function CreatePostScreen() {
     
     try {
       // Upload media files to Supabase storage
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        throw new Error('Supabase client not configured');
+      }
+
       const mediaUrls: string[] = [];
       
       for (const mediaItem of media) {

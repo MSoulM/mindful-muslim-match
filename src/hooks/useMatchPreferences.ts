@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { MatchPreferences } from '@/types/onboarding';
 import { toast } from 'sonner';
 
@@ -14,7 +14,7 @@ interface UseMatchPreferencesReturn {
 }
 
 export const useMatchPreferences = (): UseMatchPreferencesReturn => {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [preferences, setPreferences] = useState<MatchPreferences | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +30,13 @@ export const useMatchPreferences = (): UseMatchPreferencesReturn => {
     try {
       setIsLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
 
       const { data, error: fetchError } = await supabase
         .from('match_preferences')
@@ -63,7 +70,7 @@ export const useMatchPreferences = (): UseMatchPreferencesReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, getToken]);
 
   // Save preferences to database
   const savePreferences = useCallback(
@@ -76,6 +83,13 @@ export const useMatchPreferences = (): UseMatchPreferencesReturn => {
       try {
         setIsLoading(true);
         setError(null);
+
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
 
         const { error: upsertError } = await supabase
           .from('match_preferences')
@@ -124,6 +138,13 @@ export const useMatchPreferences = (): UseMatchPreferencesReturn => {
       try {
         setIsLoading(true);
         setError(null);
+
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
 
         const { error: deleteError } = await supabase
           .from('match_preferences')

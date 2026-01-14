@@ -32,6 +32,8 @@ import { useUser } from '@/context/UserContext';
 import { useApp } from '@/context/AppContext';
 import { useDNAScore } from '@/hooks/useDNAScore';
 import { usePremium } from '@/hooks/usePremium';
+import { StreakCounter } from '@/components/streaks/StreakCounter';
+import { useStreak } from '@/hooks/useStreak';
 
 const ProfileScreen = () => {
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ const ProfileScreen = () => {
   const { premiumState } = usePremium();
   const { dnaScore, rarityConfig } = useDNAScore();
   const { signOut } = useClerk();
+  const { status: streakStatus } = useStreak();
   
   
   // Check if user is premium
@@ -138,9 +141,14 @@ const ProfileScreen = () => {
             {user.location}
             {user.birthdate ? ` • Age ${Math.floor((Date.now() - new Date(user.birthdate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}` : ''}
           </p>
-          <p className="text-sm text-foreground/80 max-w-md mx-auto">
+          <p className="text-sm text-foreground/80 max-w-md mx-auto mb-3">
             {user.bio}
           </p>
+          
+          {/* Streak Counter */}
+          <div className="flex justify-center">
+            <StreakCounter status={streakStatus} />
+          </div>
         </div>
 
         {/* Quick Stats Card */}

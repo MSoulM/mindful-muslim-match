@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { DNAAnswers } from '@/types/onboarding';
 import { toast } from 'sonner';
 
@@ -15,7 +15,7 @@ interface UseDNAAnswersReturn {
 }
 
 export const useDNAAnswers = (): UseDNAAnswersReturn => {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [answers, setAnswers] = useState<DNAAnswers>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +31,13 @@ export const useDNAAnswers = (): UseDNAAnswersReturn => {
     try {
       setIsLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
 
       const { data, error: fetchError } = await supabase
         .from('dna_answers')
@@ -56,7 +63,7 @@ export const useDNAAnswers = (): UseDNAAnswersReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, getToken]);
 
   // Save a single answer
   const saveAnswer = useCallback(
@@ -68,6 +75,13 @@ export const useDNAAnswers = (): UseDNAAnswersReturn => {
 
       try {
         setError(null);
+
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
 
         // Upsert the answer
         const { error: upsertError } = await supabase
@@ -101,7 +115,7 @@ export const useDNAAnswers = (): UseDNAAnswersReturn => {
         toast.error('Failed to save answer');
       }
     },
-    [userId]
+    [userId, getToken]
   );
 
   // Save all answers at once
@@ -115,6 +129,13 @@ export const useDNAAnswers = (): UseDNAAnswersReturn => {
       try {
         setIsLoading(true);
         setError(null);
+
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
 
         const answers_to_save = Object.entries(allAnswers).map(([questionId, answer]) => ({
           question_id: questionId,
@@ -143,7 +164,7 @@ export const useDNAAnswers = (): UseDNAAnswersReturn => {
         setIsLoading(false);
       }
     },
-    [userId]
+    [userId, getToken]
   );
 
   // Clear all answers
@@ -157,6 +178,13 @@ export const useDNAAnswers = (): UseDNAAnswersReturn => {
       try {
         setIsLoading(true);
         setError(null);
+
+        const token = await getToken();
+        const supabase = createSupabaseClient(token || undefined);
+        if (!supabase) {
+          setError('Supabase client not configured');
+          return;
+        }
 
         const { error: deleteError } = await supabase
           .from('dna_answers')

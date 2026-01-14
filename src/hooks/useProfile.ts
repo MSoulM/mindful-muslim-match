@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useUser as useClerkUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { useUser as useClerkUser, useAuth } from '@clerk/clerk-react';
+import { createSupabaseClient } from '@/lib/supabase';
 import { Profile } from '@/types/profile';
 import { useDNAScore } from '@/hooks/useDNAScore';
 
@@ -11,6 +11,7 @@ import { useDNAScore } from '@/hooks/useDNAScore';
 export const useProfile = () => {
   const queryClient = useQueryClient();
   const { user: clerkUser } = useClerkUser();
+  const { getToken } = useAuth();
   const authUserId = clerkUser?.id;
   const { recalculateScore } = useDNAScore();
 
@@ -18,7 +19,13 @@ export const useProfile = () => {
   const query = useQuery({
     queryKey: ['profile', authUserId],
     queryFn: async (): Promise<Profile | null> => {
-      if (!authUserId || !supabase) {
+      if (!authUserId) {
+        return null;
+      }
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
         return null;
       }
 
@@ -44,16 +51,22 @@ export const useProfile = () => {
         throw error;
       }
     },
-    enabled: !!authUserId && !!supabase,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    enabled: !!authUserId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (updates: Partial<Profile>) => {
-      if (!authUserId || !supabase) {
-        throw new Error('Not authenticated or Supabase not available');
+      if (!authUserId) {
+        throw new Error('Not authenticated');
+      }
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        throw new Error('Supabase not available');
       }
 
       const dbPayload = convertProfileToDB(updates);
@@ -82,8 +95,14 @@ export const useProfile = () => {
   // Create profile mutation (for first-time setup)
   const createProfileMutation = useMutation({
     mutationFn: async (profileData: Partial<Profile>) => {
-      if (!authUserId || !supabase) {
-        throw new Error('Not authenticated or Supabase not available');
+      if (!authUserId) {
+        throw new Error('Not authenticated');
+      }
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        throw new Error('Supabase not available');
       }
 
       const payload = {

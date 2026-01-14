@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubscriptionTier } from '@/hooks/useSubscriptionTier';
 import { getDNAFeatureAccess } from '@/utils/dnaSubscriptionFeatures';
@@ -30,7 +30,7 @@ export interface CityLeaderboard {
 }
 
 export function useCityLeaderboard() {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const { profile } = useProfile();
   const { tier } = useSubscriptionTier();
   const [leaderboard, setLeaderboard] = useState<CityLeaderboard | null>(null);
@@ -49,6 +49,13 @@ export function useCityLeaderboard() {
     setError(null);
 
     try {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
+
       // Get all users in the same city with DNA scores
       const { data: cityProfiles, error: profilesError } = await supabase
         .from('profiles')
@@ -133,7 +140,7 @@ export function useCityLeaderboard() {
     } finally {
       setLoading(false);
     }
-  }, [userId, profile?.location, featureAccess.canViewFullLeaderboard]);
+  }, [userId, profile?.location, featureAccess.canViewFullLeaderboard, getToken]);
 
   useEffect(() => {
     if (userId && profile?.location) {

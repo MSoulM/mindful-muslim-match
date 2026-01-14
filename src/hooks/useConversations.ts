@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/supabase';
 
 export type ConversationLastMessageType = 'text' | 'emoji' | 'image' | 'file' | 'voice' | null;
 
@@ -23,7 +23,7 @@ interface UseConversationsReturn {
 }
 
 export const useConversations = (): UseConversationsReturn => {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,14 +34,17 @@ export const useConversations = (): UseConversationsReturn => {
       setError('User not authenticated');
       return;
     }
-    if (!supabase) {
-      setError('Supabase client not configured');
-      return;
-    }
 
     try {
       setIsLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        setError('Supabase client not configured');
+        return;
+      }
 
       const { data, error: fetchError } = await supabase
         .from('conversations')
@@ -84,15 +87,20 @@ export const useConversations = (): UseConversationsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, getToken]);
 
   useEffect(() => {
-    if (!userId || !supabase) return;
+    if (!userId) return;
 
-    void reload();
+    const setupRealtime = async () => {
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) return;
 
-    // Realtime subscription: keep conversation list in sync
-    const channel = supabase
+      void reload();
+
+      // Realtime subscription: keep conversation list in sync
+      const channel = supabase
       .channel(`conversations:user:${userId}`)
       .on(
         'postgres_changes',
@@ -109,10 +117,13 @@ export const useConversations = (): UseConversationsReturn => {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
-  }, [userId, reload]);
+
+    setupRealtime();
+  }, [userId, reload, getToken]);
 
   return {
     conversations,

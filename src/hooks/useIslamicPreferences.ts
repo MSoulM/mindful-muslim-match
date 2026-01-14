@@ -1,18 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useUser as useClerkUser } from '@clerk/clerk-react';
-import { supabase } from '@/lib/supabase';
+import { useUser as useClerkUser, useAuth } from '@clerk/clerk-react';
+import { createSupabaseClient } from '@/lib/supabase';
 import { IslamicPreferences } from '@/types/islamicPreferences';
 
 export const useIslamicPreferences = () => {
   const queryClient = useQueryClient();
   const { user: clerkUser } = useClerkUser();
+  const { getToken } = useAuth();
   const authUserId = clerkUser?.id;
 
   // Fetch Islamic preferences query
   const query = useQuery({
     queryKey: ['islamicPreferences', authUserId],
     queryFn: async (): Promise<IslamicPreferences | null> => {
-      if (!authUserId || !supabase) {
+      if (!authUserId) {
+        return null;
+      }
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
         return null;
       }
 
@@ -37,16 +44,22 @@ export const useIslamicPreferences = () => {
         throw error;
       }
     },
-    enabled: !!authUserId && !!supabase,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!authUserId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   // Update Islamic preferences mutation
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<IslamicPreferences>) => {
-      if (!authUserId || !supabase) {
-        throw new Error('Not authenticated or Supabase not available');
+      if (!authUserId) {
+        throw new Error('Not authenticated');
+      }
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        throw new Error('Supabase not available');
       }
 
       const dbPayload = convertToDB(updates);
@@ -73,8 +86,14 @@ export const useIslamicPreferences = () => {
   // Create Islamic preferences mutation (for first-time setup)
   const createMutation = useMutation({
     mutationFn: async (preferencesData: Partial<IslamicPreferences>) => {
-      if (!authUserId || !supabase) {
-        throw new Error('Not authenticated or Supabase not available');
+      if (!authUserId) {
+        throw new Error('Not authenticated');
+      }
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        throw new Error('Supabase not available');
       }
 
       const payload = {
@@ -100,8 +119,14 @@ export const useIslamicPreferences = () => {
   // Upsert (create or update) mutation
   const upsertMutation = useMutation({
     mutationFn: async (preferencesData: Partial<IslamicPreferences>) => {
-      if (!authUserId || !supabase) {
-        throw new Error('Not authenticated or Supabase not available');
+      if (!authUserId) {
+        throw new Error('Not authenticated');
+      }
+
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      if (!supabase) {
+        throw new Error('Supabase not available');
       }
 
       const dbPayload = convertToDB(preferencesData);
