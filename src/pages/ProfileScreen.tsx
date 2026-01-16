@@ -24,7 +24,8 @@ import {
   Camera,
   Crown,
   ChevronRight,
-  Mic
+  Mic,
+  Brain
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
@@ -263,6 +264,14 @@ const ProfileScreen = () => {
             title="Voice Onboarding"
             description="Record your voice introduction"
             onClick={() => navigate('/onboarding/voice-demo')}
+            className="rounded-none"
+          />
+          
+          <FeatureCard
+            icon={<Brain className="w-6 h-6" />}
+            title="Personality Assessment"
+            description="Discover your MMAgent personality"
+            onClick={() => navigate('/onboarding/personality-assessment')}
             className="rounded-none"
           />
           

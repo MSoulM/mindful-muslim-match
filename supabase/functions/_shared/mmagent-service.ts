@@ -201,8 +201,21 @@ export function getPersonalityPrompt(personality: PersonalityType | null): strin
   return personality ? prompts[personality] : prompts.amina;
 }
 
-export function getSystemPrompt(tier: SubscriptionTier, personality: PersonalityType | null, lowTokens: boolean): string {
-  const basePrompt = `You are MMAgent, an AI assistant for MuslimSoulmate.ai. Your role is to help users with:
+export async function getSystemPrompt(
+  supabase: SupabaseClient,
+  tier: SubscriptionTier,
+  personality: PersonalityType | null,
+  lowTokens: boolean,
+  clerkUserId: string,
+  userData?: Record<string, any>
+): Promise<string> {
+  try {
+    const { getSystemPromptFromDB } = await import('./mmagent-prompt-service.ts');
+    return await getSystemPromptFromDB(supabase, personality, clerkUserId, lowTokens, userData);
+  } catch (error) {
+    console.error('Error loading prompt from DB, using fallback:', error);
+    
+    const basePrompt = `You are MMAgent, an AI assistant for MuslimSoulmate.ai. Your role is to help users with:
 - Matchmaking and compatibility guidance
 - Profile improvement suggestions
 - Islamic marriage guidance and principles
@@ -212,9 +225,9 @@ export function getSystemPrompt(tier: SubscriptionTier, personality: Personality
 
 Always be warm, supportive, and culturally sensitive to Islamic values.`;
 
-  const personalityPrompt = getPersonalityPrompt(personality);
-  
-  const scopePrompt = `IMPORTANT: You must focus ONLY on matchmaking, relationships, and Islamic marriage guidance. Politely deflect questions about:
+    const personalityPrompt = getPersonalityPrompt(personality);
+    
+    const scopePrompt = `IMPORTANT: You must focus ONLY on matchmaking, relationships, and Islamic marriage guidance. Politely deflect questions about:
 - Homework or academic work
 - Business or career advice
 - Coding or technical support
@@ -224,11 +237,12 @@ Always be warm, supportive, and culturally sensitive to Islamic values.`;
 
 If asked about these topics, respond warmly but redirect to your core purpose.`;
 
-  const tokenPrompt = lowTokens 
-    ? "Keep your response concise and focused. Provide helpful but brief guidance."
-    : "Provide thoughtful, detailed responses when appropriate.";
+    const tokenPrompt = lowTokens 
+      ? "Keep your response concise and focused. Provide helpful but brief guidance."
+      : "Provide thoughtful, detailed responses when appropriate.";
 
-  return `${basePrompt}\n\n${personalityPrompt}\n\n${scopePrompt}\n\n${tokenPrompt}`;
+    return `${basePrompt}\n\n${personalityPrompt}\n\n${scopePrompt}\n\n${tokenPrompt}`;
+  }
 }
 
 export async function retrieveMemories(

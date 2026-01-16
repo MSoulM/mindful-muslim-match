@@ -103,6 +103,7 @@ const EngagementAnalyticsScreen = lazy(() => import("./pages/EngagementAnalytics
 const ExportAnalyticsScreen = lazy(() => import("./pages/ExportAnalyticsScreen").then(m => ({ default: m.ExportAnalyticsScreen })));
 const AdminAnalyticsScreen = lazy(() => import("./pages/admin/AdminAnalyticsScreen"));
 const AdminGovernanceScreen = lazy(() => import("./pages/admin/AdminGovernanceScreen").then(m => ({ default: m.AdminGovernanceScreen })));
+const AdminPersonalityScreen = lazy(() => import("./pages/admin/AdminPersonalityScreen").then(m => ({ default: m.AdminPersonalityScreen })));
 
 // Lazy load dev/demo screens
 const TestingChecklist = lazy(() => import("@/components/dev/TestingChecklist"));
@@ -382,6 +383,11 @@ const AnimatedRoutes = () => {
             <Route path="/admin/governance" element={
               <motion.div {...pageTransition} transition={pageTransitionConfig}>
                 <AdminGovernanceScreen />
+              </motion.div>
+            } />
+            <Route path="/admin/personality" element={
+              <motion.div {...pageTransition} transition={pageTransitionConfig}>
+                <AdminPersonalityScreen />
               </motion.div>
             } />
             
