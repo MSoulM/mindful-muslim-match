@@ -128,7 +128,15 @@ export class MMAgentMessageHandler {
       ? await retrieveMemories(this.supabase, this.clerkUserId, messageContent, 5)
       : [];
 
-    const systemPrompt = getSystemPrompt(this.tier, this.personality, lowTokens);
+    const userData = await this.getUserData();
+    const systemPrompt = await getSystemPrompt(
+      this.supabase,
+      this.tier,
+      this.personality,
+      lowTokens,
+      this.clerkUserId,
+      userData
+    );
     const contextMessages = this.buildContext(recentMessages, memories);
 
     const aiResponse = await this.callAI(model, systemPrompt, contextMessages, messageContent, lowTokens);
@@ -294,6 +302,43 @@ export class MMAgentMessageHandler {
     if (lower.includes('islamic') || lower.includes('marriage') || lower.includes('wali')) return 'guidance';
     if (lower.includes('emotional') || lower.includes('support') || lower.includes('feel')) return 'emotional';
     return 'general';
+  }
+
+  private async getUserData(): Promise<Record<string, any> | undefined> {
+    try {
+      const { data: profile } = await this.supabase
+        .from('profiles')
+        .select('first_name, birthdate, subscription_tier, location')
+        .eq('clerk_user_id', this.clerkUserId)
+        .maybeSingle();
+      
+      if (!profile) return undefined;
+      
+      const age = profile.birthdate 
+        ? Math.floor((Date.now() - new Date(profile.birthdate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : null;
+      
+      const { data: culturalProfile } = await this.supabase
+        .from('cultural_profiles')
+        .select('primary_background')
+        .eq('clerk_user_id', this.clerkUserId)
+        .maybeSingle();
+      
+      return {
+        userName: profile.first_name || '',
+        firstName: profile.first_name || '',
+        age: age,
+        culturalBackground: culturalProfile?.primary_background || '',
+        primary_background: culturalProfile?.primary_background || '',
+        city: profile.location || '',
+        location: profile.location || '',
+        subscriptionTier: profile.subscription_tier || '',
+        subscription_tier: profile.subscription_tier || ''
+      };
+    } catch (error) {
+      console.error('Error fetching user data for prompt:', error);
+      return undefined;
+    }
   }
 
   private async saveMessage(
