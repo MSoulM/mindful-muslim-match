@@ -349,22 +349,32 @@ export class MMAgentMessageHandler {
     tokensUsed?: number,
     personality?: PersonalityType | null
   ): Promise<void> {
-    await this.supabase.from('mmagent_messages').insert({
+    const { error: insertError } = await this.supabase.from('mmagent_messages').insert({
       session_id: sessionId,
       clerk_user_id: this.clerkUserId,
       role,
       content,
       model_used: model,
       tokens_used: tokensUsed,
-      personality_used: personality || null
+      personality_used: personality || null,
+      is_visible: true
     });
 
-    await this.supabase
+    if (insertError) {
+      console.error('Failed to save message:', insertError);
+      throw new Error(`Failed to save ${role} message: ${insertError.message}`);
+    }
+
+    const { error: updateError } = await this.supabase
       .from('mmagent_sessions')
       .update({
         message_count: this.supabase.raw('message_count + 1'),
         last_message_at: new Date().toISOString()
       })
       .eq('id', sessionId);
+
+    if (updateError) {
+      console.error('Failed to update session:', updateError);
+    }
   }
 }

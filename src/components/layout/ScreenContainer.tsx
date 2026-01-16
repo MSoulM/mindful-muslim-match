@@ -116,7 +116,8 @@ export const ScreenContainer = ({
         backgroundColor,
         paddingTop: topPadding,
         paddingBottom: bottomPadding,
-        minHeight: '100vh',
+        height: '100vh',
+        maxHeight: '100vh',
         WebkitOverflowScrolling: 'touch',
       }}
     >
