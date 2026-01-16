@@ -5,9 +5,16 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Dna, Sparkles, Zap, Crown, Star, Gem } from 'lucide-react';
+import { Dna, Sparkles, Zap, Crown, Star, Gem, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDNAScore, RARITY_CONFIG, RarityTier } from '@/hooks/useDNAScore';
+import { useOriginality } from '@/hooks/useOriginality';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Rarity tier icons
 const RARITY_ICONS: Record<RarityTier, typeof Star> = {
@@ -25,6 +32,7 @@ interface MySoulDNAProps {
 
 export const MySoulDNA = memo(({ variant = 'full', className }: MySoulDNAProps) => {
   const { dnaScore, loading, rarityConfig } = useDNAScore();
+  const { originality, loading: originalityLoading } = useOriginality();
 
   if (loading) {
     return (
@@ -187,6 +195,39 @@ export const MySoulDNA = memo(({ variant = 'full', className }: MySoulDNAProps) 
             weight="5%"
           />
         </div>
+
+        {/* Originality Metric */}
+        {!originalityLoading && originality && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.85 }}
+            className="mt-4 bg-white/10 backdrop-blur-sm rounded-xl p-3"
+          >
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between cursor-help">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4" />
+                      <span className="text-xs font-medium">Content Originality</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold">{originality.score}</div>
+                      <div className="text-xs opacity-75">{originality.label}</div>
+                      {originality.percentile !== null && (
+                        <div className="text-xs opacity-60">Top {(100 - originality.percentile).toFixed(0)}%</div>
+                      )}
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs text-xs">{originality.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
