@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractUserId } from "../_shared/admin-auth.ts";
+import { createAuthenticatedClient } from "../_shared/supabase-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -95,16 +95,15 @@ serve(async (req) => {
     const authHeader = req.headers.get('authorization');
     const userId = extractUserId(authHeader);
 
-    if (!userId) {
+    if (!userId || !authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createAuthenticatedClient(token);
 
     if (req.method === 'POST') {
       const { lat, lng } = await req.json();

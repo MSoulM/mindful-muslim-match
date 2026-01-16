@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getSubscriptionTier } from "../_shared/mmagent-service.ts";
 import { getTodayUsage } from "../_shared/token-governance-service.ts";
+import { createAuthenticatedClient } from "../_shared/supabase-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,10 +35,7 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createAuthenticatedClient(token);
 
     const tier = await getSubscriptionTier(supabase, clerkUserId);
     const usage = await getTodayUsage(supabase, clerkUserId, tier);
