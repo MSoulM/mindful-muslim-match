@@ -56,6 +56,10 @@ export const insightsApi = {
       throw new Error('Not authenticated');
     }
 
+    if (!SUPABASE_URL) {
+      throw new Error('Supabase URL not configured');
+    }
+
     const response = await fetch(`${SUPABASE_URL}/functions/v1/insights-pending`, {
       method: 'GET',
       headers: {
@@ -76,6 +80,10 @@ export const insightsApi = {
     const token = await getToken();
     if (!token) {
       throw new Error('Not authenticated');
+    }
+
+    if (!SUPABASE_URL) {
+      throw new Error('Supabase URL not configured');
     }
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/insights-approve`, {
@@ -102,6 +110,10 @@ export const insightsApi = {
       throw new Error('Not authenticated');
     }
 
+    if (!SUPABASE_URL) {
+      throw new Error('Supabase URL not configured');
+    }
+
     const response = await fetch(`${SUPABASE_URL}/functions/v1/insights-reject`, {
       method: 'POST',
       headers: {
@@ -124,6 +136,10 @@ export const insightsApi = {
     const token = await getToken();
     if (!token) {
       throw new Error('Not authenticated');
+    }
+
+    if (!SUPABASE_URL) {
+      throw new Error('Supabase URL not configured');
     }
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/insights-approved?limit=${limit}&offset=${offset}`, {
@@ -168,6 +184,10 @@ export const insightsApi = {
     const token = await getToken();
     if (!token) {
       throw new Error('Not authenticated');
+    }
+
+    if (!SUPABASE_URL) {
+      throw new Error('Supabase URL not configured');
     }
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/gamification-badges`, {

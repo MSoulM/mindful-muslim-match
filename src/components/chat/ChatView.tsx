@@ -179,7 +179,9 @@ export const ChatView = ({
   };
 
   const handleQuickReply = (reply: string) => {
-    onSendMessage(reply);
+    if (reply && reply.trim()) {
+      onSendMessage(reply.trim());
+    }
   };
 
   const handleEmojiSelect = (emoji: string) => {
@@ -443,7 +445,7 @@ const MessageBubble = ({ message, onToggleImportant, gestures }: MessageBubblePr
         >
           {message.isImportant && (
             <Star
-              className="absolute -top-2 -right-2 w-4 h-4 text-yellow-500 fill-yellow-500"
+              className="absolute -top-2 -left-2 w-4 h-4 text-yellow-500 fill-yellow-500 z-10"
             />
           )}
           
@@ -455,7 +457,7 @@ const MessageBubble = ({ message, onToggleImportant, gestures }: MessageBubblePr
             <Button
               variant="ghost"
               size="sm"
-              className="absolute -top-2 -left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute -top-2 -left-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleImportant(message.id);

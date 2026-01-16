@@ -14,7 +14,7 @@ export const PullToRefresh = ({ children, onRefresh }: PullToRefreshProps) => {
   const showIndicator = pullDistance > 20 || isRefreshing;
   
   return (
-    <div className="relative" {...handlers}>
+    <div className="relative h-full" {...handlers}>
       {/* Pull Indicator */}
       {showIndicator && (
         <div 
@@ -39,6 +39,7 @@ export const PullToRefresh = ({ children, onRefresh }: PullToRefreshProps) => {
       
       {/* Content */}
       <div 
+        className="h-full"
         style={{ 
           transform: isRefreshing ? 'translateY(40px)' : `translateY(${pullDistance * 0.5}px)`,
           transition: isRefreshing ? 'transform 0.2s' : 'none'
