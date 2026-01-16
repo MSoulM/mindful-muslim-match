@@ -13,6 +13,16 @@ import {
   PersonalityType,
   TopicCategory
 } from './mmagent-service.ts';
+import {
+  checkAndDeductTokens,
+  routeModel,
+  estimateQueryComplexity,
+  getTodayUsage,
+  ModelType
+} from './token-governance-service.ts';
+import {
+  performAbuseChecks
+} from './abuse-detection-service.ts';
 
 interface MessageRequest {
   sessionId: string;
@@ -26,6 +36,8 @@ interface MessageResponse {
   model: string;
   personality: string;
   deflection?: string;
+  warning?: string;
+  blocked?: boolean;
 }
 
 export class MMAgentMessageHandler {
@@ -64,42 +76,80 @@ export class MMAgentMessageHandler {
       };
     }
 
-    const tokenInfo = await getOrCreateTokenRecord(this.supabase, this.clerkUserId, this.tier);
-    const lowTokens = tokenInfo.tokensRemaining < 1000;
+    let messageContent = request.content;
+    const abuseCheck = await performAbuseChecks(
+      this.supabase,
+      this.clerkUserId,
+      messageContent,
+      request.sessionId
+    );
 
+    if (!abuseCheck.allowed || abuseCheck.blocked) {
+      return {
+        message: abuseCheck.warning || abuseCheck.reason || 'Your message could not be processed.',
+        tokensRemaining: 0,
+        model: 'none',
+        personality: this.personality || 'amina',
+        blocked: true,
+        warning: abuseCheck.warning
+      };
+    }
+
+    if (abuseCheck.truncatedContent) {
+      messageContent = abuseCheck.truncatedContent;
+    }
+
+    const complexity = estimateQueryComplexity(messageContent);
+    const model = routeModel(this.clerkUserId, this.tier, complexity, messageContent) as ModelType;
+    const estimatedTokens = this.estimateTokens(messageContent + ' [estimated response]');
+
+    const tokenCheck = await checkAndDeductTokens(
+      this.supabase,
+      this.clerkUserId,
+      this.tier,
+      estimatedTokens,
+      model
+    );
+
+    if (!tokenCheck.allowed || tokenCheck.blocked) {
+      return {
+        message: tokenCheck.suggestion || tokenCheck.reason || 'Daily token limit exceeded. Please try again tomorrow.',
+        tokensRemaining: 0,
+        model: 'none',
+        personality: this.personality || 'amina',
+        blocked: true,
+        warning: tokenCheck.reason
+      };
+    }
+
+    const lowTokens = tokenCheck.tokens_remaining < 1000;
     const recentMessages = await this.getRecentMessages(request.sessionId, 10);
     const memories = this.tier === 'gold_plus' 
-      ? await retrieveMemories(this.supabase, this.clerkUserId, request.content, 5)
+      ? await retrieveMemories(this.supabase, this.clerkUserId, messageContent, 5)
       : [];
 
     const systemPrompt = getSystemPrompt(this.tier, this.personality, lowTokens);
     const contextMessages = this.buildContext(recentMessages, memories);
 
-    const useClaude = shouldUseClaude(request.content, this.tier) && !lowTokens;
-    const model = useClaude ? 'claude-3-5-sonnet-20241022' : 'gpt-4o-mini';
-
-    const aiResponse = await this.callAI(model, systemPrompt, contextMessages, request.content, lowTokens);
-    const tokensUsed = this.estimateTokens(request.content + aiResponse);
-
-    if (tokenInfo.tokensRemaining >= tokensUsed) {
-      await recordTokenUsage(this.supabase, this.clerkUserId, tokensUsed, this.tier);
-    }
+    const aiResponse = await this.callAI(model, systemPrompt, contextMessages, messageContent, lowTokens);
+    const actualTokens = this.estimateTokens(messageContent + aiResponse);
 
     await this.saveMessage(request.sessionId, 'user', request.content);
-    await this.saveMessage(request.sessionId, 'assistant', aiResponse, model, tokensUsed, this.personality);
+    await this.saveMessage(request.sessionId, 'assistant', aiResponse, model, actualTokens, this.personality);
 
     if (this.tier === 'gold_plus' && memories.length === 0) {
-      const topic = this.detectTopic(request.content);
-      await storeMemory(this.supabase, this.clerkUserId, request.content, aiResponse, topic);
+      const topic = this.detectTopic(messageContent);
+      await storeMemory(this.supabase, this.clerkUserId, messageContent, aiResponse, topic);
     }
 
-    const updatedTokenInfo = await getOrCreateTokenRecord(this.supabase, this.clerkUserId, this.tier);
+    const updatedUsage = await getTodayUsage(this.supabase, this.clerkUserId, this.tier);
 
     return {
       message: aiResponse,
-      tokensRemaining: Math.max(0, updatedTokenInfo.tokensRemaining - tokensUsed),
+      tokensRemaining: tokenCheck.tokens_remaining,
       model,
-      personality: this.personality || 'amina'
+      personality: this.personality || 'amina',
+      warning: tokenCheck.warning || abuseCheck.warning
     };
   }
 

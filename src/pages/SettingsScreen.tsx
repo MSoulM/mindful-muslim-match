@@ -156,17 +156,30 @@ export default function SettingsScreen() {
           <div className="space-y-2">
             {/* Admin-only Analytics Link */}
             {isAdmin && (
-              <FeatureCard
-                icon={<Shield className="w-6 h-6 text-primary" />}
-                title="Admin Analytics"
-                description="Platform-wide metrics"
-                onClick={() => navigate('/admin/analytics')}
-                rightElement={
-                  <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
-                    Admin
-                  </Badge>
-                }
-              />
+              <>
+                <FeatureCard
+                  icon={<Shield className="w-6 h-6 text-primary" />}
+                  title="Admin Analytics"
+                  description="Platform-wide metrics"
+                  onClick={() => navigate('/admin/analytics')}
+                  rightElement={
+                    <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
+                      Admin
+                    </Badge>
+                  }
+                />
+                <FeatureCard
+                  icon={<Shield className="w-6 h-6 text-primary" />}
+                  title="Token Governance"
+                  description="Manage token limits and cost controls"
+                  onClick={() => navigate('/admin/governance')}
+                  rightElement={
+                    <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
+                      Admin
+                    </Badge>
+                  }
+                />
+              </>
             )}
             
             <FeatureCard
