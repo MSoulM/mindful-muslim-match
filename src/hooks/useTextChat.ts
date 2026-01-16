@@ -12,6 +12,7 @@ interface Message {
 export const useTextChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
   const sendMessage = useCallback(async (
     text: string, 
@@ -23,7 +24,9 @@ export const useTextChat = () => {
     setError(null);
 
     try {
-      // Check if Supabase is configured
+      const token = await getToken();
+      const supabase = createSupabaseClient(token || undefined);
+      
       if (!supabase) {
         throw new Error('Lovable Cloud is not enabled. Please enable Cloud to use MMAgent chat.');
       }

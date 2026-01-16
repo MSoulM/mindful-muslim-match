@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Archive, MoreVertical, Heart, HelpCircle, UserCircle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -93,7 +93,7 @@ export const ThreadList = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full w-full bg-background">
       {/* Header with search and new thread button */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
@@ -157,16 +157,17 @@ export const ThreadList = ({
       </ScrollArea>
 
       {/* Thread list */}
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          <AnimatePresence mode="popLayout">
-            {filteredThreads.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="flex flex-col items-center justify-center py-12 px-4 text-center"
-              >
+      <div className="flex-1 relative">
+        <ScrollArea className="h-full">
+          <div className={filteredThreads.length === 0 ? "flex items-center justify-center min-h-[calc(100vh-300px)]" : "p-2"}>
+            <AnimatePresence mode="popLayout">
+              {filteredThreads.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="flex flex-col items-center justify-center w-full py-12 px-4 text-center"
+                >
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                   <MessageSquare className="w-8 h-8 text-muted-foreground" />
                 </div>
@@ -197,9 +198,10 @@ export const ThreadList = ({
                 />
               ))
             )}
-          </AnimatePresence>
-        </div>
-      </ScrollArea>
+            </AnimatePresence>
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 };
@@ -213,7 +215,7 @@ interface ThreadCardProps {
   onDelete: () => void;
 }
 
-const ThreadCard = ({ thread, index, onSelect, onArchive, onDelete }: ThreadCardProps) => {
+const ThreadCard = forwardRef<HTMLDivElement, ThreadCardProps>(({ thread, index, onSelect, onArchive, onDelete }, ref) => {
   const threadType = THREAD_TYPES[thread.type];
   const timeSince = formatDistanceToNow(thread.lastMessageAt, { addSuffix: true });
   
@@ -224,6 +226,7 @@ const ThreadCard = ({ thread, index, onSelect, onArchive, onDelete }: ThreadCard
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -300,4 +303,6 @@ const ThreadCard = ({ thread, index, onSelect, onArchive, onDelete }: ThreadCard
       </div>
     </motion.div>
   );
-};
+});
+
+ThreadCard.displayName = 'ThreadCard';

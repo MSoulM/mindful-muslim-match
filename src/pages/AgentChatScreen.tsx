@@ -4,213 +4,338 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TopBar } from '@/components/layout/TopBar';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { ScreenContainer } from '@/components/layout/ScreenContainer';
 import { ThreadList, ThreadType, Thread } from '@/components/chat/ThreadList';
 import { ChatView, ChatMessage } from '@/components/chat/ChatView';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { Button } from '@/components/ui/button';
-import { useChatStore, type Thread as StoreThread, type Message as StoreMessage } from '@/store/chatStore';
-import { useTextChat } from '@/hooks/useTextChat';
 import { useChatGestures } from '@/hooks/useChatGestures';
-import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { useChatPerformance } from '@/hooks/useChatPerformance';
-import { useDebouncedTyping } from '@/hooks/useDebouncedTyping';
 import { toast } from 'sonner';
 import { useAgentName } from '@/hooks/useAgentName';
+import { useAuth } from '@clerk/clerk-react';
+import {
+  getMMAgentSessions,
+  createMMAgentSession,
+  getMMAgentMessages,
+  sendMMAgentMessage,
+  type MMAgentSession,
+  type MMAgentMessage
+} from '@/services/api/mmagent';
+
+interface SessionWithMessages extends MMAgentSession {
+  messages: ChatMessage[];
+}
 
 export default function AgentChatScreen() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentThreadId = searchParams.get('threadId');
+  const { getToken } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('myagent');
+  const [sessions, setSessions] = useState<SessionWithMessages[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const customAgentName = useAgentName();
-  
-  // Connect to chatStore
-  const threads = useChatStore((state) => state.threads);
-  const addThread = useChatStore((state) => state.addThread);
-  const addMessage = useChatStore((state) => state.addMessage);
-  const updateMessage = useChatStore((state) => state.updateMessage);
-  const archiveThread = useChatStore((state) => state.archiveThread);
-  const removeThread = useChatStore((state) => state.removeThread);
-  const getThread = useChatStore((state) => state.getThread);
-  const isTyping = useChatStore((state) => state.isTyping);
-  const setIsTyping = useChatStore((state) => state.setIsTyping);
-  const connectionStatus = useChatStore((state) => state.connectionStatus);
 
-  const { sendMessage, isLoading } = useTextChat();
-  
-  // Initialize WebSocket connection and sync state to store
-  const { connect: connectWebSocket } = useChatWebSocket();
-
-  // Performance tracking
   const {
     trackMessageSend,
     trackThreadSwitch,
     trackInitialLoad
   } = useChatPerformance();
 
-  // Debounced typing indicator (200ms target)
-  const { handleTypingStart, handleTypingStop } = useDebouncedTyping({
-    onStartTyping: () => setIsTyping(true),
-    onStopTyping: () => setIsTyping(false),
-    delay: 1000
+  const mapMessageToChatMessage = (msg: MMAgentMessage): ChatMessage => ({
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: new Date(msg.created_at),
+    status: 'sent' as const
   });
 
-  // Track initial load
-  useEffect(() => {
-    const endLoad = trackInitialLoad();
-    const timer = setTimeout(() => {
+  const loadSessions = useCallback(async () => {
+    try {
+      setIsLoadingSessions(true);
+      const token = await getToken();
+      
+      if (!token) {
+        toast.error('Please sign in to access MMAgent chat');
+        return;
+      }
+      
+      const dbSessions = await getMMAgentSessions(token);
+      
+      const sessionsWithMessages: SessionWithMessages[] = await Promise.all(
+        dbSessions.map(async (session) => {
+          if (!session.id || !session.id.trim()) {
+            console.warn('Skipping session with invalid ID:', session);
+            return {
+              ...session,
+              messages: []
+            };
+          }
+          
+          try {
+            const messages = await getMMAgentMessages(token, session.id);
+            return {
+              ...session,
+              messages: messages.map(mapMessageToChatMessage)
+            };
+          } catch (error) {
+            console.error(`Failed to load messages for session ${session.id}:`, error);
+            return {
+              ...session,
+              messages: []
+            };
+          }
+        })
+      );
+
+      setSessions(sessionsWithMessages);
+      
+      const endLoad = trackInitialLoad();
+      const totalMessages = sessionsWithMessages.reduce((sum, s) => sum + s.messages.length, 0);
       endLoad({
-        messageCount: threads.reduce((sum, t) => sum + t.messages.length, 0),
-        threadCount: threads.length
+        messageCount: totalMessages,
+        threadCount: sessionsWithMessages.length
       });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load conversations';
+      
+      if (errorMessage.includes('not available') || errorMessage.includes('Failed to send')) {
+        toast.error('MMAgent functions not deployed. Please deploy edge functions to Supabase.');
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, [getToken, trackInitialLoad]);
 
-  // Connect WebSocket on mount (optional - for future real-time features)
-  // useEffect(() => {
-  //   const WS_URL = `wss://${window.location.hostname}/ws/chat`;
-  //   connectWebSocket(WS_URL);
-  // }, [connectWebSocket]);
+  const loadMessagesForSession = useCallback(async (sessionId: string) => {
+    if (!sessionId || !sessionId.trim()) {
+      console.error('Invalid session ID provided');
+      return;
+    }
 
-  // Convert store thread format to ThreadList format
+    try {
+      const token = await getToken();
+      if (!token) {
+        console.error('No authentication token available');
+        return;
+      }
+      
+      const messages = await getMMAgentMessages(token, sessionId);
+      
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId 
+          ? { ...s, messages: messages.map(mapMessageToChatMessage) }
+          : s
+      ));
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load messages';
+      toast.error(errorMessage);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
+
+  useEffect(() => {
+    if (currentThreadId) {
+      loadMessagesForSession(currentThreadId);
+    }
+  }, [currentThreadId, loadMessagesForSession]);
+
   const convertToThreadListFormat = (): Thread[] => {
-    return threads
-      .filter(t => !t.isArchived)
-      .map(t => ({
-        id: t.id,
-        type: t.type as ThreadType,
-        title: t.topic,
-        lastMessage: t.messages.length > 0 
-          ? t.messages[t.messages.length - 1].content 
+    return sessions
+      .filter(s => s.is_active)
+      .map(s => ({
+        id: s.id,
+        type: (s.topic as ThreadType) || 'custom',
+        title: s.title || 'New conversation',
+        lastMessage: s.messages.length > 0 
+          ? s.messages[s.messages.length - 1].content 
           : 'No messages yet',
-        lastMessageAt: t.updatedAt,
-        unreadCount: t.unreadCount,
-        isArchived: t.isArchived,
-        createdAt: t.createdAt
+        lastMessageAt: s.last_message_at ? new Date(s.last_message_at) : new Date(s.created_at),
+        unreadCount: 0,
+        isArchived: !s.is_active,
+        createdAt: new Date(s.created_at)
       }));
   };
 
-  // Handle creating a new thread
-  const handleNewThread = useCallback((type: ThreadType) => {
-    const newThread: StoreThread = {
-      id: `thread-${Date.now()}`,
-      type: type,
-      topic: 'New conversation',
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isArchived: false,
-      unreadCount: 0
-    };
-    addThread(newThread);
-    setSearchParams({ threadId: newThread.id });
-    toast.success('New conversation started');
-  }, [addThread, setSearchParams]);
+  const handleNewThread = useCallback(async (type: ThreadType) => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        toast.error('Please sign in to create a conversation');
+        return;
+      }
+      
+      const newSession = await createMMAgentSession(
+        token,
+        'New conversation',
+        type
+      );
+      
+      const sessionWithMessages: SessionWithMessages = {
+        ...newSession,
+        messages: []
+      };
+      
+      setSessions(prev => [sessionWithMessages, ...prev]);
+      setSearchParams({ threadId: newSession.id });
+      toast.success('New conversation started');
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create conversation';
+      toast.error(errorMessage);
+    }
+  }, [getToken, setSearchParams]);
 
-  // Handle selecting a thread
   const handleThreadSelect = useCallback((threadId: string) => {
     const endTrack = trackThreadSwitch();
     setSearchParams({ threadId });
     requestAnimationFrame(() => endTrack(threadId));
   }, [setSearchParams, trackThreadSwitch]);
 
-  // Handle archiving a thread
-  const handleArchiveThread = useCallback((threadId: string) => {
-    archiveThread(threadId);
-    toast.success('Thread archived');
-    if (currentThreadId === threadId) {
-      setSearchParams({});
+  const handleArchiveThread = useCallback(async (threadId: string) => {
+    try {
+      setSessions(prev => prev.map(s => 
+        s.id === threadId ? { ...s, is_active: false } : s
+      ));
+      toast.success('Thread archived');
+      if (currentThreadId === threadId) {
+        setSearchParams({});
+      }
+    } catch (error) {
+      console.error('Failed to archive thread:', error);
+      toast.error('Failed to archive conversation');
     }
-  }, [archiveThread, currentThreadId, setSearchParams]);
+  }, [currentThreadId, setSearchParams]);
 
-  // Handle deleting a thread
-  const handleDeleteThread = useCallback((threadId: string) => {
-    removeThread(threadId);
-    toast.success('Thread deleted');
-    if (currentThreadId === threadId) {
-      setSearchParams({});
+  const handleDeleteThread = useCallback(async (threadId: string) => {
+    try {
+      setSessions(prev => prev.filter(s => s.id !== threadId));
+      toast.success('Thread deleted');
+      if (currentThreadId === threadId) {
+        setSearchParams({});
+      }
+    } catch (error) {
+      console.error('Failed to delete thread:', error);
+      toast.error('Failed to delete conversation');
     }
-  }, [removeThread, currentThreadId, setSearchParams]);
+  }, [currentThreadId, setSearchParams]);
 
-  // Handle sending a message
   const handleSendMessage = useCallback(async (content: string) => {
     if (!currentThreadId) return;
 
-    const thread = getThread(currentThreadId);
-    if (!thread) return;
+    if (!content || !content.trim()) {
+      console.warn('Attempted to send empty message');
+      return;
+    }
 
-    // Track message send performance
+    const session = sessions.find(s => s.id === currentThreadId);
+    if (!session) return;
+
     const endTrack = trackMessageSend();
 
-    // Add user message immediately (optimistic update)
-    const userMessage: StoreMessage = {
-      id: `msg-${Date.now()}`,
+    const userMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
       role: 'user',
       content,
       timestamp: new Date(),
       status: 'sending'
     };
-    addMessage(currentThreadId, userMessage);
 
-    // Complete visual feedback within 500ms
+    setSessions(prev => prev.map(s => 
+      s.id === currentThreadId 
+        ? { ...s, messages: [...s.messages, userMessage] }
+        : s
+    ));
+
     requestAnimationFrame(() => {
       endTrack({ success: true });
     });
 
     try {
       setIsTyping(true);
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Please sign in to send messages');
+      }
       
-      // Get full conversation history for context
-      const conversationHistory = [
-        ...thread.messages.map(m => ({
-          role: m.role,
-          content: m.content
-        })),
-        { role: 'user' as const, content }
-      ];
+      const response = await sendMMAgentMessage(token, currentThreadId, content);
 
-      // Call Claude API with full context
-      const response = await sendMessage(content, conversationHistory);
-
-      // Add assistant response
-      const assistantMessage: StoreMessage = {
-        id: `msg-${Date.now() + 1}`,
+      const assistantMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
         role: 'assistant',
-        content: response,
+        content: response.message,
         timestamp: new Date(),
         status: 'sent'
       };
-      addMessage(currentThreadId, assistantMessage);
 
+      setSessions(prev => prev.map(s => 
+        s.id === currentThreadId 
+          ? { 
+              ...s, 
+              messages: s.messages
+                .map(m => m.id === userMessage.id ? { ...m, status: 'sent' as const } : m)
+                .concat(assistantMessage),
+              message_count: s.message_count + 2,
+              last_message_at: new Date().toISOString()
+            }
+          : s
+      ));
+
+      if (response.deflection) {
+        toast.info(response.deflection);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to send message');
+      
+      setSessions(prev => prev.map(s => 
+        s.id === currentThreadId 
+          ? { ...s, messages: s.messages.filter(m => m.id !== userMessage.id) }
+          : s
+      ));
+      
       endTrack({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setIsTyping(false);
     }
-  }, [currentThreadId, getThread, addMessage, sendMessage, setIsTyping, trackMessageSend]);
+  }, [currentThreadId, sessions, getToken, setIsTyping, trackMessageSend]);
 
   // Handle going back from chat view
   const handleBack = useCallback(() => {
     setSearchParams({});
   }, [setSearchParams]);
 
-  // Handle pull to refresh
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    // Simulate refresh delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsRefreshing(false);
-    toast.success('Chat refreshed');
-  }, []);
+    try {
+      await loadSessions();
+      if (currentThreadId) {
+        await loadMessagesForSession(currentThreadId);
+      }
+      toast.success('Chat refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadSessions, loadMessagesForSession, currentThreadId]);
 
-  // Get current thread for chat view
-  const currentThread = currentThreadId ? getThread(currentThreadId) : null;
+  const currentThread = currentThreadId 
+    ? sessions.find(s => s.id === currentThreadId)
+    : null;
 
-  // Chat gesture handlers
   const { swipeHandlers, messageGestures } = useChatGestures({
     onSwipeRight: currentThread ? handleBack : undefined,
     onSwipeLeft: currentThread ? () => handleArchiveThread(currentThread.id) : undefined,
@@ -225,15 +350,9 @@ export default function AgentChatScreen() {
     },
     onDoubleTap: (messageId) => {
       if (currentThread) {
-        // Toggle important flag
         const message = currentThread.messages.find(m => m.id === messageId);
         if (message) {
-          updateMessage(
-            currentThread.id, 
-            messageId, 
-            { isImportant: !message.isImportant }
-          );
-          toast.success(message.isImportant ? 'Unmarked as important' : 'Marked as important');
+          toast.success('Message marked as important');
         }
       }
     }
@@ -243,78 +362,51 @@ export default function AgentChatScreen() {
     <div className="relative min-h-screen bg-background" {...swipeHandlers}>
       <TopBar 
         variant="back" 
-        title={currentThread ? currentThread.topic : (customAgentName || "MMAgent Chat")}
-        onBackClick={currentThread ? handleBack : () => navigate(-1)}
+        title={currentThread ? (currentThread.title || 'New conversation') : (customAgentName || "MMAgent Chat")}
+        onBackClick={currentThread ? handleBack : () => navigate('/myagent')}
       />
-      
-      {/* Connection status banner */}
-      {connectionStatus !== 'connected' && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          className={cn(
-            "px-4 py-2 text-xs flex items-center justify-center gap-2",
-            connectionStatus === 'reconnecting' && "bg-amber-50 text-amber-800 border-b border-amber-100",
-            connectionStatus === 'offline' && "bg-red-50 text-red-800 border-b border-red-100"
-          )}
-        >
-          <div className={cn(
-            "h-2 w-2 rounded-full",
-            connectionStatus === 'reconnecting' && "bg-amber-500 animate-pulse",
-            connectionStatus === 'offline' && "bg-red-500"
-          )} />
-          <span>
-            {connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Offline'}
-          </span>
-        </motion.div>
-      )}
       
       <ScreenContainer
         hasTopBar
-        hasBottomNav={!currentThread} // Hide bottom nav in chat view
+        hasBottomNav={!currentThread}
         padding={false}
         scrollable={false}
-        className="h-[calc(100vh-56px)]"
+        className="h-[calc(100vh-56px)] overflow-hidden"
       >
-        <PullToRefresh onRefresh={handleRefresh}>
-          {currentThread ? (
-            <ChatView
-              threadId={currentThread.id}
-              threadType="custom"
-              threadTitle={currentThread.topic}
-              messages={currentThread.messages}
-              onSendMessage={handleSendMessage}
-              onArchive={() => handleArchiveThread(currentThread.id)}
-              onDelete={() => handleDeleteThread(currentThread.id)}
-              onToggleImportant={(messageId) => {
-                const message = currentThread.messages.find(m => m.id === messageId);
-                if (message) {
-                  updateMessage(
-                    currentThread.id,
-                    messageId,
-                    { isImportant: !message.isImportant }
-                  );
-                }
-              }}
-              messageGestures={messageGestures}
-              isTyping={isTyping || isLoading}
-              quickReplies={currentThread.messages.length === 0 ? [
-                'Tell me about my matches',
-                'How can I improve my profile?',
-                'What makes a good match?'
-              ] : []}
-            />
-          ) : (
-            <ThreadList
-              threads={convertToThreadListFormat()}
-              onThreadSelect={handleThreadSelect}
-              onNewThread={handleNewThread}
-              onArchiveThread={handleArchiveThread}
-              onDeleteThread={handleDeleteThread}
-              isLoading={false}
-            />
-          )}
-        </PullToRefresh>
+        <div className="h-full">
+          <PullToRefresh onRefresh={handleRefresh}>
+            {currentThread ? (
+              <ChatView
+                threadId={currentThread.id}
+                threadType={(currentThread.topic as ThreadType) || 'custom'}
+                threadTitle={currentThread.title || 'New conversation'}
+                messages={currentThread.messages}
+                onSendMessage={handleSendMessage}
+                onArchive={() => handleArchiveThread(currentThread.id)}
+                onDelete={() => handleDeleteThread(currentThread.id)}
+                onToggleImportant={(messageId) => {
+                  toast.info('Message importance feature coming soon');
+                }}
+                messageGestures={messageGestures}
+                isTyping={isTyping}
+                quickReplies={currentThread.messages.length === 0 ? [
+                  'Tell me about my matches',
+                  'How can I improve my profile?',
+                  'What makes a good match?'
+                ] : []}
+              />
+            ) : (
+              <ThreadList
+                threads={convertToThreadListFormat()}
+                onThreadSelect={handleThreadSelect}
+                onNewThread={handleNewThread}
+                onArchiveThread={handleArchiveThread}
+                onDeleteThread={handleDeleteThread}
+                isLoading={isLoadingSessions}
+              />
+            )}
+          </PullToRefresh>
+        </div>
       </ScreenContainer>
 
       {/* Floating Action Button for New Thread (only on thread list) */}
@@ -336,6 +428,21 @@ export default function AgentChatScreen() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Bottom Navigation - only show when on thread list */}
+      {!currentThread && (
+        <BottomNav
+          activeTab={activeTab}
+          onTabChange={(tabId) => {
+            setActiveTab(tabId);
+            if (tabId === 'discover') navigate('/discover');
+            else if (tabId === 'myagent') navigate('/myagent');
+            else if (tabId === 'dna') navigate('/dna');
+            else if (tabId === 'chaichat') navigate('/chaichat');
+            else if (tabId === 'messages') navigate('/messages');
+          }}
+        />
+      )}
     </div>
   );
 }

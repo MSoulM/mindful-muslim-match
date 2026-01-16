@@ -143,7 +143,8 @@ export const ScreenContainer = ({
         style={{ y }}
         className={cn(
           padding && 'px-4 sm:px-5',
-          hasBottomNav && padding && 'pb-5'
+          hasBottomNav && padding && 'pb-5',
+          !padding && 'h-full'
         )}
       >
         {children}
