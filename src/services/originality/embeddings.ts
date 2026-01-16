@@ -1,4 +1,4 @@
-import { createSupabaseClient } from '@/integrations/supabase/client';
+import { createSupabaseClient } from '@/lib/supabase';
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const MAX_INPUT_LENGTH = 8000;

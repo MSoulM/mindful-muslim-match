@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/CustomButton';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { MMAgentSettings } from '@/components/settings/MMAgentSettings';
+import { CityClusterSelector } from '@/components/settings/CityClusterSelector';
 import { UserPersonalityType } from '@/types/onboarding';
 
 export default function SettingsScreen() {
@@ -46,6 +47,12 @@ export default function SettingsScreen() {
             personalityType={userPersonality}
             daysAgo={daysAgo}
           />
+        </div>
+
+        {/* City Cluster Section */}
+        <div className="px-5 py-4">
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3">Location & Culture</h2>
+          <CityClusterSelector />
         </div>
 
         {/* Account Section */}

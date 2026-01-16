@@ -1,4 +1,4 @@
-import { createSupabaseClient } from '@/integrations/supabase/client';
+import { createSupabaseClient } from '@/lib/supabase';
 
 const MIN_CONTENT_REQUIRED = 3;
 const MIN_POPULATION_REQUIRED = 10;

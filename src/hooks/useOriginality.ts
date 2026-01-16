@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { createSupabaseClient } from '@/integrations/supabase/client';
+import { createSupabaseClient } from '@/lib/supabase';
 
 export interface OriginalityData {
   score: number;

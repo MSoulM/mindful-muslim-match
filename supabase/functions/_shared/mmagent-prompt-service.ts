@@ -1,4 +1,5 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getUserCityKey, getCityPromptOverlay, type CityKey } from './city-cluster-service.ts';
 
 type PersonalityKey = 'wise_aunty' | 'modern_scholar' | 'spiritual_guide' | 'cultural_bridge';
 type CulturalRegion = 'south_asian' | 'middle_eastern' | 'southeast_asian' | 'western_convert' | 'african';
@@ -238,6 +239,29 @@ export async function getSystemPromptFromDB(
     }
   }
   
+  const cityKey = await getUserCityKey(supabase, clerkUserId);
+  if (cityKey) {
+    const cityOverlay = await getCityPromptOverlay(supabase, cityKey, personalityKey);
+    if (cityOverlay) {
+      systemPrompt = `${systemPrompt}\n\n${cityOverlay.prompt_overlay}`;
+      
+      if (cityOverlay.tone_adjustments) {
+        const adjustedTone = {
+          warmth: Math.max(1, Math.min(10, toneParams.warmth + (cityOverlay.tone_adjustments.warmth_modifier || 0))),
+          formality: Math.max(1, Math.min(10, toneParams.formality + (cityOverlay.tone_adjustments.formality_modifier || 0))),
+          energy: toneParams.energy,
+          empathy: toneParams.empathy,
+          religiosity: toneParams.religiosity
+        };
+        
+        const cityToneInstructions = applyToneParameters('', adjustedTone);
+        if (cityToneInstructions) {
+          systemPrompt = `${systemPrompt}\n${cityToneInstructions}`;
+        }
+      }
+    }
+  }
+  
   systemPrompt = substituteTemplateVariables(systemPrompt, userData || {});
   
   const basePrompt = `You are MMAgent, an AI assistant for MuslimSoulmate.ai. Your role is to help users with:
@@ -271,11 +295,18 @@ If asked about these topics, respond warmly but redirect to your core purpose.`;
   return fullPrompt;
 }
 
-export function invalidatePromptCache(personalityKey?: PersonalityKey): void {
-  if (personalityKey) {
+export function invalidatePromptCache(personalityKey?: PersonalityKey, cityKey?: CityKey): void {
+  if (personalityKey || cityKey) {
     const keysToDelete: string[] = [];
     for (const key of promptCache.keys()) {
-      if (key.startsWith(`prompt:${personalityKey}:`)) {
+      let shouldDelete = false;
+      if (personalityKey && key.includes(`prompt:${personalityKey}:`)) {
+        shouldDelete = true;
+      }
+      if (cityKey && key.includes(`:${cityKey}:`)) {
+        shouldDelete = true;
+      }
+      if (shouldDelete) {
         keysToDelete.push(key);
       }
     }
