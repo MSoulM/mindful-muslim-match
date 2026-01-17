@@ -226,73 +226,323 @@ export async function processDNARecalculation(
 ): Promise<void> {
   const userId = job.payload.userId || job.user_id;
 
+  try {
+    const result = await calculateDNAScore(userId, supabase);
+    
+    const { data: existing } = await supabase
+      .from('mysoul_dna_scores')
+      .select('rarity_tier')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const previousTier = existing?.rarity_tier;
+    const tierChanged = previousTier && previousTier !== result.rarityTier;
+
+    await supabase
+      .from('mysoul_dna_scores')
+      .upsert({
+        user_id: userId,
+        score: result.finalScore,
+        rarity_tier: result.rarityTier,
+        percentile_rank: result.percentileRank,
+        trait_rarity_raw_score: result.componentScores.traitRarity,
+        profile_depth_raw_score: result.componentScores.profileDepth,
+        behavioral_raw_score: result.componentScores.behavioral,
+        content_raw_score: result.componentScores.contentOriginality,
+        cultural_raw_score: result.componentScores.culturalVariance,
+        component_breakdown: result.componentBreakdown,
+        rare_traits: result.rareTraits,
+        unique_behaviors: result.uniqueBehaviors,
+        approved_insights_count: result.approvedInsightsCount,
+        days_active: result.daysActive,
+        algorithm_version: result.algorithmVersion,
+        previous_tier: tierChanged ? previousTier : null,
+        tier_changed_at: tierChanged ? new Date().toISOString() : null,
+        last_calculated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+  } catch (error) {
+    console.error(`[DNA Recalc] Failed for user ${userId}:`, error);
+    throw error;
+  }
+}
+
+async function calculateDNAScore(userId: string, supabase: any): Promise<any> {
+  const MIN_APPROVED_INSIGHTS = 5;
+  const MIN_DAYS_FOR_BEHAVIORAL = 7;
+  const COMPONENT_WEIGHTS = {
+    traitRarity: 0.35,
+    profileDepth: 0.25,
+    behavioral: 0.20,
+    contentOriginality: 0.15,
+    culturalVariance: 0.05
+  };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('clerk_user_id', userId)
+    .maybeSingle();
+
+  if (!profile) {
+    throw new Error('Profile not found');
+  }
+
   const { data: approvedInsights } = await supabase
     .from('user_insights')
     .select('*')
     .eq('clerk_user_id', userId)
     .eq('status', 'approved');
 
-  const insightCount = approvedInsights?.length || 0;
+  const approvedInsightsCount = approvedInsights?.length || 0;
+  const daysActive = calculateDaysActive(profile.created_at);
+
+  if (approvedInsightsCount < MIN_APPROVED_INSIGHTS) {
+    return {
+      finalScore: 0,
+      rarityTier: 'COMMON',
+      percentileRank: 0,
+      componentScores: {
+        traitRarity: 0,
+        profileDepth: 0,
+        behavioral: 0,
+        contentOriginality: 0,
+        culturalVariance: 0
+      },
+      componentBreakdown: {},
+      rareTraits: [],
+      uniqueBehaviors: [],
+      approvedInsightsCount,
+      daysActive,
+      algorithmVersion: 'v1.0'
+    };
+  }
 
   const { data: posts } = await supabase
     .from('posts')
-    .select('depth_level, categories')
+    .select('depth_level, created_at, categories')
     .eq('clerk_user_id', userId)
-    .eq('is_visible', true);
+    .order('created_at', { ascending: true });
 
   const postCount = posts?.length || 0;
-  const avgDepth = posts?.length > 0 
-    ? posts.reduce((sum: number, p: any) => sum + (p.depth_level || 1), 0) / posts.length 
+  const avgDepth = postCount > 0 
+    ? posts.reduce((sum: number, p: any) => sum + (p.depth_level || 1), 0) / postCount 
     : 1;
 
-  const traitUniquenessScore = Math.min(100, insightCount * 5);
-  const profileCompletenessScore = Math.min(100, postCount * 3 + insightCount * 2);
-  const behaviorScore = Math.min(100, avgDepth * 25);
-  const culturalScore = 50;
+  const traitRarityScore = Math.min(100, Math.round((avgDepth / 5) * 70 + (postCount / 20) * 30));
+  
+  const profileDepthScore = calculateProfileDepthScore(profile);
+  
+  const behavioralScore = daysActive >= MIN_DAYS_FOR_BEHAVIORAL && postCount > 0
+    ? calculateBehavioralScore(posts, daysActive)
+    : 0;
 
-  const { data: existingDNA } = await supabase
+  const { data: dnaScore } = await supabase
     .from('mysoul_dna_scores')
     .select('content_originality_score')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
-  const contentOriginalityScore = existingDNA?.content_originality_score;
-  const useOriginalityScore = contentOriginalityScore !== null && contentOriginalityScore !== undefined;
-  
-  const contentScoreComponent = useOriginalityScore 
-    ? contentOriginalityScore 
-    : Math.min(100, postCount * 2);
+  const contentOriginalityScore = dnaScore?.content_originality_score ?? 50;
 
-  const totalScore = Math.round(
-    traitUniquenessScore * 0.35 +
-    profileCompletenessScore * 0.25 +
-    behaviorScore * 0.20 +
-    contentScoreComponent * 0.15 +
-    culturalScore * 0.05
+  const culturalVarianceScore = await calculateCulturalVarianceScore(userId, profile, supabase);
+
+  const componentScores = {
+    traitRarity: traitRarityScore,
+    profileDepth: profileDepthScore,
+    behavioral: behavioralScore,
+    contentOriginality: contentOriginalityScore,
+    culturalVariance: culturalVarianceScore
+  };
+
+  const finalScore = Math.round(
+    componentScores.traitRarity * COMPONENT_WEIGHTS.traitRarity +
+    componentScores.profileDepth * COMPONENT_WEIGHTS.profileDepth +
+    componentScores.behavioral * COMPONENT_WEIGHTS.behavioral +
+    componentScores.contentOriginality * COMPONENT_WEIGHTS.contentOriginality +
+    componentScores.culturalVariance * COMPONENT_WEIGHTS.culturalVariance
   );
 
-  let rarityTier = 'Common';
-  if (totalScore >= 95) rarityTier = 'Legendary';
-  else if (totalScore >= 85) rarityTier = 'Ultra Rare';
-  else if (totalScore >= 70) rarityTier = 'Rare';
-  else if (totalScore >= 50) rarityTier = 'Uncommon';
+  const rarityTier = getRarityTier(finalScore);
+  const percentileRank = await calculatePercentileRank(finalScore, supabase);
 
-  await supabase
-    .from('mysoul_dna_scores')
-    .upsert({
-      user_id: userId,
-      score: totalScore,
-      rarity_tier: rarityTier,
-      trait_uniqueness_score: traitUniquenessScore,
-      profile_completeness_score: profileCompletenessScore,
-      behavior_score: behaviorScore,
-      content_score: Math.min(15, Math.round(contentScoreComponent * 0.15)),
-      cultural_score: culturalScore,
-      approved_insights_count: insightCount,
-      last_calculated_at: new Date().toISOString()
-    }, {
-      onConflict: 'user_id'
-    });
+  const componentBreakdown = {
+    traitRarity: {
+      score: componentScores.traitRarity,
+      weight: COMPONENT_WEIGHTS.traitRarity,
+      weightedScore: componentScores.traitRarity * COMPONENT_WEIGHTS.traitRarity,
+      explanation: `Based on ${postCount} posts with avg depth ${avgDepth.toFixed(1)}`
+    },
+    profileDepth: {
+      score: componentScores.profileDepth,
+      weight: COMPONENT_WEIGHTS.profileDepth,
+      weightedScore: componentScores.profileDepth * COMPONENT_WEIGHTS.profileDepth,
+      explanation: 'Profile completeness across 5 dimensions'
+    },
+    behavioral: {
+      score: componentScores.behavioral,
+      weight: COMPONENT_WEIGHTS.behavioral,
+      weightedScore: componentScores.behavioral * COMPONENT_WEIGHTS.behavioral,
+      explanation: daysActive < MIN_DAYS_FOR_BEHAVIORAL 
+        ? `Need ${MIN_DAYS_FOR_BEHAVIORAL} days activity (have ${daysActive})`
+        : 'Based on posting patterns and engagement'
+    },
+    contentOriginality: {
+      score: componentScores.contentOriginality,
+      weight: COMPONENT_WEIGHTS.contentOriginality,
+      weightedScore: componentScores.contentOriginality * COMPONENT_WEIGHTS.contentOriginality,
+      explanation: 'Content uniqueness vs population'
+    },
+    culturalVariance: {
+      score: componentScores.culturalVariance,
+      weight: COMPONENT_WEIGHTS.culturalVariance,
+      weightedScore: componentScores.culturalVariance * COMPONENT_WEIGHTS.culturalVariance,
+      explanation: 'Uniqueness within city cluster'
+    }
+  };
+
+  return {
+    finalScore,
+    rarityTier,
+    percentileRank,
+    componentScores,
+    componentBreakdown,
+    rareTraits: [],
+    uniqueBehaviors: avgDepth >= 4 ? [{ metric: 'depth', displayName: 'Deep Content Creator', value: avgDepth }] : [],
+    approvedInsightsCount,
+    daysActive,
+    algorithmVersion: 'v1.0'
+  };
+}
+
+function calculateDaysActive(createdAt?: string): number {
+  if (!createdAt) return 0;
+  const created = new Date(createdAt);
+  const now = new Date();
+  return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function calculateProfileDepthScore(profile: any): number {
+  const dimensions = {
+    religious: scoreReligious(profile),
+    career: scoreCareer(profile),
+    personality: scorePersonality(profile),
+    lifestyle: scoreLifestyle(profile),
+    family: scoreFamily(profile)
+  };
+
+  return Math.round((dimensions.religious + dimensions.career + dimensions.personality + dimensions.lifestyle + dimensions.family) / 5);
+}
+
+function scoreReligious(profile: any): number {
+  const fields = [profile.religion?.sect, profile.religion?.practiceLevel, profile.religion?.halalPreference];
+  return (fields.filter(f => f).length / fields.length) * 100;
+}
+
+function scoreCareer(profile: any): number {
+  const fields = [profile.education_level, profile.occupation, profile.industry, profile.annual_income_range];
+  return (fields.filter(f => f).length / fields.length) * 100;
+}
+
+function scorePersonality(profile: any): number {
+  if (profile.bio && profile.bio.length > 50) return 100;
+  if (profile.bio && profile.bio.length > 20) return 50;
+  return 0;
+}
+
+function scoreLifestyle(profile: any): number {
+  const fields = [
+    profile.smoking,
+    profile.exercise_frequency,
+    profile.dietary_preferences?.length ? 'yes' : null,
+    profile.hobbies?.length ? 'yes' : null,
+    profile.height,
+    profile.build
+  ];
+  return (fields.filter(f => f).length / fields.length) * 100;
+}
+
+function scoreFamily(profile: any): number {
+  const fields = [
+    profile.marital_status,
+    typeof profile.has_children === 'boolean' ? 'yes' : null,
+    typeof profile.wants_children === 'boolean' ? 'yes' : null,
+    profile.family_structure,
+    profile.family_values,
+    profile.cultural_traditions,
+    profile.hometown
+  ];
+  return (fields.filter(f => f).length / fields.length) * 100;
+}
+
+function calculateBehavioralScore(posts: any[], daysActive: number): number {
+  const postCount = posts.length;
+  const firstPost = new Date(posts[0].created_at);
+  const lastPost = new Date(posts[posts.length - 1].created_at);
+  const postingSpanDays = Math.max(1, Math.floor((lastPost.getTime() - firstPost.getTime()) / (1000 * 60 * 60 * 24)));
+  const postFrequency = postCount / Math.max(1, postingSpanDays);
+
+  const consistencyScore = Math.min(100, (postingSpanDays / 30) * 50);
+  const avgDepth = posts.reduce((sum: number, p: any) => sum + (p.depth_level || 1), 0) / postCount;
+  const depthScore = Math.min(100, (avgDepth / 5) * 100);
+  const frequencyScore = Math.min(100, postFrequency * 20);
+
+  return Math.round((consistencyScore + depthScore + frequencyScore) / 3);
+}
+
+async function calculateCulturalVarianceScore(userId: string, profile: any, supabase: any): Promise<number> {
+  if (!profile.location) return 50;
+
+  const { data: cityProfiles } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('location', profile.location)
+    .limit(100);
+
+  if (!cityProfiles || cityProfiles.length < 5) return 50;
+
+  const myTraits = {
+    religion: profile.religion?.sect,
+    occupation: profile.occupation,
+    maritalStatus: profile.marital_status,
+    wantsChildren: profile.wants_children
+  };
+
+  let uniquenessCount = 0;
+  let totalComparisons = 0;
+
+  for (const other of cityProfiles) {
+    if (other.clerk_user_id === userId) continue;
+    
+    if (myTraits.religion !== other.religion?.sect) uniquenessCount++;
+    if (myTraits.occupation !== other.occupation) uniquenessCount++;
+    if (myTraits.maritalStatus !== other.marital_status) uniquenessCount++;
+    if (myTraits.wantsChildren !== other.wants_children) uniquenessCount++;
+    
+    totalComparisons += 4;
+  }
+
+  const uniquenessRatio = totalComparisons > 0 ? uniquenessCount / totalComparisons : 0.5;
+  return Math.round(uniquenessRatio * 100);
+}
+
+function getRarityTier(score: number): string {
+  if (score >= 96) return 'LEGENDARY';
+  if (score >= 81) return 'EPIC';
+  if (score >= 61) return 'RARE';
+  if (score >= 41) return 'UNCOMMON';
+  return 'COMMON';
+}
+
+async function calculatePercentileRank(score: number, supabase: any): Promise<number> {
+  try {
+    const { data } = await supabase.rpc('calculate_dna_percentile_rank', { user_score: score });
+    return data || 50;
+  } catch (error) {
+    console.error('[DNA Percentile] Calculation failed:', error);
+    return 50;
+  }
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {

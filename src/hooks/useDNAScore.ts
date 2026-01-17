@@ -8,26 +8,27 @@ import { useAuth } from '@clerk/clerk-react';
 import { createSupabaseClient } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-export type RarityTier = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
+export type RarityTier = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
 
 export interface DNAScore {
   score: number;
   rarityTier: RarityTier;
-  // Five DNA Strands with their weights:
-  traitRarityScore: number;      // 35% weight - Trait Rarity
-  profileDepthScore: number;     // 25% weight - Profile Depth
-  behavioralScore: number;       // 20% weight - Behavioral
-  contentScore: number;           // 15% weight - Content Originality
-  culturalScore: number;          // 5% weight - Cultural Variance
+  percentileRank?: number;
+  traitRarityScore: number;
+  profileDepthScore: number;
+  behavioralScore: number;
+  contentScore: number;
+  culturalScore: number;
   lastCalculatedAt: Date;
-  // Business rule tracking
   approvedInsightsCount?: number;
   daysActive?: number;
   previousTier?: RarityTier;
   tierChangedAt?: Date;
+  componentBreakdown?: any;
+  rareTraits?: any[];
+  uniqueBehaviors?: any[];
 }
 
-// Rarity tier configuration
 export const RARITY_CONFIG: Record<RarityTier, {
   minScore: number;
   maxScore: number;
@@ -36,7 +37,7 @@ export const RARITY_CONFIG: Record<RarityTier, {
   glowColor: string;
   description: string;
 }> = {
-  Common: {
+  COMMON: {
     minScore: 0,
     maxScore: 40,
     color: '#9CA3AF',
@@ -44,7 +45,7 @@ export const RARITY_CONFIG: Record<RarityTier, {
     glowColor: 'rgba(156, 163, 175, 0.3)',
     description: 'Just getting started'
   },
-  Uncommon: {
+  UNCOMMON: {
     minScore: 41,
     maxScore: 60,
     color: '#22C55E',
@@ -52,7 +53,7 @@ export const RARITY_CONFIG: Record<RarityTier, {
     glowColor: 'rgba(34, 197, 94, 0.3)',
     description: 'Building your identity'
   },
-  Rare: {
+  RARE: {
     minScore: 61,
     maxScore: 80,
     color: '#3B82F6',
@@ -60,7 +61,7 @@ export const RARITY_CONFIG: Record<RarityTier, {
     glowColor: 'rgba(59, 130, 246, 0.4)',
     description: 'Standing out from the crowd'
   },
-  Epic: {
+  EPIC: {
     minScore: 81,
     maxScore: 95,
     color: '#A855F7',
@@ -68,7 +69,7 @@ export const RARITY_CONFIG: Record<RarityTier, {
     glowColor: 'rgba(168, 85, 247, 0.4)',
     description: 'Exceptionally unique'
   },
-  Legendary: {
+  LEGENDARY: {
     minScore: 96,
     maxScore: 100,
     color: '#F59E0B',
@@ -78,13 +79,12 @@ export const RARITY_CONFIG: Record<RarityTier, {
   }
 };
 
-// Get rarity tier from score
 export const getRarityTier = (score: number): RarityTier => {
-  if (score >= 96) return 'Legendary';
-  if (score >= 81) return 'Epic';
-  if (score >= 61) return 'Rare';
-  if (score >= 41) return 'Uncommon';
-  return 'Common';
+  if (score >= 96) return 'LEGENDARY';
+  if (score >= 81) return 'EPIC';
+  if (score >= 61) return 'RARE';
+  if (score >= 41) return 'UNCOMMON';
+  return 'COMMON';
 };
 
 // Get rarity config for a score
@@ -126,16 +126,20 @@ export function useDNAScore() {
         setDnaScore({
           score: data.score,
           rarityTier: data.rarity_tier as RarityTier,
-          traitRarityScore: data.trait_uniqueness_score || 0,
-          profileDepthScore: data.profile_completeness_score || 0,
-          behavioralScore: data.behavior_score || 0,
-          contentScore: data.content_score || 0,
-          culturalScore: data.cultural_score || 0,
+          percentileRank: data.percentile_rank || 0,
+          traitRarityScore: data.trait_rarity_raw_score || data.trait_uniqueness_score || 0,
+          profileDepthScore: data.profile_depth_raw_score || data.profile_completeness_score || 0,
+          behavioralScore: data.behavioral_raw_score || data.behavior_score || 0,
+          contentScore: data.content_raw_score || data.content_score || 0,
+          culturalScore: data.cultural_raw_score || data.cultural_score || 0,
           lastCalculatedAt: new Date(data.last_calculated_at),
           approvedInsightsCount: data.approved_insights_count || 0,
           daysActive: data.days_active || 0,
           previousTier: data.previous_tier as RarityTier | undefined,
-          tierChangedAt: data.tier_changed_at ? new Date(data.tier_changed_at) : undefined
+          tierChangedAt: data.tier_changed_at ? new Date(data.tier_changed_at) : undefined,
+          componentBreakdown: data.component_breakdown,
+          rareTraits: data.rare_traits,
+          uniqueBehaviors: data.unique_behaviors
         });
       } else {
         // No score exists yet, calculate and create one
