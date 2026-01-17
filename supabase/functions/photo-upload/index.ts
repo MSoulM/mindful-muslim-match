@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { moderateImage } from "../_shared/moderation-service.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,11 @@ interface ProfilePhoto {
   approved: boolean;
   moderationStatus: string;
   rejectionReason?: string;
+  moderationConfidence?: number;
+  moderationFlags?: string[];
+  moderatedAt?: string;
+  mimeType?: string;
+  fileSizeBytes?: number;
   uploadedAt: string;
 }
 
@@ -200,9 +206,9 @@ async function handleUpload(req: Request, userId: string) {
     .from('profile-photos')
     .getPublicUrl(storagePath);
 
-  // Simple AI moderation simulation (in production, use actual AI service)
-  const moderationStatus = 'approved';
-  const approved = true;
+  // AI moderation
+  const moderationResult = await moderateImage(publicUrl);
+  const approved = moderationResult.status === 'approved';
 
   // Create new photo object
   const newPhoto: ProfilePhoto = {
@@ -211,7 +217,13 @@ async function handleUpload(req: Request, userId: string) {
     storagePath,
     isPrimary: isPrimary || currentPhotos.length === 0,
     approved,
-    moderationStatus,
+    moderationStatus: moderationResult.status,
+    rejectionReason: moderationResult.reason,
+    moderationConfidence: moderationResult.confidence,
+    moderationFlags: moderationResult.flags,
+    moderatedAt: new Date().toISOString(),
+    mimeType: file.type,
+    fileSizeBytes: file.size,
     uploadedAt: new Date().toISOString()
   };
 
@@ -240,7 +252,10 @@ async function handleUpload(req: Request, userId: string) {
       url: newPhoto.url,
       isPrimary: newPhoto.isPrimary,
       approved: newPhoto.approved,
-      moderationStatus: newPhoto.moderationStatus
+      moderationStatus: newPhoto.moderationStatus,
+      rejectionReason: newPhoto.rejectionReason,
+      moderationConfidence: newPhoto.moderationConfidence,
+      moderationFlags: newPhoto.moderationFlags
     }
   }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -383,6 +398,8 @@ async function handleList(userId: string) {
       approved: p.approved,
       moderationStatus: p.moderationStatus,
       rejectionReason: p.rejectionReason,
+      moderationConfidence: p.moderationConfidence,
+      moderationFlags: p.moderationFlags,
       displayOrder: index + 1
     }))
   }), {

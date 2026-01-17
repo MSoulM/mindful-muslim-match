@@ -199,17 +199,14 @@ async function handleUpload(req: Request, userId: string) {
 async function processVoiceAsync(voiceId: string, storagePath: string, audioData: ArrayBuffer, fileType: string) {
   try {
     let transcription = '';
+    let transcriptionConfidence = 0;
     let personalityMarkers = {};
+    const language = 'en-US';
 
-    // Try Azure Speech-to-Text if available
     if (AZURE_SPEECH_KEY) {
       try {
-        // Convert to base64 for Azure API
-        const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioData)));
-        
-        // Call Azure Speech-to-Text API
         const response = await fetch(
-          `https://${AZURE_SPEECH_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US`,
+          `https://${AZURE_SPEECH_REGION}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${language}`,
           {
             method: 'POST',
             headers: {
@@ -222,9 +219,12 @@ async function processVoiceAsync(voiceId: string, storagePath: string, audioData
 
         if (response.ok) {
           const result = await response.json();
-          transcription = result.DisplayText || result.RecognitionStatus === 'Success' ? result.DisplayText : '';
           
-          // Extract personality markers from transcription
+          if (result.RecognitionStatus === 'Success') {
+            transcription = result.DisplayText || '';
+            transcriptionConfidence = result.NBest?.[0]?.Confidence || 0.9;
+          }
+          
           personalityMarkers = analyzePersonality(transcription, result);
         }
       } catch (azureError) {
@@ -232,22 +232,27 @@ async function processVoiceAsync(voiceId: string, storagePath: string, audioData
       }
     }
 
-    // Update the voice record with results
     await supabase
       .from('voice_introductions')
       .update({
         transcription: transcription || null,
+        transcription_confidence: transcriptionConfidence > 0 ? transcriptionConfidence : null,
         personality_markers: Object.keys(personalityMarkers).length > 0 ? personalityMarkers : null,
-        processing_status: 'completed'
+        language: language,
+        processing_status: 'completed',
+        processed_at: new Date().toISOString()
       })
       .eq('id', voiceId);
 
-    console.log(`Voice processing completed for ${voiceId}`);
+    console.log(`Voice processing completed for ${voiceId} (confidence: ${transcriptionConfidence})`);
   } catch (error) {
     console.error('Voice processing error:', error);
     await supabase
       .from('voice_introductions')
-      .update({ processing_status: 'failed' })
+      .update({ 
+        processing_status: 'failed',
+        processed_at: new Date().toISOString()
+      })
       .eq('id', voiceId);
   }
 }
@@ -272,26 +277,35 @@ function analyzePersonality(transcription: string, azureResult: any): Record<str
   const wordCount = transcription.split(/\s+/).length;
   const sentenceCount = transcription.split(/[.!?]+/).filter(Boolean).length;
   
-  // Calculate basic markers
   const avgWordsPerSentence = wordCount / Math.max(sentenceCount, 1);
   
-  // Determine pace (words per second estimated from typical speech rate)
   let pace: 'slow' | 'moderate' | 'fast' = 'moderate';
   if (avgWordsPerSentence < 10) pace = 'slow';
   else if (avgWordsPerSentence > 20) pace = 'fast';
 
-  // Analyze tone based on punctuation and word choice
   const exclamationCount = (transcription.match(/!/g) || []).length;
   const questionCount = (transcription.match(/\?/g) || []).length;
   
-  let energy: 'low' | 'moderate' | 'high' = 'moderate';
-  if (exclamationCount > 2) energy = 'high';
-  else if (exclamationCount === 0 && questionCount === 0) energy = 'low';
+  const positiveWords = ['happy', 'excited', 'great', 'wonderful', 'love', 'amazing'];
+  const formalWords = ['indeed', 'furthermore', 'therefore', 'subsequently'];
+  const casualWords = ['yeah', 'cool', 'awesome', 'nice'];
+  
+  const lowerText = transcription.toLowerCase();
+  const hasPositive = positiveWords.some(w => lowerText.includes(w));
+  const hasFormal = formalWords.some(w => lowerText.includes(w));
+  const hasCasual = casualWords.some(w => lowerText.includes(w));
+  
+  let tone: 'warm' | 'neutral' | 'formal' = 'neutral';
+  if (hasPositive || hasCasual) tone = 'warm';
+  else if (hasFormal) tone = 'formal';
+  
+  let energy: 'calm' | 'moderate' | 'energetic' = 'moderate';
+  if (exclamationCount > 2 || hasPositive) energy = 'energetic';
+  else if (exclamationCount === 0 && questionCount === 0) energy = 'calm';
 
-  // Simple confidence estimation
   const fillerWords = ['um', 'uh', 'like', 'you know', 'basically'];
   const fillerCount = fillerWords.reduce((count, word) => 
-    count + (transcription.toLowerCase().match(new RegExp(`\\b${word}\\b`, 'g')) || []).length, 0
+    count + (lowerText.match(new RegExp(`\\b${word}\\b`, 'g')) || []).length, 0
   );
   
   let confidence: 'low' | 'moderate' | 'high' = 'high';
@@ -300,6 +314,7 @@ function analyzePersonality(transcription: string, azureResult: any): Record<str
 
   return {
     pace,
+    tone,
     energy,
     confidence,
     wordCount,
