@@ -54,6 +54,9 @@ enable_confirmations = false
 [functions.agent-chat]
 verify_jwt = false
 
+[functions.clerk-webhook]
+verify_jwt = false
+
 [functions.realtime-chat]
 verify_jwt = false
 

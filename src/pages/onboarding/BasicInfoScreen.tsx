@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { SafeArea } from '@/components/utils/SafeArea';
@@ -8,13 +8,14 @@ import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
 import { ONBOARDING_STEPS, BASIC_INFO_TEXT } from '@/config/onboardingConstants';
+import { validateBasicInfo } from '@/utils/profileCompletion';
 import type { BasicInfo, BasicInfoScreenProps } from '@/types/onboarding';
 
 const PROGRESS_PERCENTAGE = (ONBOARDING_STEPS.BASIC_INFO / ONBOARDING_STEPS.TOTAL) * 100;
 
 export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
   const navigate = useNavigate();
-  const { profile, isLoading: profileLoading, updateProfile, createProfile } = useProfile();
+  const { profile, isLoading: profileLoading, updateProfile, createProfile, refetch } = useProfile();
   const [formData, setFormData] = useState<BasicInfo>({
     firstName: '',
     lastName: '',
@@ -93,49 +94,24 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
     }
   }, [profile, profileLoading, hasAutoFilled]);
 
-  const calculateAge = (birthDate: Date): number => {
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
   const validateForm = (): boolean => {
+    // Use the centralized validation function
+    const validationErrors = validateBasicInfo({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      birthdate: formData.birthDate,
+      gender: formData.gender,
+      location: formData.location,
+    });
+    
+    // Map validation errors to form errors
     const newErrors = {
-      firstName: '',
-      lastName: '',
-      birthDate: '',
-      gender: '',
-      location: ''
+      firstName: validationErrors.firstName || '',
+      lastName: validationErrors.lastName || '',
+      birthDate: validationErrors.birthDate || '',
+      gender: validationErrors.gender || '',
+      location: validationErrors.location || '',
     };
-
-    if (!formData.firstName || formData.firstName.length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
-    }
-
-    if (!formData.lastName || formData.lastName.length < 1) {
-      newErrors.lastName = 'Last name is required';
-    }
-
-    if (!formData.birthDate) {
-      newErrors.birthDate = 'Date of birth is required';
-    } else {
-      const age = calculateAge(formData.birthDate);
-      if (age < 18) {
-        newErrors.birthDate = 'You must be at least 18 years old';
-      }
-    }
-
-    if (!formData.gender) {
-      newErrors.gender = 'Please select your gender';
-    }
-
-    if (!formData.location || formData.location.length < 3) {
-      newErrors.location = 'Location is required';
-    }
 
     setErrors(newErrors);
     return Object.values(newErrors).every(error => error === '');
@@ -184,6 +160,9 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
         await createProfile(profileData);
       }
 
+      // Refetch profile to get updated completion percent from DB
+      await refetch();
+
       // Navigate to next step
       if (onNext) {
         onNext(formData);
@@ -213,12 +192,16 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
     }
   };
 
-  const isFormValid = 
-    formData.firstName.length >= 2 &&
-    formData.lastName.length >= 1 &&
-    formData.birthDate !== undefined &&
-    formData.gender !== '' &&
-    formData.location.length >= 3;
+  const isFormValid = useMemo(() => {
+    const validationErrors = validateBasicInfo({
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      birthdate: formData.birthDate,
+      gender: formData.gender,
+      location: formData.location,
+    });
+    return Object.keys(validationErrors).length === 0;
+  }, [formData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
@@ -315,8 +298,10 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
                     setFormData(prev => ({ ...prev, birthDate: date ?? undefined }));
                     setErrors(prev => ({ ...prev, birthDate: '' }));
                   }}
-                  minDate={new Date('1940-01-01')}
-                  maxDate={new Date()}
+                  // Set min date to ensure age >= 18 (65 years ago from today)
+                  minDate={new Date(new Date().setFullYear(new Date().getFullYear() - 65))}
+                  // Set max date to ensure age >= 18 (18 years ago from today)
+                  maxDate={new Date(new Date().setFullYear(new Date().getFullYear() - 18))}
                 />
                 {errors.birthDate && (
                   <p className="text-xs text-destructive">{errors.birthDate}</p>

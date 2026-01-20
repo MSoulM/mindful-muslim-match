@@ -108,6 +108,9 @@ export interface Profile {
   // Match and activity metrics
   matchCount?: number;
   activeDays?: number;
+  
+  // Profile completion percent (0-100)
+  profileCompletionPercent?: number;
 }
 
 export interface ProfileResponse extends Profile {

@@ -3,6 +3,7 @@ import { useUser as useClerkUser, useAuth } from '@clerk/clerk-react';
 import { createSupabaseClient } from '@/lib/supabase';
 import { Profile } from '@/types/profile';
 import { useDNAScore } from '@/hooks/useDNAScore';
+import { calculateProfileCompletionPercent } from '@/utils/profileCompletion';
 
 /**
  * Hook to fetch profile from Supabase using Clerk user ID
@@ -69,7 +70,17 @@ export const useProfile = () => {
         throw new Error('Supabase not available');
       }
 
-      const dbPayload = convertProfileToDB(updates);
+      const currentProfile = queryClient.getQueryData<Profile | null>(['profile', authUserId]) || null;
+      const mergedProfile: Partial<Profile> = { ...(currentProfile || {}), ...updates };
+
+      // Single source of truth: always recompute completion percent from the full profile snapshot
+      const completionPercent = calculateProfileCompletionPercent(mergedProfile);
+      const updatesWithCompletion: Partial<Profile> = {
+        ...updates,
+        profileCompletionPercent: completionPercent,
+      };
+
+      const dbPayload = convertProfileToDB(updatesWithCompletion);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -105,9 +116,14 @@ export const useProfile = () => {
         throw new Error('Supabase not available');
       }
 
+      const completionPercent = calculateProfileCompletionPercent(profileData);
+
       const payload = {
         clerk_user_id: authUserId,
-        ...convertProfileToDB(profileData),
+        ...convertProfileToDB({
+          ...profileData,
+          profileCompletionPercent: completionPercent,
+        }),
         created_at: new Date().toISOString(),
       };
 
@@ -237,6 +253,9 @@ function convertProfileFromDB(dbProfile: any): Profile {
     // Extract match and activity metrics, with defaults
     matchCount: preferences.matchCount ?? dbProfile.match_count ?? 0,
     activeDays: preferences.activeDays ?? dbProfile.active_days ?? 0,
+    
+    // Profile completion percent (from DB column)
+    profileCompletionPercent: dbProfile.profile_completion_percent ?? 0,
   };
 }
 
@@ -282,6 +301,8 @@ function convertProfileToDB(profile: Partial<Profile>): Record<string, any> {
     numberOfSiblings: 'number_of_siblings',
     familyValues: 'family_values',
     culturalTraditions: 'cultural_traditions',
+    // Profile completion
+    profileCompletionPercent: 'profile_completion_percent',
   };
 
   Object.entries(profile).forEach(([key, value]) => {
