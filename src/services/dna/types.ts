@@ -36,13 +36,15 @@ export interface ComponentBreakdown {
     weightedScore: number;
     explanation: string;
     dimensions: ProfileDepthDimensions;
+    missingDimensions?: string[];
   };
   behavioral: {
     score: number;
     weight: number;
     weightedScore: number;
     explanation: string;
-    dimensions?: Record<string, number>;
+    dimensions?: Record<string, number>; // Per-metric z-scores
+    details?: Record<string, { zScore: number; userValue: number; populationMean: number }>;
   };
   contentOriginality: {
     score: number;

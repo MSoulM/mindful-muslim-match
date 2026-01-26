@@ -262,6 +262,8 @@ export default function CreatePostScreen() {
   };
 
   const handlePost = async () => {
+    const token = await getToken();
+    const supabase = createSupabaseClient(token || undefined);
     // Mark that user has attempted to submit
     setAttemptedSubmit(true);
 
@@ -292,8 +294,6 @@ export default function CreatePostScreen() {
     
     try {
       // Upload media files to Supabase storage
-      const token = await getToken();
-      const supabase = createSupabaseClient(token || undefined);
       if (!supabase) {
         throw new Error('Supabase client not configured');
       }

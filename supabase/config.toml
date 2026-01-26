@@ -80,3 +80,18 @@ verify_jwt = false
 
 [functions.send-message]
 verify_jwt = false
+
+[functions.streaks-activity]
+verify_jwt = false
+
+[functions.streaks-status]
+verify_jwt = false
+
+[functions.gamification-progress]
+verify_jwt = false
+
+[functions.insights-approved]
+verify_jwt = false
+
+[functions.insights-pending]
+verify_jwt = false

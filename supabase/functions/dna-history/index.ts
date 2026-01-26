@@ -66,7 +66,7 @@ serve(async (req) => {
     const { data: history, error: historyError } = await supabase
       .from('mysoul_score_history')
       .select('*')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .gte('calculated_at', new Date(Date.now() - months * 30 * 24 * 60 * 60 * 1000).toISOString())
       .order('calculated_at', { ascending: false })
       .limit(limit);

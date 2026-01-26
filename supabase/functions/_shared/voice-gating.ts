@@ -15,7 +15,7 @@ export async function hasCompletedVoiceIntro(
     const { data, error } = await supabase
       .from('voice_introductions')
       .select('processing_status, is_active')
-      .eq('user_id', clerkUserId)
+      .eq('clerk_user_id', clerkUserId)
       .eq('is_active', true)
       .maybeSingle();
 
@@ -43,7 +43,7 @@ export async function checkVoiceGating(
     const { data, error } = await supabase
       .from('voice_introductions')
       .select('processing_status, is_active')
-      .eq('user_id', clerkUserId)
+      .eq('clerk_user_id', clerkUserId)
       .eq('is_active', true)
       .maybeSingle();
 
@@ -118,14 +118,14 @@ export async function getProfileCompletionStatus(
     supabase
       .from('profile_photos')
       .select('id')
-      .eq('user_id', clerkUserId)
+      .eq('clerk_user_id', clerkUserId)
       .eq('moderation_status', 'approved')
       .limit(1)
       .maybeSingle(),
     supabase
       .from('voice_introductions')
       .select('processing_status')
-      .eq('user_id', clerkUserId)
+      .eq('clerk_user_id', clerkUserId)
       .eq('is_active', true)
       .eq('processing_status', 'completed')
       .maybeSingle()

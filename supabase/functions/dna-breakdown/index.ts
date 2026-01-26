@@ -62,7 +62,7 @@ serve(async (req) => {
     const { data: dnaScore, error: dnaError } = await supabase
       .from('mysoul_dna_scores')
       .select('*')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .maybeSingle();
 
     if (dnaError) {

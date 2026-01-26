@@ -7,7 +7,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Dna, Sparkles, Zap, Crown, Star, Gem, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useDNAScore, RARITY_CONFIG, RarityTier } from '@/hooks/useDNAScore';
+import { useDNAScore, RARITY_CONFIG, RarityTier, isDNASeedState } from '@/hooks/useDNAScore';
 import { useOriginality } from '@/hooks/useOriginality';
 import {
   Tooltip,
@@ -18,11 +18,11 @@ import {
 
 // Rarity tier icons
 const RARITY_ICONS: Record<RarityTier, typeof Star> = {
-  Common: Star,
-  Uncommon: Zap,
-  Rare: Gem,
-  Epic: Sparkles,
-  Legendary: Crown
+  COMMON: Star,
+  UNCOMMON: Zap,
+  RARE: Gem,
+  EPIC: Sparkles,
+  LEGENDARY: Crown
 };
 
 interface MySoulDNAProps {
@@ -42,16 +42,92 @@ export const MySoulDNA = memo(({ variant = 'full', className }: MySoulDNAProps) 
     );
   }
 
-  if (!dnaScore || !rarityConfig) {
+  // Check if DNA is not ready (rarity_tier is null or missing)
+  const isNotReady = !dnaScore || !dnaScore.rarityTier || !rarityConfig;
+  
+  if (isNotReady) {
     return (
       <div className={cn('bg-card rounded-2xl p-6 border border-border text-center', className)}>
-        <Dna className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Start sharing to build your DNA</p>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', bounce: 0.4 }}
+        >
+          <Dna className="w-12 h-12 mx-auto mb-3 text-muted-foreground animate-pulse" />
+          <p className="text-lg font-semibold text-foreground mb-2">DNA Seed Planted</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            {dnaScore?.approvedInsightsCount !== undefined && dnaScore.approvedInsightsCount < 5 && (
+              <>You need at least 5 approved insights to calculate your DNA score. You have {dnaScore.approvedInsightsCount}.</>
+            )}
+            {dnaScore?.daysActive !== undefined && dnaScore.daysActive < 7 && (
+              <>You need at least 7 days of activity. You have {dnaScore.daysActive} day{dnaScore.daysActive !== 1 ? 's' : ''}.</>
+            )}
+            {(!dnaScore?.approvedInsightsCount || dnaScore.approvedInsightsCount >= 5) && 
+             (!dnaScore?.daysActive || dnaScore.daysActive >= 7) && (
+              <>Keep engaging to build your DNA profile.</>
+            )}
+            {!dnaScore && (
+              <>Start sharing to build your DNA</>
+            )}
+          </p>
+        </motion.div>
       </div>
     );
   }
 
-  const { tier, color, bgGradient, glowColor, description } = rarityConfig;
+  // Check if DNA is in seed state (score = 0 but tier exists - should not happen, but handle gracefully)
+  const isSeedState = isDNASeedState(dnaScore);
+  
+  if (isSeedState && dnaScore.rarityTier === 'COMMON' && dnaScore.score === 0) {
+    return (
+      <div className={cn('bg-card rounded-2xl p-6 border border-border text-center', className)}>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', bounce: 0.4 }}
+        >
+          <Dna className="w-12 h-12 mx-auto mb-3 text-muted-foreground animate-pulse" />
+          <p className="text-lg font-semibold text-foreground mb-2">DNA Seed Planted</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            {dnaScore.approvedInsightsCount !== undefined && dnaScore.approvedInsightsCount < 5 && (
+              <>You need at least 5 approved insights to calculate your DNA score. You have {dnaScore.approvedInsightsCount}.</>
+            )}
+            {dnaScore.daysActive !== undefined && dnaScore.daysActive < 7 && (
+              <>You need at least 7 days of activity. You have {dnaScore.daysActive} day{dnaScore.daysActive !== 1 ? 's' : ''}.</>
+            )}
+            {(!dnaScore.approvedInsightsCount || dnaScore.approvedInsightsCount >= 5) && 
+             (!dnaScore.daysActive || dnaScore.daysActive >= 7) && (
+              <>Keep engaging to build your DNA profile.</>
+            )}
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Extract tier and verify it's valid
+  const tier = rarityConfig.tier;
+  
+  // Safeguard: If tier is unknown or not in RARITY_ICONS, show "DNA not ready"
+  if (!tier || !RARITY_ICONS[tier]) {
+    return (
+      <div className={cn('bg-card rounded-2xl p-6 border border-border text-center', className)}>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', bounce: 0.4 }}
+        >
+          <Dna className="w-12 h-12 mx-auto mb-3 text-muted-foreground animate-pulse" />
+          <p className="text-lg font-semibold text-foreground mb-2">DNA not ready</p>
+          <p className="text-sm text-muted-foreground">
+            Your DNA score is being calculated. Please check back later.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const { color, bgGradient, glowColor, description } = rarityConfig;
   const RarityIcon = RARITY_ICONS[tier];
 
   if (variant === 'compact') {
@@ -65,10 +141,56 @@ export const MySoulDNA = memo(({ variant = 'full', className }: MySoulDNAProps) 
           className
         )}
         style={{
-          boxShadow: `0 8px 32px ${glowColor}`
+          boxShadow: tier === 'UNCOMMON' || tier === 'RARE' || tier === 'EPIC' || tier === 'LEGENDARY'
+            ? `0 8px 32px ${glowColor}`
+            : `0 4px 16px ${glowColor}`
         }}
       >
-        <div className="flex items-center justify-between text-white">
+        {/* Tier-specific effects for compact variant */}
+        {tier === 'RARE' && (
+          <motion.div
+            className="absolute inset-0 opacity-20"
+            style={{ backgroundColor: glowColor }}
+            animate={{ opacity: [0.1, 0.3, 0.1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        )}
+        {tier === 'EPIC' && (
+          <motion.div
+            className="absolute inset-0 opacity-15"
+            style={{
+              background: `linear-gradient(45deg, transparent 30%, ${glowColor} 50%, transparent 70%)`,
+            }}
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+          />
+        )}
+        {tier === 'LEGENDARY' && (
+          <div className="absolute inset-0 overflow-hidden">
+            {[...Array(5)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 rounded-full"
+                style={{
+                  backgroundColor: color,
+                  left: `${20 + i * 15}%`,
+                  top: '50%',
+                }}
+                animate={{
+                  y: [-20, 20, -20],
+                  opacity: [0, 1, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              />
+            ))}
+          </div>
+        )}
+        
+        <div className="relative z-10 flex items-center justify-between text-white">
           <div className="flex items-center gap-2">
             <Dna className="w-5 h-5" />
             <span className="font-semibold text-sm">MySoul DNA™</span>
@@ -91,13 +213,64 @@ export const MySoulDNA = memo(({ variant = 'full', className }: MySoulDNAProps) 
         className
       )}
     >
-      {/* Background with glow effect */}
+      {/* Background with tier-specific effects */}
       <div 
         className={cn('absolute inset-0 bg-gradient-to-br', bgGradient)}
         style={{
           boxShadow: `inset 0 0 60px ${glowColor}`
         }}
       />
+      
+      {/* Tier-specific visual effects */}
+      {tier === 'UNCOMMON' && (
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${glowColor} 0%, transparent 70%)`,
+            animation: 'pulse 3s ease-in-out infinite'
+          }}
+        />
+      )}
+      {tier === 'RARE' && (
+        <motion.div 
+          className="absolute inset-0 opacity-40"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${glowColor} 0%, transparent 70%)`,
+          }}
+          animate={{
+            opacity: [0.2, 0.5, 0.2],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
+        />
+      )}
+      {tier === 'EPIC' && (
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: `linear-gradient(45deg, transparent 30%, ${glowColor} 50%, transparent 70%)`,
+            }}
+            animate={{
+              x: ['-100%', '200%'],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'linear'
+            }}
+          />
+        </div>
+      )}
+      {tier === 'LEGENDARY' && (
+        <div className="absolute inset-0 overflow-hidden">
+          <ParticleEffect color={color} />
+        </div>
+      )}
       
       {/* DNA Helix Animation */}
       <div className="absolute inset-0 overflow-hidden opacity-20">
@@ -133,10 +306,24 @@ export const MySoulDNA = memo(({ variant = 'full', className }: MySoulDNAProps) 
             transition={{ delay: 0.3, type: 'spring', bounce: 0.4 }}
             className="relative inline-block"
           >
-            {/* Glow ring */}
-            <div 
-              className="absolute inset-0 rounded-full blur-xl animate-pulse"
+            {/* Glow ring - tier-specific animation */}
+            <motion.div 
+              className="absolute inset-0 rounded-full blur-xl"
               style={{ backgroundColor: glowColor }}
+              animate={
+                tier === 'COMMON' 
+                  ? {} // Basic - no animation
+                  : tier === 'UNCOMMON' || tier === 'RARE'
+                  ? { opacity: [0.3, 0.7, 0.3], scale: [1, 1.1, 1] } // Pulse
+                  : tier === 'EPIC'
+                  ? { opacity: [0.4, 0.8, 0.4], scale: [1, 1.15, 1] } // Shimmer pulse
+                  : { opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] } // Legendary strong pulse
+              }
+              transition={{
+                duration: tier === 'LEGENDARY' ? 1.5 : 2,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
             />
             
             {/* Score circle */}
@@ -328,3 +515,57 @@ const DNAHelixAnimation = memo(({ color }: { color: string }) => {
 });
 
 DNAHelixAnimation.displayName = 'DNAHelixAnimation';
+
+// Particle effect for LEGENDARY tier
+const ParticleEffect = memo(({ color }: { color: string }) => {
+  return (
+    <>
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={`particle-${i}`}
+          className="absolute w-1 h-1 rounded-full"
+          style={{
+            backgroundColor: color,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -100, 0],
+            x: [0, (Math.random() - 0.5) * 50, 0],
+            opacity: [0, 1, 0],
+            scale: [0.5, 1.5, 0.5],
+          }}
+          transition={{
+            duration: 2 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+            ease: 'easeInOut'
+          }}
+        />
+      ))}
+      {[...Array(10)].map((_, i) => (
+        <motion.div
+          key={`sparkle-${i}`}
+          className="absolute w-2 h-2 rounded-full"
+          style={{
+            backgroundColor: 'white',
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0, 1.5, 0],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            delay: Math.random() * 3,
+            ease: 'easeInOut'
+          }}
+        />
+      ))}
+    </>
+  );
+});
+
+ParticleEffect.displayName = 'ParticleEffect';

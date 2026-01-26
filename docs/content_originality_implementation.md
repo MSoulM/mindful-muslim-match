@@ -240,7 +240,7 @@ async function calculateOriginality(userId: string) {
     const { data: cache } = await supabase
       .from('content_similarity_cache')
       .select('*')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .single();
     
     if (cache) {
@@ -281,7 +281,7 @@ await supabase
     valid_until: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date().toISOString()
   }, {
-    onConflict: 'user_id'
+    onConflict: 'clerk_user_id'
   });
 ```
 

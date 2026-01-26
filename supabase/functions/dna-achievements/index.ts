@@ -62,7 +62,7 @@ serve(async (req) => {
     const { data: achievements, error: achievementsError } = await supabase
       .from('mysoul_achievements')
       .select('*')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .order('earned_at', { ascending: false });
 
     if (achievementsError) {

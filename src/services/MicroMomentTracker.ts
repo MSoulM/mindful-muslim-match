@@ -220,7 +220,7 @@ class MicroMomentTrackerService {
    */
   private getCurrentUserId(): string {
     // Try to get from localStorage or auth context
-    const userId = localStorage.getItem('user_id') || 'anonymous';
+    const userId = localStorage.getItem('clerk_user_id') || 'anonymous';
     return userId;
   }
 

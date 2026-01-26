@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const STREAK_REWARDS_FEATURE_FLAG = Deno.env.get('STREAK_REWARDS_ENABLED') === 'true' || Deno.env.get('MAP_11') === 'true';
+const STREAK_REWARDS_FEATURE_FLAG = true;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

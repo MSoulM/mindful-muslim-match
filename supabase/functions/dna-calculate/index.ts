@@ -62,7 +62,7 @@ serve(async (req) => {
     const { data: lastCalc } = await supabase
       .from('mysoul_dna_scores')
       .select('last_calculated_at')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .maybeSingle();
 
     if (lastCalc?.last_calculated_at) {

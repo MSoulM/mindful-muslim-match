@@ -9,25 +9,25 @@ Updated all code references from `user_id` to `clerk_user_id` to match the datab
 All Edge Functions updated to use `clerk_user_id`:
 
 - ✅ `supabase/functions/insights-pending/index.ts`
-  - Changed `.eq('user_id', userId)` → `.eq('clerk_user_id', userId)`
+  - Changed `.eq('clerk_user_id', userId)` → `.eq('clerk_user_id', userId)`
 
 - ✅ `supabase/functions/insights-approve/index.ts`
-  - Changed all `.eq('user_id', userId)` → `.eq('clerk_user_id', userId)`
+  - Changed all `.eq('clerk_user_id', userId)` → `.eq('clerk_user_id', userId)`
   - Updated both `user_insights` and `gamification_progress` queries
 
 - ✅ `supabase/functions/insights-reject/index.ts`
-  - Changed all `.eq('user_id', userId)` → `.eq('clerk_user_id', userId)`
+  - Changed all `.eq('clerk_user_id', userId)` → `.eq('clerk_user_id', userId)`
   - Updated both `user_insights` and `gamification_progress` queries
 
 - ✅ `supabase/functions/insights-approved/index.ts`
-  - Changed all `.eq('user_id', userId)` → `.eq('clerk_user_id', userId)`
+  - Changed all `.eq('clerk_user_id', userId)` → `.eq('clerk_user_id', userId)`
 
 - ✅ `supabase/functions/gamification-progress/index.ts`
-  - Changed `.eq('user_id', userId)` → `.eq('clerk_user_id', userId)`
+  - Changed `.eq('clerk_user_id', userId)` → `.eq('clerk_user_id', userId)`
   - Updated default response to use `clerk_user_id`
 
 - ✅ `supabase/functions/gamification-badges/index.ts`
-  - Changed `.eq('user_id', userId)` → `.eq('clerk_user_id', userId)`
+  - Changed `.eq('clerk_user_id', userId)` → `.eq('clerk_user_id', userId)`
 
 ### 2. Database Trigger Function
 - ✅ `supabase/migrations/20251225T000003_create_gamification_trigger.sql`

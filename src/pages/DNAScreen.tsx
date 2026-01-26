@@ -13,6 +13,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useChaiChatPending } from '@/hooks/useChaiChatPending';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { useJourney, STAGE_INFO } from '@/hooks/useJourney';
+import { useDNAScore, isDNASeedState } from '@/hooks/useDNAScore';
 import { triggerHaptic } from '@/utils/haptics';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +73,7 @@ export default function DNAScreen() {
   const { pendingCount } = useChaiChatPending();
   const { unreadCount: unreadMessagesCount } = useUnreadMessages();
   const { journeyStatus, getProgressPercentage } = useJourney();
+  const { dnaScore, loading: dnaScoreLoading } = useDNAScore();
 
   const handleNotificationClick = () => {
     triggerHaptic('light');
@@ -144,9 +146,14 @@ export default function DNAScreen() {
             >
               <DNAStatsCard
                 mainStat={{
-                  value: 95,
+                  value: dnaScoreLoading 
+                    ? 0 // Placeholder, will show loading
+                    : (!dnaScore || !dnaScore.rarityTier || isDNASeedState(dnaScore))
+                      ? 'DNA Seed Planted' 
+                      : (dnaScore?.score ?? 0),
                   label: 'MySoulDNA Confidence Score'
                 }}
+                loading={dnaScoreLoading}
                 gradient="default"
                 className="min-h-[140px] relative"
                 journeyProgress={

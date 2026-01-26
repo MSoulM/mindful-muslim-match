@@ -87,7 +87,7 @@ export class BehavioralAnalyzer {
     const { data } = await this.supabase
       .from('behavioral_tracking')
       .select('*')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .order('tracking_period_end', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -257,7 +257,7 @@ export class BehavioralAnalyzer {
     const { data: latestTracking } = await this.supabase
       .from('behavioral_tracking')
       .select('tracking_id')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .order('tracking_period_end', { ascending: false })
       .limit(1)
       .maybeSingle();

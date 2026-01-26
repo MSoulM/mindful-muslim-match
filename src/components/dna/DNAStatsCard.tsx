@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 interface DNAStatsCardProps {
   title?: string;
   mainStat: {
-    value: number;
+    value: number | string; // Allow string for "not ready" message
     label: string;
   };
   subStats?: Array<{
@@ -14,6 +14,7 @@ interface DNAStatsCardProps {
   }>;
   gradient?: 'default' | 'gold' | 'pink';
   className?: string;
+  loading?: boolean;
   journeyProgress?: {
     stage: 'seed' | 'sprout' | 'growth' | 'rooted' | 'transcendent';
     stageLabel: string;
@@ -44,6 +45,7 @@ export const DNAStatsCard = ({
   subStats,
   gradient = 'default',
   className,
+  loading = false,
   journeyProgress,
 }: DNAStatsCardProps) => {
   const gradients = {
@@ -79,12 +81,29 @@ export const DNAStatsCard = ({
         <div className="flex items-start gap-6">
           {/* Main Stat */}
           <div className={cn("flex-1", journeyProgress && "mb-4")}>
-            <div className="text-5xl font-bold text-white mb-1">
-              {mainStat.value}%
-            </div>
-            <p className="text-md text-white/90 font-medium">
-              {mainStat.label}
-            </p>
+            {loading ? (
+              <>
+                <div className="text-5xl font-bold text-white mb-1 animate-pulse">
+                  <span className="opacity-50">--</span>
+                </div>
+                <p className="text-md text-white/90 font-medium animate-pulse">
+                  <span className="opacity-50">Loading...</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-5xl font-bold text-white mb-1">
+                  {typeof mainStat.value === 'string' ? (
+                    <span className="text-2xl">{mainStat.value}</span>
+                  ) : (
+                    `${mainStat.value}%`
+                  )}
+                </div>
+                <p className="text-md text-white/90 font-medium">
+                  {mainStat.label}
+                </p>
+              </>
+            )}
           </div>
 
           {/* Journey Progress Ring */}

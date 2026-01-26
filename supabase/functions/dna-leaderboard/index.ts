@@ -58,7 +58,7 @@ serve(async (req) => {
       const { data: userScore } = await supabase
         .from('mysoul_dna_scores')
         .select('score')
-        .eq('user_id', userId)
+        .eq('clerk_user_id', userId)
         .maybeSingle();
 
       if (!userScore || !userLocation) {
@@ -82,7 +82,7 @@ serve(async (req) => {
       const { count } = await supabase
         .from('mysoul_dna_scores')
         .select('*', { count: 'exact', head: true })
-        .in('user_id', cityUserIds)
+        .in('clerk_user_id', cityUserIds)
         .gt('score', userScore.score);
 
       const currentUserRank = (count || 0) + 1;
@@ -114,7 +114,7 @@ serve(async (req) => {
 
       const cityUserIds = cityProfiles?.map(p => p.clerk_user_id) || [];
 
-      query = query.in('user_id', cityUserIds);
+      query = query.in('clerk_user_id', cityUserIds);
     }
 
     const { data: scores, error: scoresError } = await query;

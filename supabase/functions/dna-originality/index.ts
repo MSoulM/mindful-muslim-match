@@ -52,7 +52,7 @@ serve(async (req) => {
     const { data: dnaScore, error: dnaError } = await supabase
       .from('mysoul_dna_scores')
       .select('content_originality_score, content_originality_percentile, content_originality_calculated_at')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .single();
 
     if (dnaError && dnaError.code !== 'PGRST116') {

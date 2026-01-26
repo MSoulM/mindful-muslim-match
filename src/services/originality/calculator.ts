@@ -174,7 +174,7 @@ async function getCachedResult(userId: string, token?: string): Promise<Original
   const { data, error } = await supabase
     .from('content_similarity_cache')
     .select('*')
-    .eq('user_id', userId)
+    .eq('clerk_user_id', userId)
     .single();
 
   if (error || !data) {
@@ -211,7 +211,7 @@ async function cacheResult(userId: string, result: OriginalityResult, token?: st
       valid_until: validUntil.toISOString(),
       updated_at: new Date().toISOString()
     }, {
-      onConflict: 'user_id'
+      onConflict: 'clerk_user_id'
     });
 
   if (error) {

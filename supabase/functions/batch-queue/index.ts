@@ -48,7 +48,7 @@ serve(async (req) => {
     const { data: queue, error: queueError } = await supabase
       .from('batch_processing_queue')
       .select('*')
-      .eq('user_id', targetUserId)
+      .eq('clerk_user_id', targetUserId)
       .in('status', ['pending', 'processing', 'retry', 'failed'])
       .order('priority', { ascending: true })
       .order('scheduled_for', { ascending: true });

@@ -103,7 +103,7 @@ Deno.test("Batch Processing Queue - Priority Ordering", async () => {
   const { data: ordered } = await supabase
     .from('batch_processing_queue')
     .select('*')
-    .eq('user_id', testUserId)
+    .eq('clerk_user_id', testUserId)
     .eq('status', 'pending')
     .order('priority', { ascending: true });
 
@@ -225,7 +225,7 @@ Deno.test("Weekly Matches - Insert and Retrieve", async () => {
   const { data: retrieved } = await supabase
     .from('weekly_matches')
     .select('*')
-    .eq('user_id', testUserId)
+    .eq('clerk_user_id', testUserId)
     .eq('week_start_date', weekStart)
     .single();
 

@@ -82,7 +82,7 @@ export function useCityLeaderboard() {
       const { data: dnaScores, error: scoresError } = await supabase
         .from('mysoul_dna_scores')
         .select('user_id, score, rarity_tier')
-        .in('user_id', cityUserIds)
+        .in('clerk_user_id', cityUserIds)
         .order('score', { ascending: false })
         .limit(featureAccess.canViewFullLeaderboard ? 100 : 1); // Gold+ gets top 100, Gold gets only their rank
 
@@ -111,7 +111,7 @@ export function useCityLeaderboard() {
         const { data: userScore } = await supabase
           .from('mysoul_dna_scores')
           .select('score')
-          .eq('user_id', userId)
+          .eq('clerk_user_id', userId)
           .maybeSingle();
 
         if (userScore) {
@@ -119,7 +119,7 @@ export function useCityLeaderboard() {
           const { count } = await supabase
             .from('mysoul_dna_scores')
             .select('*', { count: 'exact', head: true })
-            .in('user_id', cityUserIds)
+            .in('clerk_user_id', cityUserIds)
             .gt('score', userScore.score);
 
           currentUserRank = (count || 0) + 1;

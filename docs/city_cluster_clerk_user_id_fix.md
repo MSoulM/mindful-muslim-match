@@ -42,7 +42,7 @@ WHERE is_current = true;
 - ✅ Changed all method signatures: `userId` → `clerkUserId`
 - ✅ Removed profile UUID lookups (now use `clerk_user_id` directly)
 - ✅ Updated TypeScript interfaces: `user_id` → `clerk_user_id`
-- ✅ Updated queries: `.eq('user_id', ...)` → `.eq('clerk_user_id', ...)`
+- ✅ Updated queries: `.eq('clerk_user_id', ...)` → `.eq('clerk_user_id', ...)`
 
 ### Edge Function Endpoints
 

@@ -36,7 +36,7 @@ Deno.test("Voice Gating - User with processing voice intro is blocked", async ()
   assertEquals(result.hasVoiceIntro, true);
   assertEquals(result.processingStatus, 'processing');
   
-  await supabase.from('voice_introductions').delete().eq('user_id', testUserId);
+  await supabase.from('voice_introductions').delete().eq('clerk_user_id', testUserId);
 });
 
 Deno.test("Voice Gating - User with completed voice intro is allowed", async () => {
@@ -60,7 +60,7 @@ Deno.test("Voice Gating - User with completed voice intro is allowed", async () 
   assertEquals(result.hasVoiceIntro, true);
   assertEquals(result.processingStatus, 'completed');
   
-  await supabase.from('voice_introductions').delete().eq('user_id', testUserId);
+  await supabase.from('voice_introductions').delete().eq('clerk_user_id', testUserId);
 });
 
 Deno.test("hasCompletedVoiceIntro - Returns true only for completed voice", async () => {
@@ -83,7 +83,7 @@ Deno.test("hasCompletedVoiceIntro - Returns true only for completed voice", asyn
   hasVoice = await hasCompletedVoiceIntro(supabase, testUserId);
   assertEquals(hasVoice, true);
   
-  await supabase.from('voice_introductions').delete().eq('user_id', testUserId);
+  await supabase.from('voice_introductions').delete().eq('clerk_user_id', testUserId);
 });
 
 Deno.test("Photo Constraints - Max 6 non-rejected photos", async () => {
@@ -114,7 +114,7 @@ Deno.test("Photo Constraints - Only one primary photo per user", async () => {
   
   assertExists(error);
   
-  await supabase.from('profile_photos').delete().eq('user_id', testUserId);
+  await supabase.from('profile_photos').delete().eq('clerk_user_id', testUserId);
 });
 
 Deno.test("Voice Constraints - Only one active voice intro per user", async () => {
@@ -143,7 +143,7 @@ Deno.test("Voice Constraints - Only one active voice intro per user", async () =
   
   assertExists(error);
   
-  await supabase.from('voice_introductions').delete().eq('user_id', testUserId);
+  await supabase.from('voice_introductions').delete().eq('clerk_user_id', testUserId);
 });
 
 Deno.test("Voice Duration Constraints - 5 to 30 seconds enforced", async () => {
@@ -186,7 +186,7 @@ Deno.test("Voice Duration Constraints - 5 to 30 seconds enforced", async () => {
   
   assertEquals(validError, null);
   
-  await supabase.from('voice_introductions').delete().eq('user_id', testUserId);
+  await supabase.from('voice_introductions').delete().eq('clerk_user_id', testUserId);
 });
 
 Deno.test("Photo MIME Type Constraints - Only JPEG, PNG, WebP allowed", async () => {
@@ -213,7 +213,7 @@ Deno.test("Photo MIME Type Constraints - Only JPEG, PNG, WebP allowed", async ()
   
   assertEquals(validMimeError, null);
   
-  await supabase.from('profile_photos').delete().eq('user_id', testUserId);
+  await supabase.from('profile_photos').delete().eq('clerk_user_id', testUserId);
 });
 
 Deno.test("Photo File Size Constraints - Max 5MB enforced", async () => {
@@ -242,5 +242,5 @@ Deno.test("Photo File Size Constraints - Max 5MB enforced", async () => {
   
   assertEquals(validSizeError, null);
   
-  await supabase.from('profile_photos').delete().eq('user_id', testUserId);
+  await supabase.from('profile_photos').delete().eq('clerk_user_id', testUserId);
 });

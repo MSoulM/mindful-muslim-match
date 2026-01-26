@@ -31,7 +31,7 @@ import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
 
 import { useApp } from '@/context/AppContext';
-import { useDNAScore } from '@/hooks/useDNAScore';
+import { useDNAScore, isDNASeedState } from '@/hooks/useDNAScore';
 import { usePremium } from '@/hooks/usePremium';
 import { StreakCounter } from '@/components/streaks/StreakCounter';
 import { useStreak } from '@/hooks/useStreak';
@@ -42,7 +42,7 @@ const ProfileScreen = () => {
   const { user, logout } = useUser();
   const { notificationCount } = useApp();
   const { premiumState } = usePremium();
-  const { dnaScore, rarityConfig } = useDNAScore();
+  const { dnaScore, rarityConfig, loading: dnaScoreLoading } = useDNAScore();
   const { signOut } = useClerk();
   const { status: streakStatus } = useStreak();
   
@@ -160,8 +160,24 @@ const ProfileScreen = () => {
           >
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-white">{dnaScore?.score ?? 0}</div>
-                <div className="text-xs text-white/80">{rarityConfig?.tier || 'DNA'}</div>
+                <div className="text-2xl font-bold text-white">
+                  {dnaScoreLoading ? (
+                    <span className="opacity-50 animate-pulse">--</span>
+                  ) : (
+                    !dnaScore || !dnaScore.rarityTier || isDNASeedState(dnaScore)
+                      ? 'Not Ready' 
+                      : (dnaScore?.score ?? 0)
+                  )}
+                </div>
+                <div className="text-xs text-white/80">
+                  {dnaScoreLoading ? (
+                    <span className="opacity-50 animate-pulse">Loading...</span>
+                  ) : (
+                    !dnaScore || !dnaScore.rarityTier || isDNASeedState(dnaScore)
+                      ? 'DNA Score' 
+                      : (rarityConfig?.tier || 'DNA')
+                  )}
+                </div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-white">{user.matchCount ?? 0}</div>

@@ -12,7 +12,7 @@ export type RarityTier = 'COMMON' | 'UNCOMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
 
 export interface DNAScore {
   score: number;
-  rarityTier: RarityTier;
+  rarityTier: RarityTier | null; // Can be null if not calculated yet
   percentileRank?: number;
   traitRarityScore: number;
   profileDepthScore: number;
@@ -27,7 +27,37 @@ export interface DNAScore {
   componentBreakdown?: any;
   rareTraits?: any[];
   uniqueBehaviors?: any[];
+  ready?: boolean; // Flag indicating if DNA score is ready (calculated)
 }
+
+/**
+ * Check if DNA score is in seed state (not calculated yet)
+ * Seed state = rarity_tier is null OR (score is 0 AND prerequisites not met)
+ */
+export const isDNASeedState = (dnaScore: DNAScore | null): boolean => {
+  if (!dnaScore) return true;
+  
+  // If rarity_tier is null, it's definitely seed state (not ready)
+  if (dnaScore.rarityTier === null) return true;
+  
+  // If ready flag is explicitly false, it's seed state
+  if (dnaScore.ready === false) return true;
+  
+  const MIN_APPROVED_INSIGHTS = 5;
+  const MIN_DAYS_FOR_BEHAVIORAL = 7;
+  
+  // If score is 0 and prerequisites aren't met, it's seed state
+  if (dnaScore.score === 0) {
+    const hasEnoughInsights = (dnaScore.approvedInsightsCount ?? 0) >= MIN_APPROVED_INSIGHTS;
+    const hasEnoughDays = (dnaScore.daysActive ?? 0) >= MIN_DAYS_FOR_BEHAVIORAL;
+    
+    // If both prerequisites are met but score is still 0, it might be a real 0 score
+    // Otherwise, it's seed state
+    return !(hasEnoughInsights && hasEnoughDays);
+  }
+  
+  return false;
+};
 
 export const RARITY_CONFIG: Record<RarityTier, {
   minScore: number;
@@ -93,6 +123,14 @@ export const getRarityConfig = (score: number) => {
   return { tier, ...RARITY_CONFIG[tier] };
 };
 
+// Get rarity config from tier (for backend tier)
+export const getRarityConfigFromTier = (tier: RarityTier | null) => {
+  if (!tier || !RARITY_CONFIG[tier]) {
+    return null;
+  }
+  return { tier, ...RARITY_CONFIG[tier] };
+};
+
 export function useDNAScore() {
   const { userId, isLoaded, getToken } = useAuth();
   const [dnaScore, setDnaScore] = useState<DNAScore | null>(null);
@@ -117,15 +155,20 @@ export function useDNAScore() {
       const { data, error: fetchError } = await supabase
         .from('mysoul_dna_scores')
         .select('*')
-        .eq('user_id', userId)
+        .eq('clerk_user_id', userId)
         .maybeSingle();
       
       if (fetchError) throw fetchError;
       
       if (data) {
+        // Use rarity_tier directly from backend (can be null)
+        const backendTier = data.rarity_tier as RarityTier | null;
+        // Score is ready if rarity_tier is not null and score > 0
+        const isReady = backendTier !== null && data.score > 0;
+        
         setDnaScore({
           score: data.score,
-          rarityTier: data.rarity_tier as RarityTier,
+          rarityTier: backendTier, // Use backend field directly, don't default to COMMON
           percentileRank: data.percentile_rank || 0,
           traitRarityScore: data.trait_rarity_raw_score || data.trait_uniqueness_score || 0,
           profileDepthScore: data.profile_depth_raw_score || data.profile_completeness_score || 0,
@@ -139,7 +182,8 @@ export function useDNAScore() {
           tierChangedAt: data.tier_changed_at ? new Date(data.tier_changed_at) : undefined,
           componentBreakdown: data.component_breakdown,
           rareTraits: data.rare_traits,
-          uniqueBehaviors: data.unique_behaviors
+          uniqueBehaviors: data.unique_behaviors,
+          ready: isReady
         });
       } else {
         // No score exists yet, calculate and create one
@@ -206,7 +250,7 @@ export function useDNAScore() {
       const { data: posts } = await supabase
         .from('posts')
         .select('depth_level, categories, content, created_at, is_shared_content')
-        .eq('user_id', userId)
+        .eq('clerk_user_id', userId)
         .order('created_at', { ascending: true });
 
       // Get approved insights count (business rule: minimum 5 required)
@@ -370,7 +414,7 @@ export function useDNAScore() {
       const { data: currentData } = await supabase
         .from('mysoul_dna_scores')
         .select('rarity_tier')
-        .eq('user_id', userId)
+        .eq('clerk_user_id', userId)
         .maybeSingle();
       
       const currentTier = currentData?.rarity_tier as RarityTier | undefined;
@@ -395,7 +439,7 @@ export function useDNAScore() {
           tier_changed_at: tierChanged ? new Date().toISOString() : null,
           last_calculated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id'
+          onConflict: 'clerk_user_id'
         });
 
       if (upsertError) throw upsertError;
@@ -448,12 +492,17 @@ export function useDNAScore() {
     }
   }, [isLoaded, userId, fetchDNAScore]);
 
+  // Use backend rarity_tier if available, otherwise derive from score
+  const rarityConfig = dnaScore?.rarityTier 
+    ? getRarityConfigFromTier(dnaScore.rarityTier)
+    : (dnaScore ? getRarityConfig(dnaScore.score) : null);
+
   return {
     dnaScore,
     loading,
     error,
     recalculateScore,
     refetch: fetchDNAScore,
-    rarityConfig: dnaScore ? getRarityConfig(dnaScore.score) : null
+    rarityConfig
   };
 }

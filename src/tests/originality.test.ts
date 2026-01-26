@@ -172,7 +172,7 @@ describe('Content Originality System', () => {
       await mockSupabase
         .from('content_similarity_cache')
         .update({ valid_until: new Date().toISOString() })
-        .eq('user_id', 'user123');
+        .eq('clerk_user_id', 'user123');
 
       expect(mockSupabase.update).toHaveBeenCalledWith(
         expect.objectContaining({ valid_until: expect.any(String) })

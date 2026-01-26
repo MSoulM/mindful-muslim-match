@@ -1,4 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  calculateTraitRarity,
+  calculateProfileDepth,
+  calculateDaysActive,
+  getRarityTier,
+  COMPONENT_WEIGHTS,
+  MIN_APPROVED_INSIGHTS,
+  MIN_DAYS_FOR_BEHAVIORAL,
+  ALGORITHM_VERSION
+} from './dna-calculator.ts';
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
@@ -232,7 +242,7 @@ export async function processDNARecalculation(
     const { data: existing } = await supabase
       .from('mysoul_dna_scores')
       .select('rarity_tier')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .maybeSingle();
 
     const previousTier = existing?.rarity_tier;
@@ -260,7 +270,7 @@ export async function processDNARecalculation(
         tier_changed_at: tierChanged ? new Date().toISOString() : null,
         last_calculated_at: new Date().toISOString()
       }, {
-        onConflict: 'user_id'
+        onConflict: 'clerk_user_id'
       });
   } catch (error) {
     console.error(`[DNA Recalc] Failed for user ${userId}:`, error);
@@ -269,16 +279,6 @@ export async function processDNARecalculation(
 }
 
 async function calculateDNAScore(userId: string, supabase: any): Promise<any> {
-  const MIN_APPROVED_INSIGHTS = 5;
-  const MIN_DAYS_FOR_BEHAVIORAL = 7;
-  const COMPONENT_WEIGHTS = {
-    traitRarity: 0.35,
-    profileDepth: 0.25,
-    behavioral: 0.20,
-    contentOriginality: 0.15,
-    culturalVariance: 0.05
-  };
-
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -315,7 +315,7 @@ async function calculateDNAScore(userId: string, supabase: any): Promise<any> {
       uniqueBehaviors: [],
       approvedInsightsCount,
       daysActive,
-      algorithmVersion: 'v1.0'
+      algorithmVersion: ALGORITHM_VERSION
     };
   }
 
@@ -326,22 +326,67 @@ async function calculateDNAScore(userId: string, supabase: any): Promise<any> {
     .order('created_at', { ascending: true });
 
   const postCount = posts?.length || 0;
-  const avgDepth = postCount > 0 
-    ? posts.reduce((sum: number, p: any) => sum + (p.depth_level || 1), 0) / postCount 
-    : 1;
-
-  const traitRarityScore = Math.min(100, Math.round((avgDepth / 5) * 70 + (postCount / 20) * 30));
   
-  const profileDepthScore = calculateProfileDepthScore(profile);
+  // Use shared trait rarity calculation (based on insights and trait_distribution_stats)
+  const traitRarityResult = await calculateTraitRarity(supabase, approvedInsights || []);
+  const traitRarityScore = traitRarityResult.score;
   
-  const behavioralScore = daysActive >= MIN_DAYS_FOR_BEHAVIORAL && postCount > 0
-    ? calculateBehavioralScore(posts, daysActive)
-    : 0;
+  // Use shared profile depth calculation (based on user_profile_fields table)
+  const profileDepthResult = await calculateProfileDepth(supabase, userId);
+  const profileDepthScore = profileDepthResult.score;
+  
+  // Get behavioral tracking data (requires 7+ days of activity)
+  let behavioralScore = 0;
+  let uniqueBehaviors: any[] = [];
+  
+  if (daysActive >= MIN_DAYS_FOR_BEHAVIORAL) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('clerk_user_id', userId)
+      .maybeSingle();
+    
+    if (profile?.id) {
+      // Get most recent behavioral tracking period
+      const { data: behavioralData } = await supabase
+        .from('behavioral_tracking')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .order('period_start', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (behavioralData) {
+        // Use uniqueness_score from behavioral_tracking if available
+        behavioralScore = behavioralData.uniqueness_score ?? 0;
+        
+        // Extract unique behaviors from z_scores
+        if (behavioralData.z_scores) {
+          const zScores = behavioralData.z_scores as any;
+          Object.entries(zScores).forEach(([metric, zScore]: [string, any]) => {
+            if (Math.abs(zScore) >= 1.5) { // Significant deviation
+              uniqueBehaviors.push({
+                metric,
+                displayName: formatBehavioralMetricName(metric),
+                value: getMetricValue(behavioralData, metric),
+                populationMean: 0, // Would need population stats
+                zScore: Number(zScore),
+                percentile: zScoreToPercentile(Number(zScore))
+              });
+            }
+          });
+        }
+      } else {
+        // Fallback to post-based calculation if no behavioral tracking data
+        behavioralScore = postCount > 0 ? calculateBehavioralScore(posts, daysActive) : 0;
+      }
+    }
+  }
 
   const { data: dnaScore } = await supabase
     .from('mysoul_dna_scores')
     .select('content_originality_score')
-    .eq('user_id', userId)
+    .eq('clerk_user_id', userId)
     .maybeSingle();
 
   const contentOriginalityScore = dnaScore?.content_originality_score ?? 50;
@@ -367,18 +412,24 @@ async function calculateDNAScore(userId: string, supabase: any): Promise<any> {
   const rarityTier = getRarityTier(finalScore);
   const percentileRank = await calculatePercentileRank(finalScore, supabase);
 
+  const avgDepth = postCount > 0 
+    ? posts.reduce((sum: number, p: any) => sum + (p.depth_level || 1), 0) / postCount 
+    : 1;
+
   const componentBreakdown = {
     traitRarity: {
       score: componentScores.traitRarity,
       weight: COMPONENT_WEIGHTS.traitRarity,
-      weightedScore: componentScores.traitRarity * COMPONENT_WEIGHTS.traitRarity,
-      explanation: `Based on ${postCount} posts with avg depth ${avgDepth.toFixed(1)}`
+      weightedScore: Math.round(componentScores.traitRarity * COMPONENT_WEIGHTS.traitRarity * 100) / 100,
+      explanation: traitRarityResult.explanation
     },
     profileDepth: {
       score: componentScores.profileDepth,
       weight: COMPONENT_WEIGHTS.profileDepth,
-      weightedScore: componentScores.profileDepth * COMPONENT_WEIGHTS.profileDepth,
-      explanation: 'Profile completeness across 5 dimensions'
+      weightedScore: Math.round(componentScores.profileDepth * COMPONENT_WEIGHTS.profileDepth * 100) / 100,
+      explanation: profileDepthResult.explanation,
+      dimensions: profileDepthResult.dimensions,
+      missingDimensions: profileDepthResult.missingDimensions
     },
     behavioral: {
       score: componentScores.behavioral,
@@ -408,72 +459,55 @@ async function calculateDNAScore(userId: string, supabase: any): Promise<any> {
     percentileRank,
     componentScores,
     componentBreakdown,
-    rareTraits: [],
-    uniqueBehaviors: avgDepth >= 4 ? [{ metric: 'depth', displayName: 'Deep Content Creator', value: avgDepth }] : [],
+    rareTraits: traitRarityResult.rareTraits,
+    uniqueBehaviors: uniqueBehaviors.length > 0 ? uniqueBehaviors : (avgDepth >= 4 ? [{ metric: 'depth', displayName: 'Deep Content Creator', value: avgDepth }] : []),
     approvedInsightsCount,
     daysActive,
-    algorithmVersion: 'v1.0'
+    algorithmVersion: ALGORITHM_VERSION
   };
 }
 
-function calculateDaysActive(createdAt?: string): number {
-  if (!createdAt) return 0;
-  const created = new Date(createdAt);
-  const now = new Date();
-  return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
-}
+// calculateDaysActive is now imported from dna-calculator.ts
 
-function calculateProfileDepthScore(profile: any): number {
-  const dimensions = {
-    religious: scoreReligious(profile),
-    career: scoreCareer(profile),
-    personality: scorePersonality(profile),
-    lifestyle: scoreLifestyle(profile),
-    family: scoreFamily(profile)
+// calculateProfileDepth is now imported from dna-calculator.ts
+// Old profile-based calculation removed - now uses user_profile_fields table
+
+// Helper functions for behavioral uniqueness
+function formatBehavioralMetricName(metric: string): string {
+  const names: Record<string, string> = {
+    'response_time': 'Response Time',
+    'messages_per_match': 'Messages per Match',
+    'message_length': 'Message Length',
+    'emoji_usage': 'Emoji Usage',
+    'voice_ratio': 'Voice Messages',
+    'profile_views': 'Profile Views',
+    'match_acceptance': 'Match Acceptance',
+    'weekend_activity': 'Weekend Activity'
   };
-
-  return Math.round((dimensions.religious + dimensions.career + dimensions.personality + dimensions.lifestyle + dimensions.family) / 5);
+  return names[metric] || metric;
 }
 
-function scoreReligious(profile: any): number {
-  const fields = [profile.religion?.sect, profile.religion?.practiceLevel, profile.religion?.halalPreference];
-  return (fields.filter(f => f).length / fields.length) * 100;
+function getMetricValue(behavioralData: any, metric: string): number {
+  const mapping: Record<string, string> = {
+    'response_time': 'avg_response_time_hours',
+    'messages_per_match': 'messages_per_match',
+    'message_length': 'avg_message_length',
+    'emoji_usage': 'emoji_usage_rate',
+    'voice_ratio': 'voice_message_ratio',
+    'profile_views': 'profile_views_per_day',
+    'match_acceptance': 'match_acceptance_rate',
+    'weekend_activity': 'weekend_activity_ratio'
+  };
+  return behavioralData[mapping[metric]] ?? 0;
 }
 
-function scoreCareer(profile: any): number {
-  const fields = [profile.education_level, profile.occupation, profile.industry, profile.annual_income_range];
-  return (fields.filter(f => f).length / fields.length) * 100;
-}
-
-function scorePersonality(profile: any): number {
-  if (profile.bio && profile.bio.length > 50) return 100;
-  if (profile.bio && profile.bio.length > 20) return 50;
-  return 0;
-}
-
-function scoreLifestyle(profile: any): number {
-  const fields = [
-    profile.smoking,
-    profile.exercise_frequency,
-    profile.dietary_preferences?.length ? 'yes' : null,
-    profile.hobbies?.length ? 'yes' : null,
-    profile.height,
-    profile.build
-  ];
-  return (fields.filter(f => f).length / fields.length) * 100;
-}
-
-function scoreFamily(profile: any): number {
-  const fields = [
-    profile.marital_status,
-    typeof profile.has_children === 'boolean' ? 'yes' : null,
-    typeof profile.wants_children === 'boolean' ? 'yes' : null,
-    profile.family_structure,
-    profile.family_values,
-    profile.cultural_traditions,
-    profile.hometown
-  ];
-  return (fields.filter(f => f).length / fields.length) * 100;
+function zScoreToPercentile(zScore: number): number {
+  // Convert Z-score to percentile (approximation)
+  // Using standard normal distribution approximation
+  const t = 1 / (1 + 0.2316419 * Math.abs(zScore));
+  const d = 0.3989423 * Math.exp(-zScore * zScore / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return zScore > 0 ? (1 - p) * 100 : p * 100;
 }
 
 function calculateBehavioralScore(posts: any[], daysActive: number): number {
@@ -527,13 +561,7 @@ async function calculateCulturalVarianceScore(userId: string, profile: any, supa
   return Math.round(uniquenessRatio * 100);
 }
 
-function getRarityTier(score: number): string {
-  if (score >= 96) return 'LEGENDARY';
-  if (score >= 81) return 'EPIC';
-  if (score >= 61) return 'RARE';
-  if (score >= 41) return 'UNCOMMON';
-  return 'COMMON';
-}
+// getRarityTier is now imported from dna-calculator.ts
 
 async function calculatePercentileRank(score: number, supabase: any): Promise<number> {
   try {
@@ -609,7 +637,7 @@ async function calculateUserOriginality(
     const { data: cache } = await supabase
       .from('content_similarity_cache')
       .select('*')
-      .eq('user_id', userId)
+      .eq('clerk_user_id', userId)
       .single();
 
     if (cache) {
@@ -703,7 +731,7 @@ async function calculateUserOriginality(
       valid_until: validUntil.toISOString(),
       updated_at: new Date().toISOString()
     }, {
-      onConflict: 'user_id'
+      onConflict: 'clerk_user_id'
     });
 
   return {
@@ -748,7 +776,7 @@ export async function processOriginalityBatch(
           content_originality_score: result.score,
           content_originality_calculated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id'
+          onConflict: 'clerk_user_id'
         });
 
       processedCount++;

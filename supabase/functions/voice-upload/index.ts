@@ -122,7 +122,7 @@ async function handleUpload(req: Request, userId: string) {
   await supabase
     .from('voice_introductions')
     .update({ is_active: false })
-    .eq('user_id', userId)
+    .eq('clerk_user_id', userId)
     .eq('is_active', true);
 
   // Upload to storage
@@ -329,7 +329,7 @@ async function handleDelete(voiceId: string, userId: string) {
     .from('voice_introductions')
     .select('*')
     .eq('id', voiceId)
-    .eq('user_id', userId)
+    .eq('clerk_user_id', userId)
     .single();
 
   if (fetchError || !voice) {
@@ -367,7 +367,7 @@ async function handleGet(userId: string) {
   const { data: voice, error } = await supabase
     .from('voice_introductions')
     .select('*')
-    .eq('user_id', userId)
+    .eq('clerk_user_id', userId)
     .eq('is_active', true)
     .single();
 

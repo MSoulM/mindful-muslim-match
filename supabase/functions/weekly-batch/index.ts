@@ -127,6 +127,17 @@ serve(async (req) => {
       console.error('[Weekly Batch] Originality batch failed:', error);
     }
 
+    console.log(`[Weekly Batch] Phase 2.6: Behavioral Aggregation`);
+    try {
+      const { data: behavioralResult, error: behavioralError } = await supabase.rpc('process_weekly_behavioral_aggregation');
+      if (behavioralError) throw behavioralError;
+      const processedCount = behavioralResult?.[0]?.processed_count || 0;
+      console.log(`[Weekly Batch] Behavioral: ${processedCount} users processed for period ${behavioralResult?.[0]?.period_start} to ${behavioralResult?.[0]?.period_end}`);
+      totalCompleted += processedCount;
+    } catch (error: unknown) {
+      console.error('[Weekly Batch] Behavioral aggregation failed:', error);
+    }
+
     console.log(`[Weekly Batch] Phase 3: DNA Recalculation`);
     const { data: dnaJobs } = await supabase
       .from('batch_processing_queue')
