@@ -67,8 +67,16 @@ export class MMAgentMessageHandler {
 
     const topicValidation = validateTopic(request.content);
     if (!topicValidation.allowed) {
+      // Save deflection response as assistant message
+      const deflectionMessage = topicValidation.deflection || 'I can only help with matchmaking and relationship guidance.';
+      try {
+        await this.saveMessage(request.sessionId, 'assistant', deflectionMessage, 'none', 0, this.personality);
+      } catch (error) {
+        console.error('Failed to save deflection message:', error);
+      }
+      
       return {
-        message: topicValidation.deflection || 'I can only help with matchmaking and relationship guidance.',
+        message: deflectionMessage,
         tokensRemaining: 0,
         model: 'none',
         personality: this.personality || 'amina',
@@ -85,8 +93,16 @@ export class MMAgentMessageHandler {
     );
 
     if (!abuseCheck.allowed || abuseCheck.blocked) {
+      // Save warning/blocked response as assistant message
+      const blockedMessage = abuseCheck.warning || abuseCheck.reason || 'Your message could not be processed.';
+      try {
+        await this.saveMessage(request.sessionId, 'assistant', blockedMessage, 'none', 0, this.personality);
+      } catch (error) {
+        console.error('Failed to save blocked message:', error);
+      }
+      
       return {
-        message: abuseCheck.warning || abuseCheck.reason || 'Your message could not be processed.',
+        message: blockedMessage,
         tokensRemaining: 0,
         model: 'none',
         personality: this.personality || 'amina',
@@ -97,6 +113,14 @@ export class MMAgentMessageHandler {
 
     if (abuseCheck.truncatedContent) {
       messageContent = abuseCheck.truncatedContent;
+    }
+
+    // Always save user message first (even if validation fails)
+    try {
+      await this.saveMessage(request.sessionId, 'user', messageContent);
+    } catch (error) {
+      console.error('Failed to save user message:', error);
+      // Continue processing even if save fails
     }
 
     const complexity = estimateQueryComplexity(messageContent);
@@ -112,8 +136,16 @@ export class MMAgentMessageHandler {
     );
 
     if (!tokenCheck.allowed || tokenCheck.blocked) {
+      // Save token limit message as assistant message
+      const tokenLimitMessage = tokenCheck.suggestion || tokenCheck.reason || 'Daily token limit exceeded. Please try again tomorrow.';
+      try {
+        await this.saveMessage(request.sessionId, 'assistant', tokenLimitMessage, 'none', 0, this.personality);
+      } catch (error) {
+        console.error('Failed to save token limit message:', error);
+      }
+      
       return {
-        message: tokenCheck.suggestion || tokenCheck.reason || 'Daily token limit exceeded. Please try again tomorrow.',
+        message: tokenLimitMessage,
         tokensRemaining: 0,
         model: 'none',
         personality: this.personality || 'amina',
@@ -139,11 +171,18 @@ export class MMAgentMessageHandler {
     );
     const contextMessages = this.buildContext(recentMessages, memories);
 
+    console.log(model, systemPrompt, contextMessages, messageContent, lowTokens)
+
     const aiResponse = await this.callAI(model, systemPrompt, contextMessages, messageContent, lowTokens);
     const actualTokens = this.estimateTokens(messageContent + aiResponse);
 
-    await this.saveMessage(request.sessionId, 'user', request.content);
-    await this.saveMessage(request.sessionId, 'assistant', aiResponse, model, actualTokens, this.personality);
+    // Save assistant response (user message already saved at the start)
+    try {
+      await this.saveMessage(request.sessionId, 'assistant', aiResponse, model, actualTokens, this.personality);
+    } catch (error) {
+      console.error('Failed to save assistant message:', error);
+      // Don't throw - response was generated successfully, just logging failed
+    }
 
     if (this.tier === 'gold_plus' && memories.length === 0) {
       const topic = this.detectTopic(messageContent);
@@ -349,6 +388,7 @@ export class MMAgentMessageHandler {
     tokensUsed?: number,
     personality?: PersonalityType | null
   ): Promise<void> {
+    // Insert message into database
     const { error: insertError } = await this.supabase.from('mmagent_messages').insert({
       session_id: sessionId,
       clerk_user_id: this.clerkUserId,
@@ -365,16 +405,28 @@ export class MMAgentMessageHandler {
       throw new Error(`Failed to save ${role} message: ${insertError.message}`);
     }
 
+    // Update session message count and last_message_at
+    // Use RPC function or separate query to increment message_count
+    const { data: session } = await this.supabase
+      .from('mmagent_sessions')
+      .select('message_count')
+      .eq('id', sessionId)
+      .single();
+
+    const newMessageCount = (session?.message_count || 0) + 1;
+
     const { error: updateError } = await this.supabase
       .from('mmagent_sessions')
       .update({
-        message_count: this.supabase.raw('message_count + 1'),
-        last_message_at: new Date().toISOString()
+        message_count: newMessageCount,
+        last_message_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .eq('id', sessionId);
 
     if (updateError) {
       console.error('Failed to update session:', updateError);
+      // Don't throw - message was saved successfully, session update is secondary
     }
   }
 }
