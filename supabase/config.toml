@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.insights-pending]
 verify_jwt = false
+
+[functions.weekly-batch]
+verify_jwt = false

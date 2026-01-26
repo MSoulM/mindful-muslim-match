@@ -145,30 +145,8 @@ DECLARE
   v_z_score NUMERIC;
   v_uniqueness_score NUMERIC;
 BEGIN
-  -- Calculate population statistics for each metric
-  WITH population_stats AS (
-    SELECT 
-      AVG(avg_response_time_hours) AS mean_response_time,
-      STDDEV(avg_response_time_hours) AS stddev_response_time,
-      AVG(messages_per_match) AS mean_messages_per_match,
-      STDDEV(messages_per_match) AS stddev_messages_per_match,
-      AVG(avg_message_length) AS mean_message_length,
-      STDDEV(avg_message_length) AS stddev_message_length,
-      AVG(emoji_usage_rate) AS mean_emoji_rate,
-      STDDEV(emoji_usage_rate) AS stddev_emoji_rate,
-      AVG(voice_message_ratio) AS mean_voice_ratio,
-      STDDEV(voice_message_ratio) AS stddev_voice_ratio,
-      AVG(profile_views_per_day) AS mean_views_per_day,
-      STDDEV(profile_views_per_day) AS stddev_views_per_day,
-      AVG(match_acceptance_rate) AS mean_acceptance_rate,
-      STDDEV(match_acceptance_rate) AS stddev_acceptance_rate,
-      AVG(weekend_activity_ratio) AS mean_weekend_ratio,
-      STDDEV(weekend_activity_ratio) AS stddev_weekend_ratio
-    FROM public.behavioral_tracking
-    WHERE period_start = p_period_start
-      AND period_end = p_period_end
-  )
   -- Update z_scores for each user
+  -- Calculate population statistics and update in one query
   UPDATE public.behavioral_tracking bt
   SET z_scores = jsonb_build_object(
     'response_time', CASE 
@@ -240,9 +218,9 @@ BEGIN
       STDDEV(match_acceptance_rate) AS stddev_acceptance_rate,
       AVG(weekend_activity_ratio) AS mean_weekend_ratio,
       STDDEV(weekend_activity_ratio) AS stddev_weekend_ratio
-    FROM public.behavioral_tracking
-    WHERE period_start = p_period_start
-      AND period_end = p_period_end
+    FROM public.behavioral_tracking bt2
+    WHERE bt2.period_start = p_period_start
+      AND bt2.period_end = p_period_end
   ) ps
   WHERE bt.period_start = p_period_start
     AND bt.period_end = p_period_end;
@@ -273,6 +251,22 @@ BEGIN
   v_period_start := v_period_end - INTERVAL '6 days';
   
   -- Aggregate behavioral events into behavioral_tracking
+  WITH aggregated_data AS (
+    SELECT 
+      ag.profile_id,
+      ag.avg_response_time_hours,
+      ag.median_response_time_hours,
+      ag.response_time_stddev,
+      ag.messages_per_match,
+      ag.avg_message_length,
+      ag.emoji_usage_rate,
+      ag.voice_message_ratio,
+      ag.profile_views_per_day,
+      ag.match_acceptance_rate,
+      ag.peak_activity_hour,
+      ag.weekend_activity_ratio
+    FROM aggregate_behavioral_tracking(v_period_start, v_period_end) AS ag
+  )
   INSERT INTO public.behavioral_tracking (
     profile_id,
     period_start,
@@ -292,23 +286,23 @@ BEGIN
     weekend_activity_ratio
   )
   SELECT 
-    ag.profile_id,
+    ad.profile_id,
     v_period_start,
     v_period_end,
     v_period_start::timestamptz,
     v_period_end::timestamptz,
-    ag.avg_response_time_hours,
-    ag.median_response_time_hours,
-    ag.response_time_stddev,
-    ag.messages_per_match,
-    ag.avg_message_length,
-    ag.emoji_usage_rate,
-    ag.voice_message_ratio,
-    ag.profile_views_per_day,
-    ag.match_acceptance_rate,
-    ag.peak_activity_hour,
-    ag.weekend_activity_ratio
-  FROM aggregate_behavioral_tracking(v_period_start, v_period_end) ag
+    ad.avg_response_time_hours,
+    ad.median_response_time_hours,
+    ad.response_time_stddev,
+    ad.messages_per_match,
+    ad.avg_message_length,
+    ad.emoji_usage_rate,
+    ad.voice_message_ratio,
+    ad.profile_views_per_day,
+    ad.match_acceptance_rate,
+    ad.peak_activity_hour,
+    ad.weekend_activity_ratio
+  FROM aggregated_data ad
   ON CONFLICT (profile_id, period_start) DO UPDATE
   SET
     period_end = EXCLUDED.period_end,

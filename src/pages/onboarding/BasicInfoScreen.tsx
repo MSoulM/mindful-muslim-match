@@ -27,8 +27,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
   });
   const [hasAutoFilled, setHasAutoFilled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasAutoFilled, setHasAutoFilled] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   const [errors, setErrors] = useState({
     firstName: '',
@@ -179,12 +177,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
       alert('Failed to save your information. Please try again.');
     } finally {
       setIsSaving(false);
-    } catch (error) {
-      console.error('Failed to save profile:', error);
-      // You might want to show an error toast here
-      alert('Failed to save your information. Please try again.');
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -221,7 +213,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
           <div 
             className="h-full bg-primary transition-all duration-500 ease-out"
             style={{ width: `${PROGRESS_PERCENTAGE}%` }}
-            style={{ width: `${PROGRESS_PERCENTAGE}%` }}
           />
         </div>
 
@@ -250,10 +241,8 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
             <div className="space-y-2">
               <h1 className="text-2xl font-bold text-foreground">
                 {BASIC_INFO_TEXT.title}
-                {BASIC_INFO_TEXT.title}
               </h1>
               <p className="text-sm text-neutral-600">
-                {BASIC_INFO_TEXT.subtitle}
                 {BASIC_INFO_TEXT.subtitle}
               </p>
             </div>
@@ -263,7 +252,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               {/* First Name */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
-                  {BASIC_INFO_TEXT.firstName} <span className="text-destructive">*</span>
                   {BASIC_INFO_TEXT.firstName} <span className="text-destructive">*</span>
                 </label>
                 <Input
@@ -285,7 +273,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
                   {BASIC_INFO_TEXT.lastName} <span className="text-destructive">*</span>
-                  {BASIC_INFO_TEXT.lastName} <span className="text-destructive">*</span>
                 </label>
                 <Input
                   type="text"
@@ -305,7 +292,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               {/* Birth Date */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
-                  {BASIC_INFO_TEXT.birthdate} <span className="text-destructive">*</span>
                   {BASIC_INFO_TEXT.birthdate} <span className="text-destructive">*</span>
                 </label>
                 <CustomDatePicker
@@ -377,7 +363,6 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">
                   {BASIC_INFO_TEXT.location} <span className="text-destructive">*</span>
-                  {BASIC_INFO_TEXT.location} <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -402,16 +387,13 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
             <div className="space-y-3 pt-4">
               <div className="text-center text-xs text-neutral-500 mb-2">
                 {BASIC_INFO_TEXT.stepCounter(ONBOARDING_STEPS.BASIC_INFO, ONBOARDING_STEPS.TOTAL)}
-                {BASIC_INFO_TEXT.stepCounter(ONBOARDING_STEPS.BASIC_INFO, ONBOARDING_STEPS.TOTAL)}
               </div>
               <Button
                 onClick={handleContinue}
                 disabled={!isFormValid || isSaving}
-                disabled={!isFormValid || isSaving}
                 className="w-full h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80"
               >
-                {isSaving ? 'Saving...' : 'Continue'}
-                {isSaving ? 'Saving...' : 'Continue'}
+                {isSaving ? 'Saving...' : 'Continue'} 
               </Button>
             </div>
           </div>
