@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 import { TopBar } from '@/components/layout/TopBar';
@@ -25,7 +25,8 @@ import {
   Crown,
   ChevronRight,
   Mic,
-  Brain
+  Brain,
+  User
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/context/UserContext';
@@ -35,20 +36,41 @@ import { useDNAScore, isDNASeedState } from '@/hooks/useDNAScore';
 import { usePremium } from '@/hooks/usePremium';
 import { StreakCounter } from '@/components/streaks/StreakCounter';
 import { useStreak } from '@/hooks/useStreak';
+import { Progress } from '@/components/ui/progress';
+import { calculateProfileCompletionPercent } from '@/utils/profileCompletion';
 
 const ProfileScreen = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
-  const { user, logout } = useUser();
+  const { user, logout, updateUser } = useUser();
   const { notificationCount } = useApp();
   const { premiumState } = usePremium();
   const { dnaScore, rarityConfig, loading: dnaScoreLoading } = useDNAScore();
   const { signOut } = useClerk();
   const { status: streakStatus } = useStreak();
+  const didSyncCompletion = useRef(false);
   
   
   // Check if user is premium
   const isPremium = premiumState.isSubscribed;
+
+  // One-time backfill: if the stored percent is stale (commonly 0 from old logic),
+  // recompute and persist it so the UI reflects the real completion.
+  useEffect(() => {
+    if (!user) return;
+    if (didSyncCompletion.current) return;
+
+    const stored = user.profileCompletionPercent ?? 0;
+    const expected = calculateProfileCompletionPercent(user);
+
+    if (expected > 0 && expected !== stored) {
+      didSyncCompletion.current = true;
+      updateUser({}).catch((err) => {
+        console.error('Failed to sync profile completion percent:', err);
+        didSyncCompletion.current = false;
+      });
+    }
+  }, [user, updateUser]);
 
 
 
@@ -149,6 +171,25 @@ const ProfileScreen = () => {
           {/* Streak Counter */}
           <div className="flex justify-center">
             <StreakCounter status={streakStatus} />
+          </div>
+
+          {/* Profile Completion Indicator */}
+          <div className="mt-4 px-4">
+            <div className="bg-background/50 backdrop-blur-sm rounded-xl p-4 border border-border/50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">Profile Completion</span>
+                </div>
+                <span className="text-sm font-semibold text-foreground">
+                  {user.profileCompletionPercent ?? 0}%
+                </span>
+              </div>
+              <Progress
+                value={user.profileCompletionPercent ?? 0}
+                className="h-2"
+              />
+            </div>
           </div>
         </div>
 
@@ -287,7 +328,7 @@ const ProfileScreen = () => {
             icon={<Brain className="w-6 h-6" />}
             title="Personality Assessment"
             description="Discover your MMAgent personality"
-            onClick={() => navigate('/onboarding/personality-assessment')}
+            onClick={() => navigate('/onboarding/personality-assessment', { state: { fromProfile: true } })}
             className="rounded-none"
           />
           

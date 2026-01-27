@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin } from 'lucide-react';
-import { ArrowLeft, MapPin } from 'lucide-react';
 import { SafeArea } from '@/components/utils/SafeArea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import { cn } from '@/lib/utils';
 import { useProfile } from '@/hooks/useProfile';
@@ -208,7 +206,7 @@ export const BasicInfoScreen = ({ onNext, onBack }: BasicInfoScreenProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
       <SafeArea top bottom>
-        {/* Progress Bar */}
+        {/* Step Progress Bar */}
         <div className="w-full h-1 bg-neutral-200">
           <div 
             className="h-full bg-primary transition-all duration-500 ease-out"

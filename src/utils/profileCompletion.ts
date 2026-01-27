@@ -104,51 +104,90 @@ export function isBasicInfoComplete(data: BasicInfoData): boolean {
 }
 
 /**
- * Calculate MySoul DNA "Profile Depth" completion (0-100) from the **frontend** Profile shape.
+ * Calculate overall profile completion (0-100) using Task 1 section weights:
+ * - Basic: 25%
+ * - Islamic: 20%
+ * - Photos: 20%
+ * - Voice: 15%
+ * - Personality: 10%
+ * - Content: 10%
+ *
+ * This is the single source of truth for `profiles.profile_completion_percent`.
  */
 export function calculateProfileCompletionPercent(profile: Partial<Profile>): number {
-  const religiousFields = [
+  const WEIGHTS = {
+    basic: 0.25,
+    islamic: 0.20,
+    photos: 0.20,
+    voice: 0.15,
+    personality: 0.10,
+    content: 0.10,
+  } as const;
+
+  // 1) Basic Info (name, DOB, gender, city/location)
+  const basicComplete = isBasicInfoComplete({
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    birthdate: profile.birthdate,
+    gender: profile.gender,
+    location: profile.location,
+  });
+  const basicCompletion = basicComplete ? 100 : 0;
+
+  // 2) Islamic section (religion fields)
+  const islamicFields = [
     profile.religion?.sect,
     profile.religion?.practiceLevel,
     profile.religion?.halalPreference,
   ];
-  const religious = Math.round((religiousFields.filter(Boolean).length / religiousFields.length) * 100);
+  const islamicCompletion =
+    islamicFields.length > 0
+      ? Math.round((islamicFields.filter(Boolean).length / islamicFields.length) * 100)
+      : 0;
 
-  const careerFields = [
-    profile.educationLevel,
-    profile.occupation,
-    profile.industry,
-    profile.annualIncomeRange,
-  ];
-  const career = Math.round((careerFields.filter(Boolean).length / careerFields.length) * 100);
+  // 3) Photos section – require at least one approved photo for full credit,
+  // otherwise scale up to 3 photos as a soft progression.
+  const photos = profile.photos || [];
+  const approvedPhotos = photos.filter((p) => p.approved);
+  let photosCompletion = 0;
+  if (approvedPhotos.length >= 1) {
+    const maxPhotoCountForFull = 3;
+    photosCompletion = Math.round(
+      Math.min(1, approvedPhotos.length / maxPhotoCountForFull) * 100
+    );
+  }
 
-  let personality = 0;
-  if (profile.bio && profile.bio.length > 50) personality = 100;
-  else if (profile.bio && profile.bio.length > 20) personality = 50;
+  // 4) Voice section – completion if the user has at least one voice intro
+  // (tracked via voiceCount coming from Supabase/profile preferences).
+  const voiceCount = profile.voiceCount ?? 0;
+  const voiceCompletion = voiceCount > 0 ? 100 : 0;
 
-  const lifestyleFields = [
-    profile.smoking,
-    profile.exerciseFrequency,
-    (profile.dietaryPreferences?.length ? 'yes' : null),
-    (profile.hobbies?.length ? 'yes' : null),
-    profile.height,
-    profile.build,
-  ];
-  const lifestyle = Math.round((lifestyleFields.filter(Boolean).length / lifestyleFields.length) * 100);
+  // 5) Personality section – based on bio length
+  let personalityCompletion = 0;
+  if (profile.bio && profile.bio.length > 50) personalityCompletion = 100;
+  else if (profile.bio && profile.bio.length > 20) personalityCompletion = 50;
 
-  const familyFields = [
-    profile.maritalStatus,
-    (typeof profile.hasChildren === 'boolean' ? 'yes' : null),
-    (typeof profile.wantsChildren === 'boolean' ? 'yes' : null),
-    profile.familyStructure,
-    profile.familyValues,
-    profile.culturalTraditions,
-    profile.hometown,
-  ];
-  const family = Math.round((familyFields.filter(Boolean).length / familyFields.length) * 100);
+  // 6) Content section – based on any profile content (text/photo/voice/video)
+  const totalContentCount =
+    (profile.textCount ?? 0) +
+    (profile.photoCount ?? 0) +
+    (profile.voiceCount ?? 0) +
+    (profile.videoCount ?? 0);
+  // Simple ramp: 0–5 pieces of content → 0–100%
+  const contentCompletion = Math.round(
+    Math.max(0, Math.min(1, totalContentCount / 5)) * 100
+  );
 
-  const avg = (religious + career + personality + lifestyle + family) / 5;
-  return Math.min(100, Math.max(0, Math.round(avg)));
+  const overall =
+    basicCompletion * WEIGHTS.basic +
+    islamicCompletion * WEIGHTS.islamic +
+    photosCompletion * WEIGHTS.photos +
+    voiceCompletion * WEIGHTS.voice +
+    personalityCompletion * WEIGHTS.personality +
+    contentCompletion * WEIGHTS.content;
+
+  // Clamp to 0–100 and round to nearest integer
+  return Math.min(100, Math.max(0, Math.round(overall)));
 }
 
 /**

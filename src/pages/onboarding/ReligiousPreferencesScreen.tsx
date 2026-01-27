@@ -122,7 +122,7 @@ export const ReligiousPreferencesScreen = ({ onNext, onBack }: ReligiousPreferen
   return (
     <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
       <SafeArea top bottom>
-        {/* Progress Bar */}
+        {/* Step Progress Bar */}
         <div className="w-full h-1 bg-neutral-200">
           <div
             className="h-full bg-primary transition-all duration-500 ease-out"

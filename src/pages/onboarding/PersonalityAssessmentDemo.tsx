@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PersonalityAssessment } from '@/components/onboarding/PersonalityAssessment';
 import { PersonalityReveal } from '@/components/onboarding/PersonalityReveal';
 import { TopBar } from '@/components/layout/TopBar';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 export default function PersonalityAssessmentDemo() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isComplete, setIsComplete] = useState(false);
   const [assignedPersonality, setAssignedPersonality] = useState<UserPersonalityType | null>(null);
 
@@ -39,12 +40,27 @@ export default function PersonalityAssessmentDemo() {
     navigate('/profile');
   };
 
+  const handleBack = () => {
+    // If coming from profile page or any non-onboarding route, go back to profile
+    // Otherwise, go back in history
+    const referrer = document.referrer;
+    const isFromProfile = location.state?.fromProfile || 
+                         referrer.includes('/profile') ||
+                         window.history.length <= 1;
+    
+    if (isFromProfile) {
+      navigate('/profile');
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
     <ScreenContainer>
       <TopBar 
         variant="back"
         title="Personality Assessment"
-        onBackClick={() => navigate(-1)}
+        onBackClick={handleBack}
       />
 
       <div className="flex-1 flex flex-col">
