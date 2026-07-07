@@ -34,6 +34,8 @@ Hard rules:
 - Root-cause only; no hacks. A forced quick fix is flagged temporary and
   logged as sprint-debt with the proper fix proposed alongside.
 - Every root-caused bug ends with a proposed one-line trap-rule.
+- Every INV/FIX result .md is written to the repo docs folder and
+  committed on dev, plus copied to the msmadmin Drive folder.
 
 Standing trap-rules: PG CREATE OR REPLACE with changed signature creates
 an overload — pair with DROP FUNCTION IF EXISTS old signature. RLS block
