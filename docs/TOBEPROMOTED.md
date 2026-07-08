@@ -4,3 +4,4 @@ Every FIX prompt's final step adds a line: Repo | One-line change description | 
 
 ## STAGED FOR PROMOTION
 mindful-muslim-match | FIX-MSM-007 lockfile repair + bun.lockb removal | docs/FIX-MSM-007-RESULT.md | Dev-tested Y
+mindful-muslim-match | FIX-MSM-008 untrack .env, drop service-role from client env | docs/FIX-MSM-008-RESULT.md | Dev-tested Y

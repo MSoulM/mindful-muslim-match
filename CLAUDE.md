@@ -49,4 +49,10 @@ shape. Link helpers: no "?" in path; query string starts with "?". Vite
 env vars bake at BUILD time — fresh build (empty commit) after any env
 change. Assume Lovable-era hardcoded Supabase creds — env-first. Schema
 mirrors include policies on ALL schemas incl. storage. Free-tier
-Supabase pauses on inactivity.
+Supabase pauses on inactivity. Lockfile E404 on a scoped package: diff
+the failing resolved URL against npm view <pkg>@<ver> dist.tarball —
+if the integrity hash matches the registry, fix the URL in place and
+keep every pin. Secrets never go in VITE_-prefixed vars — Vite bakes
+them into the public bundle; server keys live only in Supabase edge
+function secrets, and .env stays gitignored (verify with git ls-files
+.env = empty and git check-ignore .env).
