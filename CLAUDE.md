@@ -35,7 +35,10 @@ Hard rules:
   logged as sprint-debt with the proper fix proposed alongside.
 - Every root-caused bug ends with a proposed one-line trap-rule.
 - Every INV/FIX result .md is written to the repo docs folder and
-  committed on dev, plus copied to the msmadmin Drive folder.
+  committed on dev. SPRINT-DEBT-TRACKER.md and TOBEPROMOTED.md are
+  authoritative in docs/ on dev; on every change upload copies of the
+  changed files to the msmadmin Drive folder (Drive files cannot be
+  edited in place — upload a fresh copy; latest modifiedTime is current).
 
 Standing trap-rules: PG CREATE OR REPLACE with changed signature creates
 an overload — pair with DROP FUNCTION IF EXISTS old signature. RLS block
