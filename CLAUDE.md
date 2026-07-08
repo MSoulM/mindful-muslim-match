@@ -34,6 +34,9 @@ Hard rules:
 - Root-cause only; no hacks. A forced quick fix is flagged temporary and
   logged as sprint-debt with the proper fix proposed alongside.
 - Every root-caused bug ends with a proposed one-line trap-rule.
+- AGXL MCPs are locally scoped to the AGXL repo and deny-listed in
+  .claude/settings.json; methodology/conventions from AGXL remain fine
+  to adopt — only its infrastructure is off-limits.
 - Every INV/FIX result .md is written to the repo docs folder and
   committed on dev. SPRINT-DEBT-TRACKER.md and TOBEPROMOTED.md are
   authoritative in docs/ on dev; on every change upload copies of the
